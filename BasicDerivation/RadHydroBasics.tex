@@ -1,0 +1,237 @@
+\documentclass[10pt,letterpaper,notitlepage]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{cancel}
+\usepackage{float}
+\usepackage{cite}
+
+\usepackage[ruled,vlined]{algorithm2e}
+
+
+\usepackage[left=0.75in, right=0.75in, bottom=1.0in,top=0.75in]{geometry}
+
+%\usepackage{caption} 
+%\captionsetup[table]{skip=10pt}
+%\usepackage[font=small,labelfont=bf]{caption}
+
+\usepackage{comment}
+\usepackage{listings}
+
+\usepackage{color}
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+
+\usepackage{multicol}
+
+\usepackage{appendix}
+
+\usepackage{fancyhdr}
+%\usepackage[colorlinks=true,linkcolor=blue,urlcolor=black,bookmarksopen=true,bookmarks]{hyperref}
+\usepackage{bookmark}
+
+
+%============================= Put document title here
+\newcommand{\DOCTITLE}{Basic derivations of Radiation-Hydrodynamics}  
+
+%=============================  Load list of user-defined commands
+% Mark URL's
+\newcommand{\URL}[1]{{\textcolor{blue}{#1}}}
+%
+% Ways of grouping things
+%
+\newcommand{\bracket}[1]{\left[ #1 \right]}
+\newcommand{\bracet}[1]{\left\{ #1 \right\}}
+\newcommand{\fn}[1]{\left( #1 \right)}
+\newcommand{\ave}[1]{\left\langle #1 \right\rangle}
+\newcommand{\norm}[1]{\Arrowvert #1 \Arrowvert}
+\newcommand{\abs}[1]{\arrowvert #1 \arrowvert}
+%
+% Bold quantities
+% 
+\newcommand{\Omegabf}{\mathbf{\Omega}}
+\newcommand{\bnabla}{\boldsymbol{\nabla}}
+\newcommand{\position}{\mathbf{x}}
+\newcommand{\dotp}{\boldsymbol{\cdot}}
+%
+% Vector forms
+%
+\renewcommand{\vec}[1]{\mbox{$\stackrel{\longrightarrow}{#1}$}}
+\renewcommand{\div}{\mbox{$\vec{\mathbf{\nabla}} \cdot$}}
+\newcommand{\grad}{\mbox{$\vec{\mathbf{\nabla}}$}}
+\newcommand{\bb}[1]{\bar{\bar{#1}}}
+%
+% Vector forms boldfaced
+\newcommand{\bvec}[1]{\mathbf{#1}}
+\newcommand{\bdiv}{\boldsymbol{\nabla} \boldsymbol{\cdot}}
+\newcommand{\bgrad}{\bnabla}
+\newcommand{\mat}[1]{\bar{\bar{#1}}}
+%
+%
+% Equation beginnings and endings
+%
+% Un-numbered equation with alignment
+\newcommand{\beq}{\begin{equation*} \begin{aligned}}
+\newcommand{\eeq}{\end{aligned}\end{equation*}}
+% Numbered equation with alignment
+\newcommand{\beqn}{\begin{equation}\begin{aligned}}
+\newcommand{\eeqn}{\end{aligned}\end{equation}}  
+
+%
+% Quick commands for symbols
+%
+\newcommand{\Edensity}{\mathcal{E}}
+
+
+\newcommand{\jcr}[1]{\textcolor{magenta}{#1}}
+\usepackage[normalem]{ulem}
+\newcommand{\ssout}[1]{\sout{\textcolor{magenta}{#1}}}
+
+%
+% Code syntax highlighting
+%
+%\lstset{language=C++,frame=ltrb,framesep=2pt,basicstyle=\linespread{0.8} \small,
+%	keywordstyle=\ttfamily\color{OliveGreen},
+%	identifierstyle=\ttfamily\color{CadetBlue}\bfseries,
+%	commentstyle=\color{Brown},
+%	stringstyle=\ttfamily,
+%	showstringspaces=true,
+%	tabsize=2,}
+
+\lstset{language=C++,frame=ltrb,framesep=8pt,basicstyle=\linespread{0.8} \Large,
+commentstyle=\ttfamily\color{OliveGreen},
+keywordstyle=\ttfamily\color{blue},
+identifierstyle=\ttfamily\color{CadetBlue}\bfseries,
+stringstyle=\ttfamily,
+tabsize=2,
+showstringspaces=false,
+numbers=left,
+captionpos=t}
+
+\renewcommand{\lstlistingname}{\textbf{Code Snippet}}% Listing -> Code Snippet
+
+
+\begin{document}
+\noindent
+{\LARGE\textbf{\DOCTITLE}}
+\newline
+\newline
+\newline
+\noindent
+{\Large Jan I.C. Vermaak$^{1,2}$, Jim E. Morel$^{1,2}$}
+\newline
+\noindent\rule{\textwidth}{1pt}
+{\small $^1$Center for Large Scale Scientific Simulations, Texas A\&M Engineering Experiment Station, College Station, Texas, USA.}
+\newline\noindent
+{\small $^2$Nuclear Engineering Department, Texas A\&M University, College Station, Texas, USA.}
+\newline
+\newline
+\textbf{Abstract:}\newline\noindent
+Work is work for some, but for some it is play.
+\newline
+\newline\noindent
+{\small
+\textbf{Keywords:} transport sweeps; discrete-ordinate method; radiation transport; massively parallel simulations; discontinuous Galerkin; unstructured mesh}
+
+\section{Definitions}
+\subsection{Independent variables}
+We refer to the following independent variables:
+\begin{itemize}
+\item Position in the cartesian space $\{x,y,z\}$ is denoted with $\position$ and each component having units $[cm]$.
+\item Direction, $\{\varphi, \theta\}$, is denoted with $\Omegabf$ which takes on the form 
+$$
+\Omegabf = 
+\begin{bmatrix}
+\Omega_x \\ \Omega_y \\ \Omega_z
+\end{bmatrix}
+\text{ and/or }
+\Omegabf = 
+\begin{bmatrix}
+\sin\theta \cos\varphi \\ \sin\theta \sin\varphi \\ \cos\theta
+\end{bmatrix},
+$$
+where $\varphi$ is the azimuthal-angle and $\theta$ is the polar-angle, both in spherical coordinates. Commonly, $\cos\theta$, is denoted with $\mu$. The general dimension of angular phase space is $[steridian]$.
+\item Photon frequency, $\nu$ in $[Hertz]$ or $[s^{-1}]$.
+\item Time, $t$ in $[s]$.
+\end{itemize} 
+
+\vspace{0.5cm}
+\subsection{Dependent variables}
+We use the following basic dependent variables:
+\begin{itemize}
+\item The foundation of the dependent unknowns is the \textbf{radiation angular intensity}, $I(\position, \Omegabf, \nu,t)$ with units $[Joule/cm^2 {-} s {-} steradian {-} Hz]$. We often use the corresponding angle-integral of this quantity, $\phi(\position,\nu,t)$, and define it as
+\beqn 
+\phi(\position,\nu,t) = \Edensity c = \int_{4\pi} I(\position,\Omegabf,\nu,t) \ d\Omegabf
+\eeqn 
+with units $[Joule/cm^2 {-} s {-} Hz]$.
+\item  The \textbf{radiation energy density}, $\Edensity$, is 
+\beqn 
+\Edensity(\position, \nu, t) = \frac{\phi}{c}  = 
+\frac{1}{c} \int_{4\pi} I(\position,\Omegabf,\nu,t) \ d\Omegabf
+\eeqn 
+with units $[Joule/cm^3 {-} Hz]$.
+\end{itemize}
+
+
+\vspace{0.5cm}
+\subsection{Blackbody radiation}
+A blackbody source, $B(\nu,T)$, is properly described by Planck's law,
+\beqn \label{eq:plancks_law}
+B(\nu,T) = \frac{1}{4\pi}\frac{2h\nu^3}{c^2} \frac{1}{e^{\frac{h\nu}{k_B T}} - 1  }
+\eeqn 
+with units $[Joule/cm^2 {-} s {-} steridian-Hz]$ where $h$ is Planck's constant and $k_B$ is the Boltzmann constant.
+
+If we integrate the blackbody source over all angle-space and frequencies the we get the mean radiation intensity from a blackbody at temperature $T$ as
+\beqn 
+\int_0^\infty \int_{4\pi}  B(\nu, T) \ d\Omegabf d\nu
+&=
+\int_0^\infty \int_{4\pi}  \frac{1}{4\pi}\frac{2h\nu^3}{c^2} \frac{1}{e^{\frac{h\nu}{k_B T}} - 1  } \ d\Omegabf d\nu \\
+&= a c T^4,
+\eeqn 
+with units $[Joule/cm^2 {-} s {-} steridian]$ and where $a$ is the \textbf{blackbody radiation constant} given by
+\beqn 
+a = \frac{8\pi^5 k_B^4}{15 h^3 c^3}.
+\eeqn 
+\newline
+\newline
+In both cases this unfortunately is only the intensity. Following Kirchoff's law, which states that the emission and absorption of radiation must be equal in equilibrium, we can determine the \textbf{blackbody emission rate}, $S_{bb}$, from the absorption rate as
+\beqn 
+S_{bb}(\nu, T) = \rho \kappa(\nu) B(\nu, T),
+\eeqn 
+with units $[Joule/cm^3 {-} s {-} steridian {-} Hz]$
+where $\rho$ is the material density $[g/cm^3]$ and $\kappa$ is the opacity $[cm^2/g]$. Data for the opacity of a material is normally available in the form of either the \textbf{Rosseland opacity}, $\kappa_{Rs}$, or the \textbf{Planck opacity}, $\kappa_{Pl}$.
+
+
+
+
+
+
+\vspace{1cm}
+\section{Conservation equation - Electromagnetic Radiation}
+The basic statement of conservation, without hydrodynamics, is
+\beqn 
+\frac{1}{c} \frac{\partial I(\position, \Omegabf, \nu, t)}{\partial t} &=
+-\Omegabf \dotp \bnabla I(\position, \Omegabf, \nu, t)
+- \sigma_t(\position,\nu) I(\position, \Omegabf, \nu, t) \\
+&+ \int_0^{\infty} \int_{4\pi} \frac{\nu}{\nu'} \sigma_s(\position,\nu'{\to}\nu,\Omegabf'{\dotp}\Omegabf) I(\position, \Omegabf', 
+\nu, t)  d\nu' d\Omegabf'
++S
+\eeqn 
+
+\newpage
+\begin{thebibliography}{1}
+	
+	\bibitem{LewisMiller} Lewis E.E., Miller W.F., {\em Computational Methods of Neutron Transport}, JohnWiley \& Sons, 1984
+	   
+\end{thebibliography}
+
+\newpage
+\begin{appendices}
+\section{First appendix}
+Put ``Lazy reader stuff here".
+\end{appendices}
+
+\end{document}

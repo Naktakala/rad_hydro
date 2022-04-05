@@ -1,0 +1,29 @@
+.git
+cmake-build-debug/
+cmake-build-debug
+
+# Latex compile files
+*.aux
+*.lof
+*.log
+*.lot
+*.synctex.gz
+*.toc
+
+# All vtk mesh files
+*.vtu
+*.pvtu
+
+# python files
+\.DS_Store
+._.DS_Store
+*.pyc
+*.pmesh
+
+*-private.sh
+
+#Scratch directory
+scratch/
+
+#general data files
+*.data
