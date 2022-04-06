@@ -27,3 +27,15 @@ scratch/
 
 #general data files
 *.data
+
+#vscode stuff
+.vscode
+.idea
+
+#build stuff
+bin
+build
+chi_build
+cmake-build-release/
+cmake-build-debug/
+Makefile
