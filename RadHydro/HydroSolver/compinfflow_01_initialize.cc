@@ -23,6 +23,18 @@ void chi_hydro::CompInFFlow::Initialize()
                 << std::setprecision(4) << std::scientific
                 << delta_t_max;
 
+  C_cfl = basic_options("CFL").FloatValue();
+
+  chi_log.Log() << "  CompInFFlow: C_cfl set to "
+                << std::setprecision(4) << std::scientific
+                << C_cfl;
+
+  num_timesteps = basic_options("max_timesteps").IntegerValue();
+
+  chi_log.Log() << "  CompInFFlow: num_timesteps set to "
+                << std::setprecision(4) << std::scientific
+                << num_timesteps;
+
   //======================================== Check grid
   if (regions.empty())
   {
@@ -83,10 +95,6 @@ void chi_hydro::CompInFFlow::Initialize()
 
   //======================================== Initialize vectors
   num_nodes_local = fv->GetNumLocalDOFs(ChiMath::UNITARY_UNKNOWN_MANAGER);
-  num_dofs_local = fv->GetNumLocalDOFs(uk_man_U);
-
-  U_old.resize(num_dofs_local);
-  U_new = U_old;
 
   //======================================== Initialize material properties
   gamma.assign(num_nodes_local, 1.0);
@@ -112,12 +120,66 @@ void chi_hydro::CompInFFlow::Initialize()
       }
   }
 
+  //======================================== Initialize cell characteristic
+  //                                         lenghts
+  cell_char_length.assign(num_nodes_local, 0.0);
+  for (const auto& cell : grid->local_cells)
+  {
+    double char_length = 0.0;
+    const size_t num_faces = cell.faces.size();
+    for (size_t f=0; f<num_faces; ++f)
+    {
+      for (size_t fp=0; fp < num_faces; ++fp) //fp = f_prime
+      {
+        if (f == fp) continue;
+        const auto& fc  = cell.faces[f ].centroid;
+        const auto& fpc = cell.faces[fp].centroid;
+
+        const double L = (fpc - fc).Norm();
+        char_length = std::max(L, char_length);
+      }//fp
+    }//f
+
+    cell_char_length[cell.local_id] = char_length;
+  }
+
+  //======================================== Initialize face mappings
+  cell_face_mappings.resize(num_nodes_local);
+  for (const auto& cell : grid->local_cells)
+  {
+    const size_t num_faces = cell.faces.size();
+    FaceMapping face_mapping(num_faces, 0);
+    for (size_t cf=0; cf<num_faces; ++cf)
+    {
+      const auto& current_face = cell.faces[cf];
+      const auto& cf_vids = current_face.vertex_ids;
+      const std::set<uint64_t> cf_face_id_info(cf_vids.begin(), cf_vids.end());
+
+      if (current_face.has_neighbor)
+      {
+        const auto& adjacent_cell = grid->cells[current_face.neighbor_id];
+        const size_t adj_num_faces = adjacent_cell.faces.size();
+        for (size_t af=0; af<adj_num_faces; ++af)
+        {
+          const auto& adjacent_face = adjacent_cell.faces[af];
+          const auto& af_vids = adjacent_face.vertex_ids;
+          const std::set<uint64_t> af_face_id_info(af_vids.begin(), af_vids.end());
+
+          if (cf_face_id_info == af_face_id_info)
+            face_mapping[cf] = af;
+        }//for af
+      }//if not bndry
+    }//for cf
+
+    cell_face_mappings[cell.local_id] = face_mapping;
+  }//for cell
+
   //======================================== Initialize fields
   rho.assign(num_nodes_local, 1.0);
   u.assign(num_nodes_local, 0.0);
   v=w=u;
   p.assign(num_nodes_local, 1.0);
-  T.assign(num_nodes_local, 1.0);
+  temperature.assign(num_nodes_local, 1.0);
   e.assign(num_nodes_local, 1.0);
   Cv.assign(num_nodes_local, 1.0);
 
@@ -135,13 +197,13 @@ void chi_hydro::CompInFFlow::Initialize()
     for (const auto& cell : grid->local_cells)
       if (logvol->Inside(cell.centroid))
       {
-        if (field_name == "rho") {rho[cell.local_id] == field_value; }
-        if (field_name == "u"  )  u  [cell.local_id] == field_value;
-        if (field_name == "v"  )  v  [cell.local_id] == field_value;
-        if (field_name == "w"  )  w  [cell.local_id] == field_value;
-        if (field_name == "p"  ) {p  [cell.local_id] == field_value; }
-        if (field_name == "T"  ) {T  [cell.local_id] == field_value; }
-        if (field_name == "e"  ) {e  [cell.local_id] == field_value; e_specified = true;}
+        if (field_name == "rho") {rho[cell.local_id] = field_value; }
+        if (field_name == "u"  )  u  [cell.local_id] = field_value;
+        if (field_name == "v"  )  v  [cell.local_id] = field_value;
+        if (field_name == "w"  )  w  [cell.local_id] = field_value;
+        if (field_name == "p"  ) {p  [cell.local_id] = field_value; }
+        if (field_name == "T"  ) { temperature  [cell.local_id] = field_value; }
+        if (field_name == "e"  ) {e  [cell.local_id] = field_value; e_specified = true;}
       }
   }//for field_setting
 
@@ -150,10 +212,33 @@ void chi_hydro::CompInFFlow::Initialize()
       e[c] = p[c]/(rho[c]*(gamma[c]-1.0));
 
   for (uint64_t c=0; c<num_nodes_local; ++c)
-    T[c] = e[c]/Cv[c];
+    temperature[c] = e[c] / Cv[c];
 
   //======================================== Create field functions
-  
+  auto PrintField = [](const std::vector<double>& field,
+                       const std::string& field_name)
+  {
+    std::stringstream out; out << field_name << ": ";
+    for (double val : field)
+      out << std::setprecision(2) << std::scientific << val << " ";
+
+    return out.str();
+  };
+
+  std::vector<double> xc(num_nodes_local,0.0);
+  for (const auto& cell : grid->local_cells)
+    xc[cell.local_id] = cell.centroid.z;
+
+  std::ofstream ofile;
+  ofile.open("Output.txt",std::ofstream::out|std::ofstream::trunc);
+
+  ofile << PrintField(xc   ,"xc   ") << "\n";
+  ofile << PrintField(rho  ,"rho  ") << "\n";
+  ofile << PrintField(p    ,"p    ") << "\n";
+  ofile << PrintField(e    ,"e    ") << "\n";
+  ofile << PrintField(gamma,"gamma") << "\n";
+
+  ofile.close();
 
   chi_log.Log() << "Done initializing CompInFFlow solver\n\n";
 }

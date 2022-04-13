@@ -1,0 +1,7 @@
+*.aux
+*.log
+*.pdf
+*.gz
+.DS_Store
+__pycache__/
+.spy*

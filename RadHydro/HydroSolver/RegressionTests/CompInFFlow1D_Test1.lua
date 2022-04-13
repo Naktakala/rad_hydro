@@ -44,8 +44,29 @@ chiPhysicsMaterialSetProperty(materials[1],"Gamma",SINGLE_VALUE,1.4)
 --############################################### Setup Physics
 phys1 = chiCreateCompInFFlowSolver();
 chiSolverAddRegion(phys1,region1)
-chiSolverSetBasicOption(phys1,"maximum_dt",2.0e-8)
-chiSolverSetBasicOption(phys1,"CFL"       ,0.9)
+chiSolverSetBasicOption(phys1,"maximum_dt"   ,1.0e-3)
+chiSolverSetBasicOption(phys1,"CFL"          ,0.2)
+chiSolverSetBasicOption(phys1,"max_timesteps",200)
+
+vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
+vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
+
+chiCompInFFlowSetFieldInitialValue(phys1,vol_L,"rho",1.0)
+chiCompInFFlowSetFieldInitialValue(phys1,vol_R,"rho",0.125)
+--chiCompInFFlowSetFieldInitialValue(phys1,vol_R,"rho",1.0)
+
+chiCompInFFlowSetFieldInitialValue(phys1,vol_L,"u",0.0)
+chiCompInFFlowSetFieldInitialValue(phys1,vol_R,"u",0.0)
+
+chiCompInFFlowSetFieldInitialValue(phys1,vol_L,"p",1.0)
+chiCompInFFlowSetFieldInitialValue(phys1,vol_R,"p",0.1)
+--chiCompInFFlowSetFieldInitialValue(phys1,vol_R,"p",1.0)
+
+--e=p/(gamma-1)/rho  e_L = 1/(0.4*1) = 2.5
+--                   e_R = 0.1/(0.4*0.125) = 2
+
+-- E=0.5*rho*u^2 + rho*e  E_L = 2.5
+--                        E_R = 0.25
 
 chiSolverInitialize(phys1)
 chiSolverExecute(phys1)

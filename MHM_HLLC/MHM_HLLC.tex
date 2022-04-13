@@ -291,7 +291,7 @@ Given the arbitrary face area vector, $\mathbf{A}_f=\mathbf{n}_f A_f$, we first 
 \eeqn 
 and the angle of rotation, $\theta_{\ihat}$, as
 \beqn 
-\theta_{\ihat} = \mathbf{n}_f \dotp \ihat.
+\theta_{\ihat} = \arccos (\mathbf{n}_f \dotp \ihat).
 \eeqn 
 We then apply Rodrigues's formula as detailed in appendix \ref{appendix:Roderigues_formula} to obtain $R_{\ihat}$. With this matrix in hand we can form the general transformation matrix, $T_{\ihat}$, defined as
 \beqn
@@ -420,7 +420,7 @@ When using the HLLC solver, as described in \cite{Toro}, the Riemann solver will
 \beqn 
 \mathbf{U}_c^{n+1} = \mathbf{U}_c^n - \frac{\Delta t^n}{V_c} \sum_{f=0}^{N_{f,c}{-1}} 
 \biggr(
-\mathbf{A}_f T_{\ihat}^{-1}
+A_f T_{\ihat}^{-1}
 \hatbf{F}_f^{hllc,n{+}\frac{1}{2}}
 \biggr)
 + \Delta t^n \mathbf{Q}.
@@ -444,7 +444,7 @@ The primary inputs for this solver are
 \subsubsection{Fastest wave speed estimation}
 The HLLC Riemann solver is predicated on knowing an estimate for the maximum wave speed, $S_{max}$, which can be computed from 
 \beqn
-S_{max} =\max_i (|{u}_L| + a_L, |{u}_R| + a_R),
+S_{max} =\max (|{u}_L| + a_L, |{u}_R| + a_R),
 \eeqn
 where $a_L$ and $a_R$ are the sound speeds associated with the left- and right conserved variables as
 \beqn 
@@ -481,7 +481,7 @@ for $K=L$ and $K=R$. The vector $\mathbf{D}_*$ is a vector such that
 \eeqn 
 therefore 
 \beqn 
-\mathbf{D}_* = [0,1,0,0,u]^T
+\mathbf{D}_* = [0,1,0,0,S_*]^T
 \eeqn 
 
 \subsection{Interface flux}

@@ -4,6 +4,7 @@
 #include "ChiPhysics/SolverBase/chi_solver.h"
 
 #include "ChiMath/chi_math_vectorNX.h"
+#include "ChiMath/chi_math_matrixNXxNX.h"
 #include "ChiMath/UnknownManager/unknown_manager.h"
 #include "ChiMath/SpatialDiscretization/FiniteVolume/fv.h"
 
@@ -16,10 +17,7 @@ enum class CoordinateSystem
 {
   NO_GEOMETRY_SET  = 0,
   ONED_SLAB        = 1,
-  ONED_CYLINDRICAL = 2,
-  ONED_SPHERICAL   = 3,
   TWOD_CARTESIAN   = 4,
-  TWOD_CYLINDRICAL = 5,
   THREED_CARTESIAN = 6
 };
 
@@ -31,10 +29,17 @@ class CompInFFlow : public chi_physics::Solver
 protected:
   typedef std::shared_ptr<SpatialDiscretization_FV> SDMFVPtr;
   typedef std::tuple<chi_mesh::LogicalVolume*, std::string, double> LVFieldSetting;
+  typedef chi_math::VectorN<5> UVector;
+  typedef UVector FVector;
+  typedef std::vector<UVector> GradUTensor;
+  typedef chi_mesh::Vector3 Vec3;
+  typedef chi_math::MatrixNXxNX<5,double> TMatrix;
+  typedef std::vector<size_t> FaceMapping;
 
 public:
   double       delta_t_max   = 1.0e-8;
   double       C_cfl         = 0.9;
+  int64_t      num_timesteps = 1000;
   CoordinateSystem coordinate_system = CoordinateSystem::NO_GEOMETRY_SET;
 
   std::vector<LVFieldSetting> logvol_field_settings;
@@ -44,17 +49,48 @@ public:
   SDMFVPtr                   fv;
 
   uint64_t num_nodes_local = 0;
-  uint64_t num_dofs_local = 0;
 
-  std::vector<chi_math::VectorN<4>> U_old, U_new;
-  std::vector<double> gamma;
-  std::vector<double> rho, u, v, w, p, T, e, Cv;
+  std::vector<double> gamma, Cv;
+  std::vector<double> rho, u, v, w, p, e;
+  std::vector<double> temperature;
+  std::vector<double> cell_char_length;
+
+  std::vector<FaceMapping> cell_face_mappings;
 
 public:
   explicit CompInFFlow(const std::string& text_name);
 
   void Initialize() override;
+  //02
   void Execute() override;
+  //02a
+  double ComputeCourantLimitDelta_t() const;
+  //02b
+  std::vector<GradUTensor> ComputeGradients(const std::vector<UVector>& U) const;
+
+  //90 utils
+  static double PressureFromCellU(const UVector& U, double gamma);
+  static FVector MakeF(const UVector& U, double pressure);
+  static double SoundSpeed(double gamma, double p, double rho);
+  void FieldsToU(std::vector<UVector>& pU);
+  void UToFields(const std::vector<UVector>& pU);
+
+  static MatDbl MakeRotationMatrix(const Vec3& axis, double theta);
+  static TMatrix MakeTransformationMatrix(const Vec3& n,CoordinateSystem cosystem);
+  static double MinMod(const std::vector<double>& a);
+  static UVector MinModU(const std::vector<UVector>& vec_of_U) ;
+
+  static std::string PrintU(const UVector& U,
+                            double epsilon=1.0e-12);
+
+  //91
+  static UVector HLLC_RiemannSolve(const UVector& U_L,
+                                   const UVector& U_R,
+                                   double p_L,
+                                   double p_R,
+                                   double gamma_L,
+                                   double gamma_R,
+                                   bool verbose=false) ;
 };
 
 }//namespace chi_radhydro
