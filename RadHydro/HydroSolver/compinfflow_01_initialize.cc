@@ -10,6 +10,8 @@ extern ChiPhysics& chi_physics_handler;
 
 #include "ChiMesh/LogicalVolume/chi_mesh_logicalvolume.h"
 
+#include "ChiPhysics/FieldFunction/fieldfunction.h"
+
 //###################################################################
 /**Initializes the solver.*/
 void chi_hydro::CompInFFlow::Initialize()
@@ -34,6 +36,12 @@ void chi_hydro::CompInFFlow::Initialize()
   chi_log.Log() << "  CompInFFlow: num_timesteps set to "
                 << std::setprecision(4) << std::scientific
                 << num_timesteps;
+
+  t_max = basic_options("max_time").FloatValue();
+
+  chi_log.Log() << "  CompInFFlow: t_max set to "
+                << std::setprecision(4) << std::scientific
+                << t_max;
 
   //======================================== Check grid
   if (regions.empty())
@@ -77,18 +85,6 @@ void chi_hydro::CompInFFlow::Initialize()
     coordinate_system = CoordinateSystem::TWOD_CARTESIAN;
   else if (grid->local_cells[0].Type() == chi_mesh::CellType::POLYHEDRON)
     coordinate_system = CoordinateSystem::THREED_CARTESIAN;
-
-  //======================================== Initialize unknown manager
-  {
-    using namespace chi_math;
-    for (int i=1; i<=5; ++i) uk_man_U.AddUnknown(UnknownType::SCALAR);
-
-    uk_man_U.SetUnknownTextName(0, "rho");
-    uk_man_U.SetUnknownTextName(1, "rho_u");
-    uk_man_U.SetUnknownTextName(2, "rho_v");
-    uk_man_U.SetUnknownTextName(3, "rho_w");
-    uk_man_U.SetUnknownTextName(4, "E");
-  }
 
   //======================================== Initialize spatial discretizations
   fv = SpatialDiscretization_FV::New(grid);
@@ -143,37 +139,6 @@ void chi_hydro::CompInFFlow::Initialize()
     cell_char_length[cell.local_id] = char_length;
   }
 
-  //======================================== Initialize face mappings
-  cell_face_mappings.resize(num_nodes_local);
-  for (const auto& cell : grid->local_cells)
-  {
-    const size_t num_faces = cell.faces.size();
-    FaceMapping face_mapping(num_faces, 0);
-    for (size_t cf=0; cf<num_faces; ++cf)
-    {
-      const auto& current_face = cell.faces[cf];
-      const auto& cf_vids = current_face.vertex_ids;
-      const std::set<uint64_t> cf_face_id_info(cf_vids.begin(), cf_vids.end());
-
-      if (current_face.has_neighbor)
-      {
-        const auto& adjacent_cell = grid->cells[current_face.neighbor_id];
-        const size_t adj_num_faces = adjacent_cell.faces.size();
-        for (size_t af=0; af<adj_num_faces; ++af)
-        {
-          const auto& adjacent_face = adjacent_cell.faces[af];
-          const auto& af_vids = adjacent_face.vertex_ids;
-          const std::set<uint64_t> af_face_id_info(af_vids.begin(), af_vids.end());
-
-          if (cf_face_id_info == af_face_id_info)
-            face_mapping[cf] = af;
-        }//for af
-      }//if not bndry
-    }//for cf
-
-    cell_face_mappings[cell.local_id] = face_mapping;
-  }//for cell
-
   //======================================== Initialize fields
   rho.assign(num_nodes_local, 1.0);
   u.assign(num_nodes_local, 0.0);
@@ -184,9 +149,6 @@ void chi_hydro::CompInFFlow::Initialize()
   Cv.assign(num_nodes_local, 1.0);
 
   //======================================== Apply field settings
-//  bool rho_specified = false;
-//  bool p_specified = false;
-//  bool T_specified = false;
   bool e_specified = false;
   for (const auto& field_setting : logvol_field_settings)
   {
@@ -214,31 +176,40 @@ void chi_hydro::CompInFFlow::Initialize()
   for (uint64_t c=0; c<num_nodes_local; ++c)
     temperature[c] = e[c] / Cv[c];
 
+  U_old.resize(num_nodes_local);
+  FieldsToU(U_old);
+
   //======================================== Create field functions
-  auto PrintField = [](const std::vector<double>& field,
-                       const std::string& field_name)
+  if (field_functions.empty())
   {
-    std::stringstream out; out << field_name << ": ";
-    for (double val : field)
-      out << std::setprecision(2) << std::scientific << val << " ";
+    auto MakeFF = [this](const std::string& field_name,
+                         std::vector<double>* field)
+    {
+      chi_math::UnknownManager uk_man;
+      uk_man.AddUnknown(chi_math::UnknownType::SCALAR);
+      uk_man.SetUnknownTextName(0, field_name);
+      auto discretization = std::dynamic_pointer_cast<SpatialDiscretization>(fv);
+      auto ff = std::make_shared<chi_physics::FieldFunction>(
+        TextName() + "-" + field_name,
+        discretization,
+        field,
+        uk_man,
+        0,0);
 
-    return out.str();
-  };
+      chi_physics_handler.fieldfunc_stack.push_back(ff);
+      field_functions.push_back(ff);
+    };
 
-  std::vector<double> xc(num_nodes_local,0.0);
-  for (const auto& cell : grid->local_cells)
-    xc[cell.local_id] = cell.centroid.z;
-
-  std::ofstream ofile;
-  ofile.open("Output.txt",std::ofstream::out|std::ofstream::trunc);
-
-  ofile << PrintField(xc   ,"xc   ") << "\n";
-  ofile << PrintField(rho  ,"rho  ") << "\n";
-  ofile << PrintField(p    ,"p    ") << "\n";
-  ofile << PrintField(e    ,"e    ") << "\n";
-  ofile << PrintField(gamma,"gamma") << "\n";
-
-  ofile.close();
+    MakeFF("rho", &rho);
+    MakeFF("u", &u);
+    MakeFF("v", &v);
+    MakeFF("w", &w);
+    MakeFF("p", &p);
+    MakeFF("e", &e);
+    MakeFF("T", &temperature);
+    MakeFF("gamma", &gamma);
+    MakeFF("Cv", &Cv);
+  }//if field functions not created
 
   chi_log.Log() << "Done initializing CompInFFlow solver\n\n";
 }

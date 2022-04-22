@@ -6,14 +6,21 @@ typedef chi_math::VectorN<5> UVector;
 extern ChiLog& chi_log;
 
 UVector chi_hydro::CompInFFlow::
-  HLLC_RiemannSolve(const UVector &U_L,
-                    const UVector &U_R,
+  HLLC_RiemannSolve(const UVector &U_L_raw,
+                    const UVector &U_R_raw,
                     const double p_L,
                     const double p_R,
                     const double gamma_L,
                     const double gamma_R,
+                    const Vec3& n_f,
                     bool verbose/*=false*/)
 {
+  const auto T    = MakeTransformationMatrix(n_f);
+  const auto Tinv = T.Inverse();
+
+  const UVector U_L = T*U_L_raw;
+  const UVector U_R = T*U_R_raw;
+
   const FVector F_L = MakeF(U_L, p_L);
   const FVector F_R = MakeF(U_R, p_R);
 
@@ -32,32 +39,14 @@ UVector chi_hydro::CompInFFlow::
   const double S_star = (p_R-p_L + rho_L*u_L*(S_L-u_L) - rho_R*u_R*(S_R-u_R))/
                         (rho_L*(S_L-u_L) - rho_R*(S_R-u_R));
 
-  const double C0_L = rho_L*(S_L-u_L)/(S_L-S_star);
-  const double C0_R = rho_R*(S_R-u_R)/(S_R-S_star);
+  const UVector D_star({0,1,0,0,S_star});
 
-  const UVector U_star_L({C0_L * 1,
-                          C0_L * S_star,
-                          C0_L * U_L[2]/rho_L,
-                          C0_L * U_L[3]/rho_L,
-                          C0_L * ((U_L[4]/rho_L) + (S_star-u_L) * (S_star+p_L/(rho_L*(S_L-u_L))))});
-
-  const UVector U_star_R({C0_R * 1,
-                          C0_R * S_star,
-                          C0_R * U_R[2]/rho_R,
-                          C0_R * U_R[3]/rho_R,
-                          C0_R * ((U_R[4]/rho_R) + (S_star-u_R) * (S_star+p_R/(rho_R*(S_R-u_R))))});
-
-  const FVector F_star_L = F_L + S_L * (U_star_L - U_L);
-  const FVector F_star_R = F_R + S_R * (U_star_R - U_R);
-
-//  const UVector D_star({0,1,0,0,S_star});
-
-//  const FVector F_star_L =
-//    (S_star*(S_L*U_L-F_L) + S_L*(p_L+rho_L*(S_L-u_L)*(S_star-u_L))*D_star)/
-//    (S_L-S_star);
-//  const FVector F_star_R =
-//    (S_star*(S_R*U_R-F_R) + S_R*(p_R+rho_L*(S_R-u_R)*(S_star-u_R))*D_star)/
-//    (S_R-S_star);
+  const FVector F_star_L =
+    (S_star*(S_L*U_L-F_L) + S_L*(p_L+rho_L*(S_L-u_L)*(S_star-u_L))*D_star)/
+    (S_L-S_star);
+  const FVector F_star_R =
+    (S_star*(S_R*U_R-F_R) + S_R*(p_R+rho_L*(S_R-u_R)*(S_star-u_R))*D_star)/
+    (S_R-S_star);
 
   FVector F_hllc;
   if (S_L >= 0)                 F_hllc = F_L;
@@ -71,9 +60,6 @@ UVector chi_hydro::CompInFFlow::
     chi_log.Log() << "S_star:" << S_star;
     chi_log.Log() << "S_R   :" << S_R;
 
-    chi_log.Log() << "U_Lstar:" << PrintU(U_star_L);
-    chi_log.Log() << "U_Rstar:" << PrintU(U_star_R);
-
     chi_log.Log() << "U_L:" << PrintU(U_L);
     chi_log.Log() << "U_R:" << PrintU(U_R);
 
@@ -83,5 +69,5 @@ UVector chi_hydro::CompInFFlow::
     chi_log.Log() << "F_R     :" << PrintU(F_R     );
   }
 
-  return F_hllc;
+  return Tinv * F_hllc;
 }

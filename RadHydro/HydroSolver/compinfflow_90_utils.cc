@@ -1,6 +1,10 @@
 #include "compinfflow.h"
 
+#include "chi_log.h"
+extern ChiLog& chi_log;
+
 typedef chi_math::VectorN<5> UVector;
+typedef UVector FVector;
 
 //###################################################################
 /**Computes the cell pressure from the ideal gas law for a single cell.*/
@@ -21,17 +25,22 @@ double chi_hydro::CompInFFlow::
 
 //###################################################################
 /**Makes a flux vector, F, from a U vector.*/
-chi_math::VectorN<5> chi_hydro::CompInFFlow::
-  MakeF(const chi_math::VectorN<5> &U, double pressure)
+FVector chi_hydro::CompInFFlow::
+  MakeF(const UVector& U, double pressure, const Vec3& n_f/*=Vec3(1,0,0)*/)
 {
-  const double rho   = U[0];
-  const double rho_u = U[1];
+  const auto T    = MakeTransformationMatrix(n_f);
+  const auto Tinv = T.Inverse();
+
+  const UVector U_t = T * U;
+
+  const double rho   = U_t[0];
+  const double rho_u = U_t[1];
 
   const double u = rho_u/rho;
 
   const UVector D({0.0,1.0,0.0,0.0,u});
 
-  return u*U + pressure*D;
+  return Tinv * (u*U_t + pressure*D);
 }
 
 //###################################################################
@@ -46,6 +55,10 @@ double chi_hydro::CompInFFlow::
 /**Passes the fields-data to a cell U vectors.*/
 void chi_hydro::CompInFFlow::FieldsToU(std::vector<UVector> &pU)
 {
+  if (pU.size() != grid->local_cells.size())
+    throw std::logic_error("CompInFFlow::FieldsToU used with incompatible"
+                           " U-vector dimension.");
+
   for (const auto& cell : grid->local_cells)
   {
     const uint64_t c = cell.local_id;
@@ -99,27 +112,17 @@ MatDbl chi_hydro::CompInFFlow::
 //###################################################################
 /**Makes a transformation matrix based on a normal.*/
 chi_math::MatrixNXxNX<5,double> chi_hydro::CompInFFlow::
-  MakeTransformationMatrix(const Vec3 &n,CoordinateSystem cosystem)
+  MakeTransformationMatrix(const Vec3 &n)
 {
+  constexpr double epsilon = 1.0e-12;
   const Vec3 ihat(1,0,0);
-//  const Vec3 khat(0,0,1);
   Vec3 a(0.0,1.0,0.0);
-  double theta = 0.0;
 
-//  if (cosystem == CoordinateSystem::ONED_SLAB)
-//  {
-//    const double n_dot_khat = n.Dot(khat);
-//    theta = acos(n_dot_khat);
-//  }
-//  else
-  {
-    const double n_dot_ihat = n.Dot(ihat);
-    if (n_dot_ihat<(1.0-1.0e-12))
-    {
-      a = n.Cross(ihat).Normalized();
-      theta = acos(n_dot_ihat);
-    }
-  }
+  const double n_dot_ihat = n.Dot(ihat);
+  if (std::fabs(n_dot_ihat)<(1.0-epsilon))
+    a = n.Cross(ihat).Normalized();
+
+  const double theta = acos(n_dot_ihat);
 
   const MatDbl R = MakeRotationMatrix(a,theta);
   chi_math::MatrixNXxNX<5,double> T;
@@ -134,8 +137,22 @@ chi_math::MatrixNXxNX<5,double> chi_hydro::CompInFFlow::
 
 //###################################################################
 /**Min mod operator.*/
-double chi_hydro::CompInFFlow::MinMod(const std::vector<double> &a)
+double chi_hydro::CompInFFlow::MinMod(const std::vector<double> &a,
+                                      bool verbose/*=false*/)
 {
+  if (verbose)
+  {
+    std::stringstream outp;
+    outp << "MinMod: {";
+    for (auto a_i : a) outp << a_i <<",";
+    outp << "} ";
+    outp << "Signs: {";
+    for (auto a_i : a) outp << signbit(a_i) <<",";
+    outp << "}";
+
+    chi_log.Log() << outp.str();
+  }
+
   if (a.empty()) return 0.0;
 
   const auto same_sign = std::signbit(a.front());
@@ -143,44 +160,65 @@ double chi_hydro::CompInFFlow::MinMod(const std::vector<double> &a)
   for (double a_i : a)
     if (std::signbit(a_i) != same_sign) return 0.0;
 
-  const bool all_positive = bool(same_sign);
+  const bool all_negative = bool(same_sign);
 
-  if (    all_positive) return *std::min_element(a.begin(),a.end());
-  else                  return *std::max_element(a.begin(),a.end());
+  if (not all_negative) return *std::min_element(a.begin(), a.end());
+  else                  return *std::max_element(a.begin(), a.end());
+
+
 }
 
 
 //###################################################################
 /**Applies minmod limiter to a UVector*/
-UVector chi_hydro::CompInFFlow::MinModU(const std::vector<UVector> &vec_of_U)
+UVector chi_hydro::CompInFFlow::MinModU(const std::vector<UVector> &vec_of_U,
+                                        bool verbose/*=false*/)
 {
+  if (vec_of_U.empty())
+    throw std::logic_error("chi_hydro::CompInFFlow::MinModU used with no list.");
+
   UVector minmod_val({0,0,0,0,0});
 
   const size_t num_elements = vec_of_U.size();
   for (size_t i=0; i<5; ++i)
   {
-    std::vector<double> minmod_args(num_elements, 0.0);
+    std::vector<double> minmod_args(num_elements);
 
     for (size_t k=0; k<num_elements; ++k)
-      minmod_args[k] = vec_of_U[k][static_cast<int>(i)];
+        minmod_args[k] = vec_of_U[k][static_cast<int>(i)];
 
-    minmod_val(static_cast<int>(i)) = MinMod(minmod_args);
+    minmod_val(static_cast<int>(i)) = MinMod(minmod_args,verbose);
   }
 
   return minmod_val;
 }
+
+
+//###################################################################
+/**Extrapolates cell-centered U to a face.*/
+UVector chi_hydro::CompInFFlow::
+UplusDXGradU(const UVector &U,
+             const Vec3 &dx,
+             const GradUTensor &grad_U)
+{
+  UVector U_f = U + dx.x * grad_U[0] +
+                dx.y * grad_U[1] +
+                dx.z * grad_U[2];
+
+  return U_f;
+}
+
 
 //###################################################################
 /**Provides a string representation of a U-vector.*/
 std::string chi_hydro::CompInFFlow::PrintU(const UVector &U,
                                            const double epsilon/*=1.0e-12*/)
 {
-  const size_t N = U.dimension;
   std::stringstream output;
   output << "[";
   for (double val : U.elements)
   {
-    if (std::fabs(val) > 1.0e-12)
+    if (std::fabs(val) > epsilon)
       output << std::setprecision(3) << std::scientific << val << " ";
     else
       output << std::setprecision(3) << std::scientific << 0.0 << " ";

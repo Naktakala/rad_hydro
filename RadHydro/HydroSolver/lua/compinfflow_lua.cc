@@ -1,10 +1,9 @@
 #include "compinfflow_lua.h"
 
 #include "ChiPhysics/chi_physics.h"
-#include "chi_log.h"
-
-#include "ChiPhysics/chi_physics.h"
 extern ChiPhysics&  chi_physics_handler;
+
+#include "chi_log.h"
 
 //###################################################################
 chi_hydro::CompInFFlow* chi_hydro::compinfflow_lua_utils::
@@ -48,7 +47,6 @@ int chi_hydro::compinfflow_lua_utils::chiCreateCompInFFlowSolver(lua_State *L)
   const std::string fname = __FUNCTION__;
   const int num_args = lua_gettop(L);
 
-  auto& chi_physics_handler = ChiPhysics::GetInstance();
   auto& chi_log = ChiLog::GetInstance();
 
   std::string solver_name = "CompInFFlow";

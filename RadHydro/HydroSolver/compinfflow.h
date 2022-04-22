@@ -37,6 +37,7 @@ protected:
   typedef std::vector<size_t> FaceMapping;
 
 public:
+  double       t_max = -1.0;
   double       delta_t_max   = 1.0e-8;
   double       C_cfl         = 0.9;
   int64_t      num_timesteps = 1000;
@@ -45,17 +46,16 @@ public:
   std::vector<LVFieldSetting> logvol_field_settings;
 
   chi_mesh::MeshContinuumPtr grid;
-  chi_math::UnknownManager   uk_man_U;
   SDMFVPtr                   fv;
 
   uint64_t num_nodes_local = 0;
+
+  std::vector<UVector> U_old;
 
   std::vector<double> gamma, Cv;
   std::vector<double> rho, u, v, w, p, e;
   std::vector<double> temperature;
   std::vector<double> cell_char_length;
-
-  std::vector<FaceMapping> cell_face_mappings;
 
 public:
   explicit CompInFFlow(const std::string& text_name);
@@ -70,15 +70,21 @@ public:
 
   //90 utils
   static double PressureFromCellU(const UVector& U, double gamma);
-  static FVector MakeF(const UVector& U, double pressure);
+  static FVector MakeF(const UVector& U,
+                       double pressure,
+                       const Vec3& n_f=Vec3(1,0,0));
   static double SoundSpeed(double gamma, double p, double rho);
   void FieldsToU(std::vector<UVector>& pU);
   void UToFields(const std::vector<UVector>& pU);
 
   static MatDbl MakeRotationMatrix(const Vec3& axis, double theta);
-  static TMatrix MakeTransformationMatrix(const Vec3& n,CoordinateSystem cosystem);
-  static double MinMod(const std::vector<double>& a);
-  static UVector MinModU(const std::vector<UVector>& vec_of_U) ;
+  static TMatrix MakeTransformationMatrix(const Vec3& n);
+  static double MinMod(const std::vector<double>& a, bool verbose=false);
+  static UVector MinModU(const std::vector<UVector>& vec_of_U,
+                         bool verbose=false) ;
+  static UVector UplusDXGradU(const UVector& U,
+                              const Vec3& dx,
+                              const GradUTensor& grad_U);
 
   static std::string PrintU(const UVector& U,
                             double epsilon=1.0e-12);
@@ -90,6 +96,7 @@ public:
                                    double p_R,
                                    double gamma_L,
                                    double gamma_R,
+                                   const Vec3& n_f,
                                    bool verbose=false) ;
 };
 

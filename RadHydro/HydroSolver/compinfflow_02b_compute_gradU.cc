@@ -56,20 +56,14 @@ std::vector<GradUTensor> chi_hydro::CompInFFlow::
   }//for cell
 
   //======================================== Apply slope limiting
-  for (const auto& cell : grid->local_cells) //TODO: Generalize to 2D/3D
+  // The double minmod
+  for (const auto& cell : grid->local_cells)
   {
-    if (cell.Type() != chi_mesh::CellType::SLAB)
-      throw std::logic_error("CompInFFlow::ComputeGradients does not support"
-                             " cells other than SLAB.");
+    const double alpha = 2.0;
     const uint64_t c   = cell.local_id;
     const Vec3&    x_c = cell.centroid;
 
-    Vec3 x_cm1;
-    Vec3 x_cp1;
-
-    const auto U_c      = U[c];
-    UVector    U_cm1;
-    UVector    U_cp1;
+    const auto& U_c = U[c];
 
     GradUTensor& grad_U_c = grad_U[c];
 
@@ -100,29 +94,11 @@ std::vector<GradUTensor> chi_hydro::CompInFFlow::
       const auto dU_ds_y = (dU/dx.NormSquare())*dx.y;
       const auto dU_ds_z = (dU/dx.NormSquare())*dx.z;
 
-      if (f==0) x_cm1 = x_cn;
-      if (f==1) x_cp1 = x_cn;
-
-      if (f==0) U_cm1 = U_cn;
-      if (f==1) U_cp1 = U_cn;
+      grad_U_c[0] = MinModU({grad_U_c[0], alpha * dU_ds_x});
+      grad_U_c[1] = MinModU({grad_U_c[1], alpha * dU_ds_y});
+      grad_U_c[2] = MinModU({grad_U_c[2], alpha * dU_ds_z});
     }//for face
-
-    const double dx_cmh = (x_c - x_cm1).Norm();
-    const double dx_cph = (x_c - x_cp1).Norm();
-
-    grad_U_c[0] = UVector({0,0,0,0,0});
-    grad_U_c[1] = UVector({0,0,0,0,0});
-    grad_U_c[2] = MinModU({(U_cm1-U_c)/dx_cmh,
-                           (U_cp1-U_cm1)/(dx_cmh+dx_cph),
-                           (U_cp1-U_c)/dx_cph});
-
-//    chi_log.Log() << "c: " << c
-//                  << " dU_dx: " << PrintU(grad_U_c[0])
-//                  << " dU_dy: " << PrintU(grad_U_c[1])
-//                  << " dU_dz: " << PrintU(grad_U_c[2]);
   }//for cell
-
-
 
   return grad_U;
 }
