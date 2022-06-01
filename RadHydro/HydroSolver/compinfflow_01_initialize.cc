@@ -1,60 +1,53 @@
 #include "compinfflow.h"
 
+#include "chi_runtime.h"
 #include "chi_log.h"
-extern ChiLog& chi_log;
-
-#include "ChiPhysics/chi_physics.h"
-extern ChiPhysics& chi_physics_handler;
+#include "ChiMesh/MeshHandler/chi_meshhandler.h"
 
 #include "ChiMath/chi_math.h"
 
 #include "ChiMesh/LogicalVolume/chi_mesh_logicalvolume.h"
 
 #include "ChiPhysics/FieldFunction/fieldfunction.h"
+#include "ChiPhysics/PhysicsMaterial/chi_physicsmaterial.h"
 
 //###################################################################
 /**Initializes the solver.*/
 void chi_hydro::CompInFFlow::Initialize()
 {
-  chi_log.Log() << "\nInitializing CompInFFlow solver";
+  chi::log.Log() << "\nInitializing CompInFFlow solver";
 
   //======================================== Parse options
   delta_t_max = basic_options("maximum_dt").FloatValue();
 
-  chi_log.Log() << "  CompInFFlow: delta_t_max set to "
+  chi::log.Log() << "  CompInFFlow: delta_t_max set to "
                 << std::setprecision(4) << std::scientific
                 << delta_t_max;
 
   C_cfl = basic_options("CFL").FloatValue();
 
-  chi_log.Log() << "  CompInFFlow: C_cfl set to "
+  chi::log.Log() << "  CompInFFlow: C_cfl set to "
                 << std::setprecision(4) << std::scientific
                 << C_cfl;
 
   num_timesteps = basic_options("max_timesteps").IntegerValue();
 
-  chi_log.Log() << "  CompInFFlow: num_timesteps set to "
+  chi::log.Log() << "  CompInFFlow: num_timesteps set to "
                 << std::setprecision(4) << std::scientific
                 << num_timesteps;
 
   t_max = basic_options("max_time").FloatValue();
 
-  chi_log.Log() << "  CompInFFlow: t_max set to "
+  chi::log.Log() << "  CompInFFlow: t_max set to "
                 << std::setprecision(4) << std::scientific
                 << t_max;
 
   //======================================== Check grid
-  if (regions.empty())
-  {
-    chi_log.Log(LOG_ALLERROR)
-      << "  CompInFFlow: No regions added to solver.";
-    exit(EXIT_FAILURE);
-  }
-  grid = regions.back()->GetGrid();
+  grid = chi_mesh::GetCurrentHandler().GetGrid();
 
   if (grid == nullptr)
   {
-    chi_log.Log(LOG_ALLERROR)
+    chi::log.LogAllError()
       << " CompInFFlow: No grid available from region.";
     exit(EXIT_FAILURE);
   }
@@ -65,13 +58,13 @@ void chi_hydro::CompInFFlow::Initialize()
     for (const auto& cell : grid->local_cells)
     {
       if (cell.material_id < 0 or
-          cell.material_id >= chi_physics_handler.material_stack.size())
+          cell.material_id >= chi::material_stack.size())
         ++num_invalid_mat_cells;
     }
 
     if (num_invalid_mat_cells > 0)
     {
-      chi_log.Log(LOG_ALLERROR)
+      chi::log.LogAllError()
         << " CompInFFlow: A total of " << num_invalid_mat_cells
         << " have invalid material ids.";
       exit(EXIT_FAILURE);
@@ -87,17 +80,18 @@ void chi_hydro::CompInFFlow::Initialize()
     coordinate_system = CoordinateSystem::THREED_CARTESIAN;
 
   //======================================== Initialize spatial discretizations
-  fv = SpatialDiscretization_FV::New(grid);
+  fv = chi_math::SpatialDiscretization_FV::New(grid);
 
   //======================================== Initialize vectors
-  num_nodes_local = fv->GetNumLocalDOFs(ChiMath::UNITARY_UNKNOWN_MANAGER);
+  auto unitary_uk_man = chi_math::UnknownManager::GetUnitaryUnknownManager();
+  num_nodes_local = fv->GetNumLocalDOFs(unitary_uk_man);
 
   //======================================== Initialize material properties
   gamma.assign(num_nodes_local, 1.0);
 
   for (const auto& cell : grid->local_cells)
   {
-    const auto& material = chi_physics_handler.material_stack[cell.material_id];
+    const auto& material = chi::material_stack[cell.material_id];
 
     for (const auto& property : material->properties)
       if (property->property_name == "Gamma")
@@ -107,7 +101,7 @@ void chi_hydro::CompInFFlow::Initialize()
           gamma[cell.local_id] = property->GetScalarValue();
         else
         {
-          chi_log.Log(LOG_ALLERROR)
+          chi::log.LogAllError()
             << " CompInFFlow: Material " << cell.material_id
             << " has an invalid gamma property. Value must be >1.0 but is "
             << gamma_value << ".";
@@ -188,7 +182,7 @@ void chi_hydro::CompInFFlow::Initialize()
       chi_math::UnknownManager uk_man;
       uk_man.AddUnknown(chi_math::UnknownType::SCALAR);
       uk_man.SetUnknownTextName(0, field_name);
-      auto discretization = std::dynamic_pointer_cast<SpatialDiscretization>(fv);
+      auto discretization = std::dynamic_pointer_cast<chi_math::SpatialDiscretization>(fv);
       auto ff = std::make_shared<chi_physics::FieldFunction>(
         TextName() + "-" + field_name,
         discretization,
@@ -196,7 +190,7 @@ void chi_hydro::CompInFFlow::Initialize()
         uk_man,
         0,0);
 
-      chi_physics_handler.fieldfunc_stack.push_back(ff);
+      chi::fieldfunc_stack.push_back(ff);
       field_functions.push_back(ff);
     };
 
@@ -211,5 +205,5 @@ void chi_hydro::CompInFFlow::Initialize()
     MakeFF("Cv", &Cv);
   }//if field functions not created
 
-  chi_log.Log() << "Done initializing CompInFFlow solver\n\n";
+  chi::log.Log() << "Done initializing CompInFFlow solver\n\n";
 }

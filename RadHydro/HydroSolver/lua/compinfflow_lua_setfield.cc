@@ -37,21 +37,14 @@ int chiCompInFFlowSetFieldInitialValue(lua_State *L)
   //============================== Get solver
   const int solver_handle = lua_tointeger(L, 1);
 
-  auto flow_solver = chi_hydro::compinfflow_lua_utils::
+  auto& flow_solver = chi_hydro::compinfflow_lua_utils::
     GetSolverByHandle(solver_handle, fname);
 
   //============================== Get logical volume
   const int logvol_handle = lua_tointeger(L, 2);
 
-  auto handler = chi_mesh::GetCurrentHandler();
-  chi_mesh::LogicalVolume* logvol;
-  try{
-    logvol = handler->logicvolume_stack.at(logvol_handle);
-  }//try
-  catch (const std::out_of_range& o){
-    throw std::logic_error(fname + ": Invalid logical-volume-handle (" +
-                           std::to_string(logvol_handle) + ").");
-  }//catch
+  auto logvol = chi::GetStackItemPtr(chi::logicvolume_stack,
+                                     logvol_handle, fname);
 
   //============================== Get name and value
   LuaCheckStringValue(fname, L, 3);
@@ -84,7 +77,7 @@ int chiCompInFFlowSetFieldInitialValue(lua_State *L)
     ". Expected value must be > 0.0");
 
   //============================== Pass settings to solver
-  flow_solver->logvol_field_settings.emplace_back(logvol, field_name, field_value);
+  flow_solver.logvol_field_settings.emplace_back(logvol, field_name, field_value);
 
   return 0;
 }

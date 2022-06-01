@@ -1,7 +1,6 @@
 #include "compinfflow.h"
 
-#include "chi_log.h"
-extern ChiLog& chi_log;
+#include "chi_runtime.h"
 
 typedef chi_math::VectorN<5> UVector;
 typedef std::vector<UVector> GradUTensor;

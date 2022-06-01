@@ -1,13 +1,13 @@
 #include "compinfflow.h"
 
+#include "chi_runtime.h"
 #include "chi_log.h"
-extern ChiLog& chi_log;
 
 //###################################################################
 /**Executes the solver.*/
 void chi_hydro::CompInFFlow::Execute()
 {
-  chi_log.Log() << "\nExecuting CompInFFlow solver\n\n";
+  chi::log.Log() << "\nExecuting CompInFFlow solver\n\n";
 
   std::vector<UVector>&             U_n = U_old;
   std::vector<UVector>              U_nph(num_nodes_local);
@@ -22,7 +22,7 @@ void chi_hydro::CompInFFlow::Execute()
     const double delta_t_hydro = ComputeCourantLimitDelta_t();
     const double dt            = std::min(delta_t_max, delta_t_hydro);
 
-    chi_log.Log() << "Timestep " << n << " with dt=" << dt << " t=" << time;
+    chi::log.Log() << "Timestep " << n << " with dt=" << dt << " t=" << time;
 
     //================================= Compute gradients
     //Populates grad_U with slope limiters
@@ -112,5 +112,5 @@ void chi_hydro::CompInFFlow::Execute()
       break;
   }//for n timesteps
 
-  chi_log.Log() << "\nDone executing CompInFFlow solver\n\n";
+  chi::log.Log() << "\nDone executing CompInFFlow solver\n\n";
 }

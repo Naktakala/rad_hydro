@@ -1,18 +1,17 @@
 #include "compinfflow_lua.h"
 
-#include "ChiPhysics/chi_physics.h"
-extern ChiPhysics&  chi_physics_handler;
-
+#include "chi_runtime.h"
 #include "chi_log.h"
 
+
 //###################################################################
-chi_hydro::CompInFFlow* chi_hydro::compinfflow_lua_utils::
+chi_hydro::CompInFFlow& chi_hydro::compinfflow_lua_utils::
   GetSolverByHandle(int handle, const std::string &calling_function_name)
 {
-  chi_hydro::CompInFFlow* compinfflow_solver;
+  std::shared_ptr<chi_hydro::CompInFFlow> compinfflow_solver;
   try{
-    compinfflow_solver = dynamic_cast<chi_hydro::CompInFFlow*>(
-      chi_physics_handler.solver_stack.at(handle));
+    compinfflow_solver = std::dynamic_pointer_cast<chi_hydro::CompInFFlow>(
+      chi::solver_stack.at(handle));
 
     if (not compinfflow_solver)
       throw std::logic_error(calling_function_name +
@@ -25,7 +24,7 @@ chi_hydro::CompInFFlow* chi_hydro::compinfflow_lua_utils::
                            std::to_string(handle) + ").");
   }//catch
 
-  return compinfflow_solver;
+  return *compinfflow_solver;
 }
 
 //###################################################################
@@ -47,8 +46,6 @@ int chi_hydro::compinfflow_lua_utils::chiCreateCompInFFlowSolver(lua_State *L)
   const std::string fname = __FUNCTION__;
   const int num_args = lua_gettop(L);
 
-  auto& chi_log = ChiLog::GetInstance();
-
   std::string solver_name = "CompInFFlow";
   if (num_args>=1)
   {
@@ -58,14 +55,14 @@ int chi_hydro::compinfflow_lua_utils::chiCreateCompInFFlowSolver(lua_State *L)
     solver_name = lua_tostring(L, 1);
   }
 
-  chi_log.Log() << "Creating CompInFFlow solver with name \""
-                << solver_name << "\".";
+  chi::log.Log() << "Creating CompInFFlow solver with name \""
+                 << solver_name << "\".";
 
-  auto solver = new chi_hydro::CompInFFlow(solver_name);
+  auto solver = std::make_shared<chi_hydro::CompInFFlow>(solver_name);
 
-  chi_physics_handler.solver_stack.push_back(solver);
+  chi::solver_stack.push_back(solver);
 
-  auto n = static_cast<lua_Integer>(chi_physics_handler.solver_stack.size() - 1);
+  auto n = static_cast<lua_Integer>(chi::solver_stack.size() - 1);
   lua_pushinteger(L, n);
   return 1;
 }

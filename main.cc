@@ -4,24 +4,22 @@
 #include "chi_log.h"
 
 #include "RadHydro/HydroSolver/lua/compinfflow_lua.h"
+#include "RadHydro/RadSolver/lua/radtran_lua.h"
 
 int main(int argc, char* argv[])
 {
-  ChiLog&     log     = ChiLog::GetInstance();
+  chi::log.Log() << "chiRadHydro - Execution started";
 
-  log.Log(LOG_0) << "chiRadHydro - Execution started";
+  chi::Initialize(argc,argv);
 
-  ChiTech::Initialize(argc,argv);
+  chi_hydro::compinfflow_lua_utils::RegisterLuaEntities(chi::console.consoleState);
+  chi_radtran::lua_utils::RegisterLuaEntities(chi::console.consoleState);
 
-  auto& lua_console = ChiConsole::GetInstance();
+  chi::RunBatch(argc,argv);
 
-  chi_hydro::compinfflow_lua_utils::RegisterLuaEntities(lua_console.consoleState);
+  chi::Finalize();
 
-  ChiTech::RunBatch(argc,argv);
-
-  ChiTech::Finalize();
-
-  log.Log(LOG_0) << "chiRadHydro - Execution finished";
+  chi::log.Log() << "chiRadHydro - Execution finished";
 
   return 0;
 }

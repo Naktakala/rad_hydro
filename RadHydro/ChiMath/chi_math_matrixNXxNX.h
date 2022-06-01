@@ -219,8 +219,8 @@ namespace chi_math{
     void SetDiagonalVec(std::vector<NumberFormat> vec)
     {
       if (vec.size()!= N){
-        auto& log = ChiLog::GetInstance();
-        log.Log(LOG_ALLERROR)<<"MatrixNXxNX::SetDiagonalVec, incompatible vector size";
+        auto& log = chi_objects::ChiLog::GetInstance();
+        log.LogAllError()<<"MatrixNXxNX::SetDiagonalVec, incompatible vector size";
         exit(EXIT_FAILURE);
       }
       for(int i = 0;i<N;++i)
@@ -229,8 +229,8 @@ namespace chi_math{
     /**Set row i using a vector.*/
     void SetRowIVec(int i, std::vector<NumberFormat> vec){
       if (N!=vec.size()){
-        auto& log = ChiLog::GetInstance();
-        log.Log(LOG_ALLERROR)<<"error"<<std::endl;
+        auto& log = chi_objects::ChiLog::GetInstance();
+        log.LogAllError()<<"error"<<std::endl;
       }
 
       for (int j =0; j<N;++j)
@@ -241,8 +241,8 @@ namespace chi_math{
     /** Sets column j using a vector.*/
     void SetColJVec(int j, std::vector<NumberFormat> vec){
       if (N!=vec.size()){
-        auto& log = ChiLog::GetInstance();
-        log.Log(LOG_ALLERROR)<<"error"<<std::endl;
+        auto& log = chi_objects::ChiLog::GetInstance();
+        log.LogAllError()<<"error"<<std::endl;
       }
 
       for (int i =0; i<N;++i)

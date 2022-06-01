@@ -17,7 +17,7 @@ namespace chi_hydro::compinfflow_lua_utils
    *                              should uniquely identify the calling function.
    *
    */
-  chi_hydro::CompInFFlow*
+  chi_hydro::CompInFFlow&
   GetSolverByHandle(int handle, const std::string& calling_function_name);
 
   int chiCreateCompInFFlowSolver(lua_State* L);

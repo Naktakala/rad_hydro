@@ -43,7 +43,6 @@ chiPhysicsMaterialSetProperty(materials[1],"Gamma",SINGLE_VALUE,1.4)
 
 --############################################### Setup Physics
 phys1 = chiCreateCompInFFlowSolver();
-chiSolverAddRegion(phys1,region1)
 chiSolverSetBasicOption(phys1,"maximum_dt"   ,1.0e-2)
 chiSolverSetBasicOption(phys1,"CFL"          ,0.3)
 chiSolverSetBasicOption(phys1,"max_timesteps",2000)

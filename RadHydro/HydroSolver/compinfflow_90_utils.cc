@@ -1,7 +1,6 @@
 #include "compinfflow.h"
 
 #include "chi_log.h"
-extern ChiLog& chi_log;
 
 typedef chi_math::VectorN<5> UVector;
 typedef UVector FVector;
@@ -150,7 +149,7 @@ double chi_hydro::CompInFFlow::MinMod(const std::vector<double> &a,
     for (auto a_i : a) outp << signbit(a_i) <<",";
     outp << "}";
 
-    chi_log.Log() << outp.str();
+    chi::log.Log() << outp.str();
   }
 
   if (a.empty()) return 0.0;

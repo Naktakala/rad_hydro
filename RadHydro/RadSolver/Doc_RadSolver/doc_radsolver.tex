@@ -1,0 +1,841 @@
+\documentclass[10pt,letterpaper,notitlepage]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{cancel}
+\usepackage{float}
+\usepackage{cite}
+\usepackage{fancyvrb}
+
+\usepackage[ruled,vlined]{algorithm2e}
+
+
+\usepackage[left=0.75in, right=0.75in, bottom=1.0in,top=0.75in]{geometry}
+
+%\usepackage{caption} 
+%\captionsetup[table]{skip=10pt}
+%\usepackage[font=small,labelfont=bf]{caption}
+
+\usepackage{comment}
+\usepackage{listings}
+
+\usepackage{color}
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+
+\definecolor{ColorLevel1}{rgb}{0.000,0.125,0.875}
+\definecolor{ColorLevel2}{rgb}{0.000,0.375,0.625}
+\definecolor{ColorLevel3}{rgb}{0.000,0.625,0.375}
+\definecolor{ColorLevel4}{rgb}{0.000,0.875,0.125}
+\definecolor{ColorLevel5}{rgb}{0.125,0.875,0.000}
+\definecolor{ColorLevel6}{rgb}{0.375,0.625,0.000}
+\definecolor{ColorLevel7}{rgb}{0.625,0.375,0.000}
+\definecolor{ColorLevel8}{rgb}{0.875,0.125,0.000}
+
+\usepackage{multicol}
+
+\usepackage{appendix}
+
+\usepackage{fancyhdr}
+%\usepackage[colorlinks=true,linkcolor=blue,urlcolor=black,bookmarksopen=true,bookmarks]{hyperref}
+\usepackage{bookmark}
+
+\usepackage{multicol}
+\setlength{\columnseprule}{1pt}
+
+\numberwithin{equation}{section} 
+
+\setcounter{tocdepth}{4}
+
+%============================= Put document title here
+\newcommand{\DOCTITLE}{Radiative heat transfer solver with fluid motion}  
+
+%=============================  Load list of user-defined commands
+% Mark URL's
+\newcommand{\URL}[1]{{\textcolor{blue}{#1}}}
+%
+% Ways of grouping things
+%
+\newcommand{\bracket}[1]{\left[ #1 \right]}
+\newcommand{\bracet}[1]{\left\{ #1 \right\}}
+\newcommand{\fn}[1]{\left( #1 \right)}
+\newcommand{\ave}[1]{\left\langle #1 \right\rangle}
+\newcommand{\norm}[1]{\Arrowvert #1 \Arrowvert}
+\newcommand{\abs}[1]{\arrowvert #1 \arrowvert}
+%
+% Partial derivative
+\newcommand{\partialderiv}[2]{\frac{\partial #1}{\partial #2}}
+%
+% Bold quantities
+% 
+\newcommand{\Omegabf}{\mathbf{\Omega}}
+\newcommand{\bnabla}{\boldsymbol{\nabla}}
+\newcommand{\position}{\mathbf{x}}
+\newcommand{\velocity}{\mathbf{u}}
+\newcommand{\dotp}{\boldsymbol{\cdot}}
+
+\newcommand{\RadE}{\mathcal{E}}
+\newcommand{\RadF}{\boldsymbol{\mathcal{F}}}
+\newcommand{\RadP}{\boldsymbol{\mathcal{P}}}
+\newcommand{\HydroF}{\mathcal{F}^H}
+\newcommand{\HydroU}{\mathbf{U}}
+\newcommand{\RadJ}{\mathbf{J}}
+
+\newcommand{\SumOverCellFaces}{\sum_f^{N_{f,c}{-1}}}
+\newcommand{\AreaVec}{\mathbf{A}}
+
+\newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
+
+\newcommand{\ihat}{\uvec{\i}}
+\newcommand{\jhat}{\uvec{\j}}
+\newcommand{\khat}{\uvec{k}}
+
+\newcommand{\hatbf}[1]{\hat{\mathbf{#1}}}
+
+\newcommand{\half}{\frac{1}{2}}
+
+%\newcommand{\ihat}{\boldsymbol{\hat{\textbf{\i}}}}
+%\newcommand{\jhat}{\boldsymbol{\hat{\textbf{\j}}}}
+%\newcommand{\khat}{\boldsymbol{\hat{\textbf{\k}}}}
+
+%\newcommand{\ihat}{{\bm{\hat{\textnormal{\bfseries\i}}}}}
+%\newcommand{\jhat}{{\bm{\hat{\textnormal{\bfseries\j}}}}}
+%\newcommand{\khat}{{\bm{\hat{\textnormal{\bfseries\k}}}}}
+%
+% Vector forms
+%
+\renewcommand{\vec}[1]{\mbox{$\stackrel{\longrightarrow}{#1}$}}
+\renewcommand{\div}{\mbox{$\vec{\mathbf{\nabla}} \cdot$}}
+\newcommand{\grad}{\mbox{$\vec{\mathbf{\nabla}}$}}
+\newcommand{\bb}[1]{\bar{\bar{#1}}}
+%
+% Vector forms boldfaced
+\newcommand{\bvec}[1]{\mathbf{#1}}
+\newcommand{\bdiv}{\boldsymbol{\nabla} \boldsymbol{\cdot}}
+\newcommand{\bgrad}{\bnabla}
+\newcommand{\mat}[1]{\bar{\bar{#1}}}
+%
+%
+% Equation beginnings and endings
+%
+% Un-numbered equation with alignment
+\newcommand{\beq}{\begin{equation*} \begin{aligned}}
+\newcommand{\eeq}{\end{aligned}\end{equation*}}
+% Numbered equation with alignment
+\newcommand{\beqn}{\begin{equation}\begin{aligned}}
+\newcommand{\eeqn}{\end{aligned}\end{equation}}  
+
+%
+% Quick commands for symbols
+%
+\newcommand{\Edensity}{\mathcal{E}}
+
+
+\newcommand{\jcr}[1]{\textcolor{magenta}{#1}}
+\usepackage[normalem]{ulem}
+\newcommand{\ssout}[1]{\sout{\textcolor{magenta}{#1}}}
+
+%
+% Code syntax highlighting
+%
+%\lstset{language=C++,frame=ltrb,framesep=2pt,basicstyle=\linespread{0.8} \small,
+%	keywordstyle=\ttfamily\color{OliveGreen},
+%	identifierstyle=\ttfamily\color{CadetBlue}\bfseries,
+%	commentstyle=\color{Brown},
+%	stringstyle=\ttfamily,
+%	showstringspaces=true,
+%	tabsize=2,}
+
+\lstset{language=C++,frame=ltrb,framesep=8pt,basicstyle=\linespread{0.8} \Large,
+commentstyle=\ttfamily\color{OliveGreen},
+keywordstyle=\ttfamily\color{blue},
+identifierstyle=\ttfamily\color{CadetBlue}\bfseries,
+stringstyle=\ttfamily,
+tabsize=2,
+showstringspaces=false,
+numbers=left,
+captionpos=t}
+
+\renewcommand{\lstlistingname}{\textbf{Code Snippet}}% Listing -> Code Snippet
+
+
+\begin{document}
+\noindent
+{\LARGE\textbf{\DOCTITLE}}
+\newline
+\newline
+\newline
+\noindent
+{\Large Jan I.C. Vermaak$^{1,2}$, Jim E. Morel$^{1,2}$}
+\newline
+\noindent\rule{\textwidth}{1pt}
+{\small $^1$Center for Large Scale Scientific Simulations, Texas A\&M Engineering Experiment Station, College Station, Texas, USA.}
+\newline\noindent
+{\small $^2$Nuclear Engineering Department, Texas A\&M University, College Station, Texas, USA.}
+\newline
+\newline
+\textbf{Abstract:}\newline\noindent
+Work is work for some, but for some it is play.
+\newline
+\newline\noindent
+{\small
+\textbf{Keywords:} hydrodynamics}
+
+\tableofcontents
+
+\section{Definitions}
+\subsection{Independent variables}
+We refer to the following independent variables:
+\begin{itemize}
+	\item Position in the cartesian space $\{x,y,z\}$ is denoted with $\position$ and each component having units $[cm]$.
+	\item Direction, $\{\varphi, \theta\}$, is denoted with $\Omegabf$ which takes on the form 
+	$$
+	\Omegabf = 
+	\begin{bmatrix}
+		\Omega_x \\ \Omega_y \\ \Omega_z
+	\end{bmatrix}
+	\text{ and/or }
+	\Omegabf = 
+	\begin{bmatrix}
+		\sin\theta \cos\varphi \\ \sin\theta \sin\varphi \\ \cos\theta
+	\end{bmatrix},
+	$$
+	where $\varphi$ is the azimuthal-angle and $\theta$ is the polar-angle, both in spherical coordinates. Commonly, $\cos\theta$, is denoted with $\mu$. The general dimension of angular phase space is $[steridian]$.
+	\item Photon frequency, $\nu$ in $[Hertz]$ or $[s^{-1}]$.
+	\item Time, $t$ in $[s]$.
+\end{itemize} 
+
+\vspace{0.5cm}
+\subsection{Dependent variables}
+We use the following basic dependent variables:
+\begin{itemize}
+\item The foundation of the dependent unknowns is the \textbf{radiation angular intensity}, $I(\position, \Omegabf, \nu,t)$ with units $[Joule/cm^2 {-} s {-} steradian {-} Hz]$. We often use the corresponding angle-integral of this quantity, $\phi(\position,\nu,t)$, and define it as
+	\beqn 
+	\phi(\position,\nu,t) = \RadE c = \int_{4\pi} I(\position,\Omegabf,\nu,t) \ d\Omegabf
+	\eeqn 
+	with units $[Joule/cm^2 {-} s {-} Hz]$. Where $c$ is the speed of light.
+\item  The \textbf{radiation energy density}, $\Edensity$, is 
+	\beqn 
+	\Edensity(\position, \nu, t) = \frac{\phi}{c}  = 
+	\frac{1}{c} \int_{4\pi} I(\position,\Omegabf,\nu,t) \ d\Omegabf
+	\eeqn 
+	with units $[Joule/cm^3 {-} Hz]$.
+\item The \textbf{radiation energy flux}, $\RadF$, is
+	\beqn 
+    \RadF(\position, \nu, t) = \int_{4\pi} \Omegabf \  I(\position, \Omegabf, \nu, t) d\Omegabf
+	\eeqn 
+\item \textbf{Radiation pressure}, $\RadP$, is 
+	\beqn
+	\RadP(\position, \nu, t) = \frac{1}{c}\int_{4\pi} \Omegabf \otimes \Omegabf I(\position, \Omegabf, \nu, t) d\Omegabf
+	\eeqn 
+	and is a tensor.
+\end{itemize}
+
+
+\vspace{0.5cm}
+\subsection{Blackbody radiation}
+A blackbody radiation source, $B(\nu,T)$, is properly described by \textbf{Planck's law},
+\beqn \label{eq:plancks_law}
+B(\nu,T) = \frac{2h\nu^3}{c^2} \frac{1}{e^{\frac{h\nu}{k_B T}} - 1  }
+\eeqn 
+with units $[Joule/cm^2 {-} s {-} steridian-Hz]$ where $h$ is Planck's constant and $k_B$ is the Boltzmann constant.
+
+If we integrate the blackbody source over all angle-space and frequencies then we get the mean radiation intensity from a blackbody at temperature $T$ as
+\beqn 
+\int_0^\infty \int_{4\pi}  B(\nu, T) \ d\Omegabf d\nu
+&=\int_0^\infty \int_{4\pi}  \frac{2h\nu^3}{c^2} \frac{1}{e^{\frac{h\nu}{k_B T}} - 1  } \ d\Omegabf d\nu \\
+&=4\pi \int_0^\infty \frac{2h\nu^3}{c^2} \frac{1}{e^{\frac{h\nu}{k_B T}} - 1  } \  d\nu \\
+&= a c T^4,
+\eeqn 
+with units $[Joule/cm^2 {-} s {-} steridian]$ and where $a$ is the \textbf{blackbody radiation constant} given by
+\beqn 
+a = \frac{8\pi^5 k_B^4}{15 h^3 c^3}.
+\eeqn 
+\newline
+\newline
+In both cases this unfortunately is only the intensity. Following Kirchoff's law, which states that the emission and absorption of radiation must be equal in equilibrium, we can determine the \textbf{blackbody emission rate}, $S_{bb}$, from the absorption rate as
+\beqn 
+S_{bb}(\nu, T) = \rho \kappa(\nu) B(\nu, T),
+\eeqn 
+with units $[Joule/cm^3 {-} s {-} steridian {-} Hz]$
+where $\rho$ is the material density $[g/cm^3]$ and $\kappa$ is the opacity $[cm^2/g]$. The combination $\rho \kappa$ is also equal to the macroscopic absorption cross section $\sigma_a$, therefore $\rho \kappa(\nu) = \sigma_a$. Data for the opacity of a material is normally available in the form of either the \textbf{Rosseland opacity}, $\kappa_{Rs}$, or the \textbf{Planck opacity}, $\kappa_{Pl}$.
+
+
+
+
+
+
+\newpage
+\section{Conservation equations}
+\subsection{Conservation equation - Radiative transfer}
+The basic statement of conservation, is
+\beqn 
+\frac{1}{c} \frac{\partial I(\position, \Omegabf, \nu, t)}{\partial t} &=
+-\Omegabf \dotp \bnabla I(\position, \Omegabf, \nu, t)
+- \sigma_t(\position,\nu) I(\position, \Omegabf, \nu, t) \\
+&+ \int_0^{\infty} \int_{4\pi} \frac{\nu}{\nu'} \sigma_s(\position,\nu'{\to}\nu,\Omegabf'{\dotp}\Omegabf) I(\position, \Omegabf', \nu', t)  d\nu' d\Omegabf' \\
+&+ \sigma_a(\position,\nu) B(\nu,T(\position, t))+S
+\eeqn 
+where $S$ is any other sources/sinks of radiation intensity. 
+
+\subsection{Radiative transfer assuming isotropic Thompson scattering}
+Assuming Thomson-scattering\footnote{Thomson scattering is the elastic scattering of electromagnetic radiation by a free charged particle. The particle's kinetic energy- as well as the photon's frequency, does not change in such a scattering. The scattering is also isotropic.} is the only form of scattering, gives
+\beqn 
+\frac{1}{c} \frac{\partial I(\position, \Omegabf, \nu, t)}{\partial t} &=
+-\Omegabf \dotp \bnabla I(\position, \Omegabf, \nu, t)
+- \sigma_t(\position,\nu) I(\position, \Omegabf, \nu, t) \\
+&+ \frac{\sigma_s(\position,\nu)}{4\pi} c \RadE(\position, \nu)
++ \sigma_a(\position,\nu) B(\nu,T(\position, t))+S
+\eeqn 
+where $S$ is any other sources/sinks of radiation intensity. 
+\newline
+\newline
+\textbf{Using energy instead of frequency, $\nu\to E$:}
+\beqn 
+\frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} &=
+-\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
+- \sigma_t(\position,E) I(\position, \Omegabf, E, t) \\
+&+ \frac{\sigma_s(\position,E)}{4\pi} c \RadE(\position, E)
++ \sigma_a(\position,E) B(E,T(\position, t))+S
+\eeqn 
+where $S$ is any other sources/sinks of radiation intensity. 
+
+\subsection{Radiative transfer with material motion corrections}
+Applying relativistic corrections for a material in motion, we can derive 
+\beqn 
+\frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} &=
+-\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
+- \biggr(\frac{E_0}{E}\biggr)\sigma_t(\position,E_0) I(\position, \Omegabf, E, t) \\
+&+ \biggr(\frac{E}{E_0}\biggr)^2\frac{\sigma_s(\position,E)}{4\pi} \int_{4\pi} \biggr(\frac{E_0}{E'}\biggr) I(\position, \Omegabf', E', t) d\Omegabf'
++ \biggr(\frac{E}{E_0}\biggr)^2 \sigma_a(\position,E_0) B(E_0,T(\position, t))+S,
+\eeqn 
+where
+\beqn 
+E_0 = E \gamma \biggr(1-\Omegabf \dotp \frac{\mathbf{u}}{c}\biggr)
+\eeqn 
+\beqn 
+\gamma = \biggr[ 1-\biggr(\dfrac{||\mathbf{u}||}{c}\biggr)^2 \biggr]^{-\frac{1}{2}}
+\eeqn 
+\beqn 
+\frac{E_0}{E'} = \gamma \biggr(1-\Omegabf' \dotp \frac{\mathbf{u}}{c} \biggr)
+\eeqn 
+\beqn 
+E' = E \dfrac{1-\Omegabf \dotp \dfrac{\mathbf{u}}{c}}{1-\Omegabf' \dotp \dfrac{\mathbf{u}}{c}}
+\eeqn 
+
+\subsection{Radiative transfer with material velocity dependencies expanded to $\mathcal{O}(v/c)$}
+\beqn 
+&\frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} 
++\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
++\sigma_t(\position,E) I(\position, \Omegabf, E, t) \\
+=& \frac{\sigma_s(\position,E)}{4\pi} \phi(E)
++ \sigma_a(\position,E) B(E,T(\position, t))\\
+&+
+\biggr[
+\biggr( \sigma_t + E \frac{\partial \sigma_a}{\partial E} \biggr) I
++\frac{\sigma_s}{4\pi}
+\biggr(
+2\phi - E \frac{\partial \phi}{\partial E}
+\biggr)
++2\sigma_a B(E,T)
+- B(E,T) \frac{\partial \sigma_a}{\partial E}
+-\sigma_a E \frac{\partial B(E,T)}{\partial E}
+\biggr] \Omegabf \dotp \frac{\mathbf{u}}{c} \\
+&-\frac{\sigma_s}{4\pi} \biggr( \RadF - E \frac{\partial \RadF}{\partial E} \biggr) \dotp \frac{\mathbf{u}}{c}
+\eeqn 
+\newline
+\newline
+\textbf{Radiation energy equation:}\newline 
+Obtained by integrating the transport equation over energy and angle
+\beqn 
+ \frac{\partial \RadE(\position, t)}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &= \int_0^\infty \sigma_a(\position, E) \bigr( 4\pi B(E,T) - \phi(\position, E, t) \bigr) dE \\
+&+\int_0^\infty \biggr( \sigma_a + E \frac{\partial \sigma_a}{\partial E} - \sigma_s(E)\biggr)
+\RadF \dotp  \frac{\mathbf{u}}{c}
+dE
+\eeqn 
+\newline
+\newline 
+\textbf{Radiation momentum equation:}\newline
+Obtained by first multiplying by $\frac{1}{c} \Omegabf$, then integrating over all directions and energies,
+\beqn 
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= -\int_0^\infty \frac{\sigma_t}{c} \RadF dE \\
+&+\int_0^\infty \bigr( \sigma_s \phi + \sigma_a 4\pi B(E,T) \bigr) \frac{\mathbf{u}}{c^2}dE \\
+&+\int_0^\infty \biggr( \sigma_a + E \partialderiv{\sigma_a}{E} + \sigma_s\biggr) \RadP \dotp \frac{\mathbf{u}}{c} dE
+\eeqn 
+
+
+
+\subsection{Grey Radiative Transfer}
+\beqn \label{eq:grey_radiative_transfer}
+&\frac{1}{c} \frac{\partial I(\position, \Omegabf, t)}{\partial t} 
++\Omegabf \dotp \bnabla I(\position, \Omegabf, t)
++\sigma_t(\position) I(\position, \Omegabf, t) \\
+=& \frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4\\
+&+
+\biggr[
+\sigma_t  I
++\frac{\sigma_s}{4\pi} 2\phi 
++2\sigma_a \frac{1}{4\pi} acT^4
+-\sigma_a E \frac{\partial B(E,T)}{\partial E}
+\biggr] \Omegabf \dotp \frac{\mathbf{u}}{c} \\
+&-\frac{\sigma_s}{4\pi}  \RadF \dotp \frac{\mathbf{u}}{c}
+\eeqn 
+\textbf{Radiation energy equation:}\newline 
+Obtained by integrating Eq. \eqref{eq:grey_radiative_transfer} over energy and angle
+\beqn \label{eq:radiation_energy_equation}
+\frac{\partial \RadE(\position, t)}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
++ \bigr( \sigma_a  - \sigma_s\bigr)
+\RadF \dotp  \frac{\mathbf{u}}{c}
+\eeqn 
+\newline
+\newline 
+\textbf{Radiation momentum equation:}\newline
+Obtained by first multiplying Eq. \eqref{eq:grey_radiative_transfer} by $\frac{1}{c} \Omegabf$, then integrating over all directions and energies,
+\beqn \label{eq:radiation_momentum_equation}
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= - \frac{\sigma_t}{c} \RadF  
++ \bigr( \sigma_s c\RadE + \sigma_a acT^4 \bigr) \frac{\mathbf{u}}{c^2} 
++\sigma_t \RadP \dotp \frac{\mathbf{u}}{c}
+\eeqn 
+
+\subsection{Grey Diffusion Approximation}
+Approximating the angular dependence of $I(\Omegabf)$ with a $P_1$ spherical harmonic expansion, such that the entries of $\RadP$ are given by
+\beqn 
+(\RadP)_{i,j}= \frac{1}{3} \RadE \delta_{i,j},
+\eeqn 
+the radiation energy equation is unaffected but the radiation momentum equation changes. We repeat the radiation energy equation below, and the altered radiation moment equations:
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
++ \bigr( \sigma_a  - \sigma_s\bigr)
+\RadF \dotp  \frac{\mathbf{u}}{c},
+\eeqn 
+\beqn 
+\frac{1}{3} \bnabla \RadE = - \frac{\sigma_t}{c} \RadF  
++ \bigr( \sigma_s c\RadE + \sigma_a acT^4 \bigr) \frac{\mathbf{u}}{c^2} 
++\sigma_t \frac{1}{3} \RadE \frac{\mathbf{u}}{c}.
+\eeqn 
+\newline
+\newline 
+\textbf{Useful transformations:}\newline 
+\begin{subequations}
+\beqn 
+\RadE_0 = \RadE - \frac{2}{c^2} \RadF \dotp \mathbf{u}
+\eeqn 
+\beqn 
+\RadE = \RadE_0 + \frac{2}{c^2} \RadF_0 \dotp \mathbf{u}
+\eeqn 
+\beqn \label{eq:F_0_raw}
+\RadF_0 = \RadF - \bigr( \RadE \mathbf{u} + \RadP \dotp \mathbf{u} \bigr)
+\eeqn 
+\beqn 
+\RadF = \RadF_0 + \bigr( \RadE_0 \mathbf{u} + \RadP_0 \dotp \mathbf{u} \bigr)
+\eeqn 
+\beqn 
+\RadP_0 = \RadP - \frac{2}{c^2} \mathbf{u} \otimes \RadF
+\eeqn 
+\beqn 
+\RadP = \RadP_0 + \frac{2}{c^2} \mathbf{u} \otimes \RadF_0
+\eeqn 
+With the $P_1$ approximation
+\beqn \label{eq:F0_semi_raw}
+\RadF_0 = \RadF - \frac{4}{3} \RadE \mathbf{u}
+\eeqn 
+\beqn \label{eq:F_semi_raw}
+\RadF = \RadF_0 + \frac{4}{3} \RadE \mathbf{u}
+\eeqn 
+\end{subequations}
+Applying these transformations the radiation energy- and moment equation can be expressed as
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE_0 \bigr)
+-\sigma_t \RadF \dotp  \frac{\mathbf{u}}{c},
+\eeqn 
+\beqn 
+\frac{1}{3} \bnabla \RadE = - \frac{\sigma_t}{c} \RadF_0
++ \sigma_a c\bigr( aT^4 - \RadE \bigr) \frac{\mathbf{u}}{c^2}.
+\eeqn 
+Several simplifications to these equations are made. Firstly arriving at the expression for the radiation energy equation,
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+-\sigma_t \RadF_0 \dotp  \frac{\mathbf{u}}{c},
+\eeqn 
+then the radiation momentum equation,
+\beqn 
+\frac{1}{3} \bnabla \RadE &= - \frac{\sigma_t}{c} \RadF_0 
+\eeqn 
+from which we can get expression for $\RadF_0$ and $\RadF$ in terms of $\RadE$ as
+\beqn 
+\RadF_0 &= -\frac{c}{3\sigma_t} \bnabla \RadE \\
+\eeqn 
+and
+\beqn 
+\frac{1}{3} \bnabla \RadE &= - \frac{\sigma_t}{c} \biggr (\RadF - \frac{4}{3} \RadE \mathbf{u} \biggr) \\
+\therefore
+ \RadF  &= -\frac{c}{3\sigma_t} \bnabla \RadE + \frac{4}{3} \RadE \mathbf{u}.
+\eeqn 
+These expressions for $\RadF_0$ and $\RadF$ are both then inserted into the radiation energy equation as follows
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+-\sigma_t \RadF_0 \dotp  \frac{\mathbf{u}}{c}
+\\
+\to
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE + \frac{4}{3} \RadE \mathbf{u}  \biggr)
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+-\sigma_t \biggr( -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) \dotp  \frac{\mathbf{u}}{c} 
+\\
+\to 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) + \frac{4}{3} \bnabla  \dotp \bigr( \RadE \mathbf{u}  \bigr)
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
++\frac{1}{3} \bnabla \RadE  \dotp  \velocity.
+\eeqn 
+
+Arriving at a \textbf{diffusion form} of the \textbf{radiation energy equation},
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
++\frac{1}{3} \bnabla \RadE  \dotp  \velocity.
+\eeqn
+
+\vspace{1cm}
+\subsection{Conservation equation for fluid flow}
+The governing equations we consider here are the Euler equations defined as
+\beqn 
+\partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
+\eeqn 
+\beqn 
+\partialderiv{(\rho\velocity)}{t} + \bnabla \dotp \{ \rho \velocity \otimes \velocity\}  + \bnabla p = \mathbf{f},
+\eeqn 
+\beqn 
+\partialderiv{E}{t} + \bnabla \dotp [(E + p)\velocity] = q
+\eeqn 
+where $\rho$ is the fluid density, $\velocity = [u_x, u_y, u_z] =[u,v,w]$ is the fluid velocity in cartesian coordinates, $p$ is the fluid pressure, $E$ is the material energy-density comprising kinetic energy-density, $\frac{1}{2} \rho ||\velocity||^2$, and internal energy-density, $\rho e$, such that $E = \frac{1}{2} \rho ||\velocity||^2 + \rho e$, where $e$ is the specific internal energy. The values $q$ and $\mathbf{f}$ are abstractly used here as energy- and moment- sources/sinks, respectively.
+
+The ideal gas law provides the closure relation
+\beqn 
+p = (\gamma - 1) \rho e
+\eeqn 
+where $\gamma$ is the ratio of the constant-pressure specific heat, $c_p$, to the constant-volume specific heat, $c_v$, i.e., $\gamma = \frac{c_p}{c_v}$, and is a material property.
+\newline
+\newline
+\textbf{Coupling terms:}\newline
+\beqn 
+\mathbf{f} &= \frac{\sigma_t}{c} \RadF_0 \\ &= -\frac{1}{3} \bnabla \RadE
+\eeqn 
+and
+\beqn 
+q &= - \biggr(\sigma_a c (a T^4 - \RadE) - \sigma_t \RadF_0 \dotp \frac{\mathbf{u}}{c} \biggr)\\
+&= \sigma_a c (\RadE - a T^4) - \frac{1}{3} \bnabla \RadE \dotp \velocity
+\eeqn 
+
+\newpage
+\subsection{The set of Radiation Hydrodynamics Grey Diffusion Equations}
+\begin{subequations}
+\beqn 
+\partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
+\eeqn 
+\beqn 
+\partialderiv{(\rho\velocity)}{t} + \bnabla \dotp \{ \rho \velocity \otimes \velocity\}  + \bnabla p 
+= -\frac{1}{3} \bnabla \RadE,
+\eeqn 
+\beqn 
+\partialderiv{E}{t} + \bnabla \dotp [(E + p)\velocity] 
+= \sigma_a c (\RadE - a T^4) - \frac{1}{3} \bnabla \RadE \dotp \velocity
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) + \frac{4}{3} \bnabla \bigr( \RadE \mathbf{u}  \bigr)
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
++\frac{1}{3} \bnabla \RadE  \dotp \velocity.
+\eeqn
+where
+\beqn 
+E = \frac{1}{2} \rho ||\velocity||^2 + \rho e,
+\eeqn 
+\beqn 
+p = (\gamma - 1) \rho e,
+\eeqn 
+\beqn 
+T = \frac{1}{C_v} e
+\eeqn 
+\end{subequations}
+
+
+
+\section{Notations}
+First we define the following terms
+\begin{subequations}
+\begin{itemize}
+\item The radiation momentum source
+\beqn 
+\mathbf{S}_{rp} = \frac{1}{3} \bnabla \RadE
+\eeqn 
+\item The radiation energy source
+\beqn 
+S_{re} = \sigma_a c \bigr( aT^4 - \RadE \bigr)
++\frac{1}{3} \bnabla \RadE  \dotp \velocity
+\eeqn 
+\item The conserved hydrodynamic variables
+\beqn
+\HydroU = 
+\begin{bmatrix}
+	\rho \\ \rho \mathbf{u} \\ E
+\end{bmatrix} 
+\eeqn
+\item The hydrodynamic flux
+\beqn 
+\HydroF = 
+\begin{bmatrix}
+	\rho u \\
+	\rho uu + p \\
+	\rho u v \\
+	\rho u w \\
+	(E+p)u
+\end{bmatrix}
+\eeqn 
+\item The radiation energy current
+\beqn 
+\mathbf{J} = -\frac{c}{3\sigma_t} \bnabla \RadE
+\eeqn 
+\end{itemize}
+\end{subequations}
+
+\noindent
+Next, we use these terms to define a more condensed version of the RHGD equations. 
+\beqn 
+\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+\begin{bmatrix}
+	0 \\
+-\mathbf{S}_{rp} \\
+-S_{re} 
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
+&=  S_{re}.
+\eeqn
+
+\newpage
+\section{Overview of temporal numerical scheme}
+\begin{subequations}
+\beqn 
+\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+\begin{bmatrix}
+	0 \\
+	-\mathbf{S}_{rp} \\
+	-S_{re} 
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
+&=  S_{re}.
+\eeqn
+\end{subequations}
+
+
+
+\subsection{Predictor phase}
+$\tau = \dfrac{1}{\half \Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n+\half*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n}) = \mathbf{0}
+	\eeqn 
+	\beqn 
+	\tau (\RadE^{n+\half*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n} = 0
+	\eeqn 
+	\beqn 
+	\tau (\HydroU^{n+\half} - \HydroU^{n+\half*})_{0,1} =  \begin{bmatrix}
+		0 \\
+		-\mathbf{S}_{rp} 
+	\end{bmatrix}^{n}
+	\eeqn 
+	\beqn 
+	\tau (\HydroU^{n+\half} - \HydroU^{n+\half*})_{0} = 
+	\half \sigma_a^{n+\half} c  \biggr( 
+	\RadE^{n+\half} + \RadE^{n}
+	-a\bigr( T^{4,n+\half} + T^{4,n} \bigr)
+	\biggr)
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\eeqn 
+	\beqn 
+	\tau (\RadE^{n+\half} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	\half \sigma_a^{n+\half} c \biggr( 
+	a\bigr( T^{4,n+\half} + T^{4,n} \bigr)  -\RadE^{n+\half} - \RadE^{n}
+	\biggr)
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+\half} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+\half}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\newpage
+\subsection{Corrector phase}
+$\tau = \dfrac{1}{\Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n+\half*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n+\half}) = \mathbf{0}
+	\eeqn 
+	\beqn 
+	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{0,1} =  \begin{bmatrix}
+		0 \\
+		-\mathbf{S}_{rp} 
+	\end{bmatrix}^{n+\half}
+	\eeqn 
+	\beqn 
+	\tau (\RadE^{n+\half*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half} = 0
+	\eeqn 
+	\beqn 
+	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{0} = 
+	\half \sigma_a^{n+1} c  \biggr( 
+	\RadE^{n+1} + \RadE^{n}
+	-a\bigr( T^{4,n+1} + T^{4,n} \bigr)
+	\biggr)
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	\half \sigma_a^{n+1} c \biggr( 
+	a\bigr( T^{4,n+1} + T^{4,n} \bigr)  -\RadE^{n+1} - \RadE^{n}
+	\biggr)
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+
+
+
+
+
+
+\newpage
+\section{Finite Volume Spatial Discretization}
+We now integrate $\mathbf{S}_{rp}$, $S_{re}$, the hydrodynamic equations and the radiation energy equation over the volume of a cell with index $c$ and volume $V_c$ to get
+\beqn 
+V_c \mathbf{S}_{rp} = \frac{1}{3} \SumOverCellFaces \biggr( \AreaVec_f \RadE_f \biggr)
+\eeqn 
+\beqn 
+V_c \mathbf{S}_{re} = V_c \sigma_a c (a T_c^4 - \RadE_c) 
++ \frac{1}{3} \SumOverCellFaces \biggr(\AreaVec_f \dotp \RadE_f \velocity_f \biggr)
+\eeqn 
+\beqn 
+V_c\partialderiv{\HydroU}{t} + \SumOverCellFaces \biggr( \AreaVec_f \dotp \HydroF_f \biggr) = 
+\begin{bmatrix}
+	0 \\
+	-V_c \mathbf{S}_{rp} \\
+	-V_c S_{re} 
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\SumOverCellFaces \biggr( \AreaVec_f \dotp \RadJ_f \biggr) + \frac{4}{3} \SumOverCellFaces \biggr( \AreaVec_f \dotp \RadE_f \velocity_f \biggr) = V_c S_{re}\\
+\eeqn
+where $\AreaVec_f$ denotes the area-vector $A_f \mathbf{n}$ and all quantities with an $f$ subscript as of yet unresolved. 
+
+
+
+
+
+
+\newpage
+\begin{appendices}
+\section{Angular integration identities} \label{appendix:angle_integration_identities}
+\begin{description}
+	\item [Identity A-1]
+	$$\int_{4\pi}  \ d\Omegabf = 4\pi.$$
+	
+	\item [Identity A-2]
+	$$\int_{4\pi} \Omegabf \ d\Omegabf = 0.$$
+	
+	\item [Identity A-3] Given the known three component vector, $\mathbf{v}$,
+	$$\int_{4\pi} \Omegabf \dotp \mathbf{v} \ d\Omegabf = 0.$$
+	
+	\item [Identity A-4] Given the known three component vector, $\mathbf{v}$,
+	$$\int_{4\pi} \Omegabf \dotp \bnabla (\Omegabf \dotp \mathbf{v}) \ d\Omegabf = \frac{4\pi}{3} \bnabla \dotp \mathbf{v}.$$
+	
+	\item [Identity A-5] Given the scalar, $a$,
+	$$\int_{4\pi} \Omegabf \biggr( \Omegabf \dotp \bnabla a \biggr) \ d\Omegabf = \frac{4\pi}{3} \bnabla a.$$
+	
+	\item [Identity A-6] Given the known three component vector, $\mathbf{v}$,
+	$$\int_{4\pi} \Omegabf \biggr( \Omegabf \dotp \mathbf{v} \biggr) \ d\Omegabf = \frac{4\pi}{3} \mathbf{v} .$$
+	
+	\item [Identity A-7] Given the known three component vector, $\mathbf{v}$,
+	$$\int_{4\pi} \Omegabf \biggr( \Omegabf \dotp \bnabla (\Omegabf \dotp \mathbf{v}) \biggr) \ d\Omegabf = 0 .$$
+	
+\end{description}
+
+\end{appendices}
+
+
+\newpage
+\begin{thebibliography}{1}
+	
+%	\bibitem{LewisMiller} Lewis E.E., Miller W.F., {\em Computational Methods of Neutron Transport}, JohnWiley \& Sons, 1984
+
+	\bibitem{Castor} John I. Castor, {\em Radiation Hydrodynamics}, UCRL-BOOK-134209-Rev-1, Lawrence Livermore National Laboratory, November 2003.
+	
+	\bibitem{Toro} Toro E.F., {\em Riemann Solvers and Numerical Methods for Fluid Dynamics - A Practical Introduction}, third edition, Springer, 2009.
+	
+	\bibitem{Moukalled} Moukalled F.,  Mangani L., Darwish M., {\em The Finite Volume Method in Computational Fluid Dynamics - An Advanced Introduction with OpenFOAM® and Matlab®}, Springer, 2016.
+	
+	\bibitem{McClarrenSlopes} McClarren R.G., Lowrie R.B., {\em The effects of slope limiting on asymptotic-preserving numerical methods for hyperbolic conservation laws}, Journal of Computational Physics, vol 227 p9711-9726, 2008.
+	
+	\bibitem{Timmers} Timmers F.X., {\em Exact Riemann Solver}, Website: https://cococubed.com/code\_pages/exact\_riemann.shtml, accessed April 22, 2022.
+	
+	   
+\end{thebibliography}
+
+\newpage
+\begin{appendices}
+\section{Roderigues's formula} \label{appendix:Roderigues_formula}
+Roderigues' formula for the rotation of a vector $\mathbf{v}$ about a unit vector $\mathbf{a}$ with right-hand rule
+\begin{equation}
+\newcommand{\vvec}{\mathbf{v}}
+\newcommand{\avec}{\mathbf{a}}
+\begin{aligned}
+\vvec_{rotated} &= \cos \theta \vvec + (\avec \dotp \vvec)(1-\cos \theta) \avec + \sin \theta (\avec \times \vvec)
+\end{aligned}
+\end{equation}
+In matrix form
+\beqn 
+\mathbf{v}_{rotated} = A \mathbf{v}
+\eeqn 
+where
+\beqn 
+A = 
+\begin{bmatrix}
+0 & -a_z & a_y \\
+a_z & 0 & -a_x \\
+-a_y & a_x & 0
+\end{bmatrix}
+\eeqn 
+and
+\beqn 
+R = I + \sin\theta A + (1-\cos\theta) A^2
+\eeqn
+
+
+\end{appendices}
+
+\end{document}

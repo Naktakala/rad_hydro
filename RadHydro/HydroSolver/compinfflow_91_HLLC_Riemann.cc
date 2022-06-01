@@ -3,7 +3,6 @@
 typedef chi_math::VectorN<5> UVector;
 
 #include "chi_log.h"
-extern ChiLog& chi_log;
 
 UVector chi_hydro::CompInFFlow::
   HLLC_RiemannSolve(const UVector &U_L_raw,
@@ -56,17 +55,17 @@ UVector chi_hydro::CompInFFlow::
 
   if (verbose)
   {
-    chi_log.Log() << "S_L   :" << S_L;
-    chi_log.Log() << "S_star:" << S_star;
-    chi_log.Log() << "S_R   :" << S_R;
+    chi::log.Log() << "S_L   :" << S_L;
+    chi::log.Log() << "S_star:" << S_star;
+    chi::log.Log() << "S_R   :" << S_R;
 
-    chi_log.Log() << "U_L:" << PrintU(U_L);
-    chi_log.Log() << "U_R:" << PrintU(U_R);
+    chi::log.Log() << "U_L:" << PrintU(U_L);
+    chi::log.Log() << "U_R:" << PrintU(U_R);
 
-    chi_log.Log() << "F_L     :" << PrintU(F_L     );
-    chi_log.Log() << "F_star_L:" << PrintU(F_star_L);
-    chi_log.Log() << "F_star_R:" << PrintU(F_star_R);
-    chi_log.Log() << "F_R     :" << PrintU(F_R     );
+    chi::log.Log() << "F_L     :" << PrintU(F_L     );
+    chi::log.Log() << "F_star_L:" << PrintU(F_star_L);
+    chi::log.Log() << "F_star_R:" << PrintU(F_star_R);
+    chi::log.Log() << "F_R     :" << PrintU(F_R     );
   }
 
   return Tinv * F_hllc;

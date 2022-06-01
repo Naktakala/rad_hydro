@@ -27,14 +27,14 @@ enum class CoordinateSystem
 class CompInFFlow : public chi_physics::Solver
 {
 protected:
-  typedef std::shared_ptr<SpatialDiscretization_FV> SDMFVPtr;
-  typedef std::tuple<chi_mesh::LogicalVolume*, std::string, double> LVFieldSetting;
+  typedef std::shared_ptr<chi_math::SpatialDiscretization_FV> SDMFVPtr;
+  typedef std::shared_ptr<chi_mesh::LogicalVolume> LogicalVolumePtr;
+  typedef std::tuple<LogicalVolumePtr, std::string, double> LVFieldSetting;
   typedef chi_math::VectorN<5> UVector;
   typedef UVector FVector;
   typedef std::vector<UVector> GradUTensor;
   typedef chi_mesh::Vector3 Vec3;
   typedef chi_math::MatrixNXxNX<5,double> TMatrix;
-  typedef std::vector<size_t> FaceMapping;
 
 public:
   double       t_max = -1.0;
@@ -59,6 +59,9 @@ public:
 
 public:
   explicit CompInFFlow(const std::string& text_name);
+
+  CompInFFlow(const CompInFFlow&) = delete;
+  CompInFFlow operator=(const CompInFFlow&) = delete;
 
   void Initialize() override;
   //02

@@ -283,7 +283,7 @@ where $V_c$ is the volume of the cell, $N_{f,c}$ is the number of faces for cell
 
 \vspace{1cm}
 \subsection{Multidimensional transformation of interface fluxes} \label{section:3dtransformation}
-Most of the Riemann solver schemes presented in \cite{Toro} are for one dimensional geometries. A transformation technique is prescribed in \cite{Toro} that allows one to seamlessly use the one dimensional formulations.
+Most of the Riemann solver schemes presented in \cite{Toro} are for one dimensional geometries. A transformation technique is prescribed in \cite{Toro}, using the rotational-invariant property of the fluid flow, that allows one to use the one dimensional formulations.
 
 Given the arbitrary face area vector, $\mathbf{A}_f=\mathbf{n}_f A_f$, we first seek a rotation matrix, $R_{\ihat}$, to rotate any vector about an axis $\mathbf{a}_{\ihat}$ such that it is aligned with $\ihat$. To determine $R_{\ihat}$ we first set the rotation axis as
 \beqn 
@@ -483,7 +483,7 @@ The discontinuity across a face is treated as a one dimensional problem with a l
 \mathbf{U}_{f,c}^{n} = \mathbf{U}_c^{n+\frac{1}{2}}  + (\position_{f} - \position_c) \dotp \big\{ \bnabla \mathbf{U} \big\}_c^n
 \end{equation}
 \begin{equation}
-\mathbf{U}_{f,cn}^{n} = \mathbf{U}_{cn}^{n+\frac{1}{2}}  + (\position_{f} - \position_c) \dotp \big\{ \bnabla \mathbf{U} \big\}_{cn}^n.
+\mathbf{U}_{f,cn}^{n} = \mathbf{U}_{cn}^{n+\frac{1}{2}}  + (\position_{f} - \position_{cn}) \dotp \big\{ \bnabla \mathbf{U} \big\}_{cn}^n.
 \end{equation}
 \end{subequations}
 
