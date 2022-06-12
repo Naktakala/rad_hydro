@@ -10,7 +10,7 @@
 #include "SPDS/angle_set.h"
 #include "SPDS/sweepscheduler.h"
 
-namespace chi_radtran
+namespace chi_radhydro
 {
 
 class RadTranDO : public chi_physics::Solver

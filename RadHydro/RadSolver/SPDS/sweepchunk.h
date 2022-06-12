@@ -1,12 +1,12 @@
 #ifndef RADHYDRO_SWEEPCHUNK_H
 #define RADHYDRO_SWEEPCHUNK_H
 
-namespace chi_radtran
+namespace chi_radhydro
 {
   class AngleSet;
 }
 
-namespace chi_radtran
+namespace chi_radhydro
 {
   class SweepChunk
   {

@@ -8,7 +8,7 @@
 
 //###################################################################
 /**Computes the sweep ordering.*/
-chi_radtran::SweepStructure::
+chi_radhydro::SweepStructure::
   SweepStructure(const chi_mesh::MeshContinuum& grid,
                  const chi_mesh::Vector3& input_omega,
                  double parallel_tolerance/* = 1.0e-12*/) :

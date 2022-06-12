@@ -6,7 +6,7 @@
 
 #include "chi_log.h"
 
-void chi_radtran::RadTranDO::Initialize()
+void chi_radhydro::RadTranDO::Initialize()
 {
   //=================================== Process options
   options.num_angles       = basic_options("num_angles").IntegerValue();

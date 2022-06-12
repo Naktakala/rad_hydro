@@ -3,9 +3,12 @@
 
 #include "ChiLua/chi_lua.h"
 
-namespace chi_radtran::lua_utils
+namespace chi_radhydro::lua_utils
 {
   int chiCreateRadTranDOSolver(lua_State* L);
+
+  int chiCreateRadTranGreyDiffSolver(lua_State* L);
+  int chiRadTranGreyDiffSetFieldInitialValue(lua_State* L);
 
   void RegisterLuaEntities(lua_State* L);
 }//namespace chi_radtran::lua_utils

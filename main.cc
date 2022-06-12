@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
   chi::Initialize(argc,argv);
 
   chi_hydro::compinfflow_lua_utils::RegisterLuaEntities(chi::console.consoleState);
-  chi_radtran::lua_utils::RegisterLuaEntities(chi::console.consoleState);
+  chi_radhydro::lua_utils::RegisterLuaEntities(chi::console.consoleState);
 
   chi::RunBatch(argc,argv);
 

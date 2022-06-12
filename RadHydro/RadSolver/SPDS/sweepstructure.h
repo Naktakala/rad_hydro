@@ -10,7 +10,7 @@ namespace chi_mesh
 
 #include "ChiMesh/chi_mesh.h"
 
-namespace chi_radtran
+namespace chi_radhydro
 {
   /**LinearElementSPDS*/
   class SweepStructure

@@ -7,7 +7,7 @@
 
 //###################################################################
 /**Execution of a sweep chunk.*/
-void chi_radtran::SweepChunk::Sweep(AngleSet &angle_set)
+void chi_radhydro::SweepChunk::Sweep(AngleSet &angle_set)
 {
   const auto& sweep_structure = angle_set.GetSweepStructure();
   const auto& sweep_ordering  = sweep_structure.GridOrdering();

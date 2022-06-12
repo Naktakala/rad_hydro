@@ -4,7 +4,7 @@
 #include "ChiMath/Quadratures/angular_quadrature_base.h"
 #include "sweepstructure.h"
 
-namespace chi_radtran
+namespace chi_radhydro
 {
   class AngularQuadraturePointInfo
   {

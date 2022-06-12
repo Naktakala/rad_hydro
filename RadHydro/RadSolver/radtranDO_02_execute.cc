@@ -1,6 +1,6 @@
 #include "radtranDO.h"
 
-void chi_radtran::RadTranDO::Execute()
+void chi_radhydro::RadTranDO::Execute()
 {
   //Lets do classic richardson first
 
