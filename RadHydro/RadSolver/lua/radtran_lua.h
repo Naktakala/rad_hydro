@@ -5,8 +5,6 @@
 
 namespace chi_radhydro::lua_utils
 {
-  int chiCreateRadTranDOSolver(lua_State* L);
-
   int chiCreateRadTranGreyDiffSolver(lua_State* L);
   int chiRadTranGreyDiffSetFieldInitialValue(lua_State* L);
 

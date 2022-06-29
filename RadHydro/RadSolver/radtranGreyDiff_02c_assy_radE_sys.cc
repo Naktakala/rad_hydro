@@ -4,55 +4,29 @@
 
 #include "ChiMath/SpatialDiscretization/FiniteVolume/fv.h"
 
-namespace chi_radhydro
-{
-  struct DataBlockA
-  {
-    typedef chi_math::SpatialDiscretization_FV SDM_FV;
-    chi_mesh::MeshContinuum& grid;
-    std::shared_ptr<SDM_FV>& fv;
-
-    std::vector<UVector>& U_n;
-    std::vector<UVector>& U_nstar;
-    std::vector<UVector>& U_nph;
-
-    std::vector<double>& rad_E_n;
-    std::vector<double>& rad_E_nstar;
-
-    std::vector<double>&  kappa_t;
-    std::vector<double>&  kappa_a;
-
-    std::vector<GradUTensor>& grad_U_n;
-    std::vector<Vec3>&        grad_rad_E;
-
-    std::vector<double>& Cv;
-    double delta_t;
-
-  };
-}
-
 void chi_radhydro::RadTranGreyDiffusion::
   AssemblePredictorRadESystem(MatDbl &A, VecDbl &b,
-                              const DataBlockA& data_block)
+                              chi_mesh::MeshContinuum&  grid_ref,
+                              std::shared_ptr<SDM_FV>&  fv_ref,
+                              std::vector<UVector>&     U_n,
+                              std::vector<UVector>&     U_nstar,
+                              std::vector<UVector>&     U_nph,
+                              std::vector<double>&      rad_E_n,
+                              std::vector<double>&      rad_E_nstar,
+                              std::vector<double>&      kappa_t,
+                              std::vector<double>&      kappa_a,
+                              std::vector<GradUTensor>& grad_U_n,
+                              std::vector<Vec3>&        grad_rad_E,
+                              std::vector<double>&      Cv,
+                              std::vector<double>&      k5_vec,
+                              std::vector<double>&      k6_vec,
+                              double                    delta_t)
 {
-  const auto& grid    = data_block.grid;
-  const auto& fv      = data_block.fv;
+  const auto& grid    = grid_ref;
+  const auto& fv      = fv_ref;
 
-  const auto& U_n     = data_block.U_n;
-  const auto& U_nstar = data_block.U_nstar;
-  const auto& U_nph   = data_block.U_nph;
-
-  const auto& rad_E_n     = data_block.rad_E_n;
-  const auto& rad_E_nstar = data_block.rad_E_nstar;
-
-  const auto& kappa_t = data_block.kappa_t;
-  const auto& kappa_a = data_block.kappa_a;
-
-  const auto& grad_U_n   = data_block.grad_U_n;
-  const auto& grad_rad_E = data_block.grad_rad_E;
-
-  const auto& Cv         = data_block.Cv;
-  const auto& delta_t    = data_block.delta_t;
+  k5_vec.assign(grid.local_cells.size(), 0.0);
+  k6_vec.assign(grid.local_cells.size(), 0.0);
 
   for (const auto& cell_c : grid.local_cells)
   {
@@ -95,7 +69,7 @@ void chi_radhydro::RadTranGreyDiffusion::
       third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
     }//for f
 
-    const double k1 = 0.5 * sigma_ac_nph * speed_of_light_mps;
+    const double k1 = 0.5 * sigma_ac_nph * speed_of_light_cmpsh;
     const double k2 = 4 * pow(T_c_nstar,3)/Cv[c];
 
     const double k3 = k1*rad_E_c_n
@@ -110,6 +84,9 @@ void chi_radhydro::RadTranGreyDiffusion::
                     - tau*0.5*rho_c_nph*pow(u_c_nph.Norm(),2)
                     + tau*E_c_nstar)/
                     (tau*rho_c_nph);
+
+    k5_vec[c] = k5;
+    k6_vec[c] = k6;
 
     //======================= Connectivity and grad_J_n
     double grad_J_n = 0.0;
@@ -136,7 +113,7 @@ void chi_radhydro::RadTranGreyDiffusion::
       }
 
       const double sigma_tf = (sigma_tc_nph + sigma_tcn_nph)/2.0;
-      const double Df = -speed_of_light_mps/(3.0*sigma_tf);
+      const double Df = -speed_of_light_cmpsh/(3.0*sigma_tf);
 
       const Vec3 x_ccn = x_cn - x_c;
       const Vec3 kf = Df * x_ccn / x_ccn.NormSquare();

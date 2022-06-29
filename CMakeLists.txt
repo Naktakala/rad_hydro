@@ -42,6 +42,7 @@ include_directories(${PROJECT_SOURCE_DIR}/${CHI_MODULE_DIR})
 # The directory added below will need to populate
 # the variable ${SOURCES}
 add_subdirectory(${PROJECT_SOURCE_DIR}/${CHI_MODULE_DIR})
+add_subdirectory(${PROJECT_SOURCE_DIR}/${CHI_MODULE_DIR}/ChiMath)
 
 #================================================ Set Misc flags
 # set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -O3")

@@ -14,8 +14,6 @@
 namespace chi_radhydro
 {
 
-struct DataBlockA;
-
 class RadTranGreyDiffusion : public chi_physics::Solver
 {
 protected:
@@ -23,12 +21,11 @@ protected:
   typedef std::shared_ptr<chi_mesh::LogicalVolume> LogicalVolumePtr;
   typedef std::tuple<LogicalVolumePtr, std::string, double> LVFieldSetting;
 
-private:
   std::shared_ptr<chi_mesh::MeshContinuum> grid;
+
+private:
   std::shared_ptr<SDM_FV>                  fv;
-
-  chi_math::UnknownManager                 e_E_uk_man;
-
+  chi_math::UnknownManager                 unitary_uk_man;
 
 public:
   std::vector<LVFieldSetting> logvol_field_settings;
@@ -59,9 +56,41 @@ public:
   void Initialize() override;
   //02
   void Execute() override;
+  void Predictor(double dt,
+                 std::vector<UVector>&           U_n,
+                 std::vector<UVector>&           U_nph,
+                 std::vector<GradUTensor>&       grad_U,
+
+                 std::vector<double>&            rad_E_n,
+                 std::vector<double>&            rad_E_nph,
+                 std::vector<chi_mesh::Vector3>& grad_rad_E);
+  void Corrector(double dt,
+                 std::vector<UVector>&           U_n,
+                 std::vector<UVector>&           U_nph,
+                 std::vector<UVector>&           U_np1,
+                 std::vector<GradUTensor>&       grad_U,
+
+                 std::vector<double>&            rad_E_n,
+                 std::vector<double>&            rad_E_nph,
+                 std::vector<double>&            rad_E_np1,
+                 std::vector<chi_mesh::Vector3>& grad_rad_E);
   //02a
-  static void AssemblePredictorRadESystem(MatDbl& A, VecDbl& b,
-                                          const DataBlockA& data_block);
+  static void AssemblePredictorRadESystem(MatDbl &A, VecDbl &b,
+                                          chi_mesh::MeshContinuum&  grid_ref,
+                                          std::shared_ptr<SDM_FV>&  fv_ref,
+                                          std::vector<UVector>&     U_n,
+                                          std::vector<UVector>&     U_nstar,
+                                          std::vector<UVector>&     U_nph,
+                                          std::vector<double>&      rad_E_n,
+                                          std::vector<double>&      rad_E_nstar,
+                                          std::vector<double>&      kappa_t,
+                                          std::vector<double>&      kappa_a,
+                                          std::vector<GradUTensor>& grad_U_n,
+                                          std::vector<Vec3>&        grad_rad_E,
+                                          std::vector<double>&      Cv,
+                                          std::vector<double>&      k5_vec,
+                                          std::vector<double>&      k6_vec,
+                                          double                    delta_t);
 
   //03
   std::vector<GradUTensor>

@@ -69,11 +69,8 @@ void chi_radhydro::RadTranGreyDiffusion::Initialize()
   fv = chi_math::SpatialDiscretization_FV::New(grid);
 
   //======================================== Initialize vectors
-  auto unitary_uk_man = chi_math::UnknownManager::GetUnitaryUnknownManager();
+//  unitary_uk_man = chi_math::UnknownManager::GetUnitaryUnknownManager();
   num_nodes_local = fv->GetNumLocalDOFs(unitary_uk_man);
-
-  e_E_uk_man.AddUnknown(chi_math::UnknownType::SCALAR);
-  e_E_uk_man.AddUnknown(chi_math::UnknownType::SCALAR);
 
   //======================================== Initialize material properties
   gamma.assign(num_nodes_local, 1.0);

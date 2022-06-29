@@ -584,17 +584,20 @@ T = \frac{1}{C_v} e
 
 
 
-\section{Notations}
+\section{Definitions}
 First we define the following terms
 \begin{subequations}
 \begin{itemize}
-\item The radiation momentum source
+\item The radiation emission and absorption, the radiation momentum source, and the radiation energy source
+\beqn 
+S_{ea} =  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+%\quad \quad \quad
+\eeqn 
 \beqn 
 \mathbf{S}_{rp} = \frac{1}{3} \bnabla \RadE
 \eeqn 
-\item The radiation energy source
 \beqn 
-S_{re} = \sigma_a c \bigr( aT^4 - \RadE \bigr)
+S_{re} =S_{ea} 
 +\frac{1}{3} \bnabla \RadE  \dotp \velocity
 \eeqn 
 \item The conserved hydrodynamic variables
@@ -672,7 +675,7 @@ $\tau = \dfrac{1}{\half \Delta t}$
 	\beqn 
 	\tau (\HydroU^{n+\half} - \HydroU^{n*})_{0,1} =  \begin{bmatrix}
 		0 \\
-		-\mathbf{S}_{rp} 
+		-\frac{1}{3} \bnabla \RadE
 	\end{bmatrix}^{n}
 	\eeqn 
 	
@@ -683,18 +686,18 @@ $\tau = \dfrac{1}{\half \Delta t}$
 	
 	\beqn 
 	\tau (\HydroU^{n+\half} - \HydroU^{n*})_{2} = 
-	\half \sigma_a^{n+\half} c  \biggr( 
-	\RadE^{n+\half} + \RadE^{n}
-	-a\bigr( T^{4,n+\half} + T^{4,n} \bigr)
+	 \sigma_a^{n+\half} c  \biggr( 
+	\RadE^{n+\half} 
+	-a T^{4,n+\half} 
 	\biggr)
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
-	\half \sigma_a^{n+\half} c \biggr( 
-	a\bigr( T^{4,n+\half} + T^{4,n} \bigr)  -\RadE^{n+\half} - \RadE^{n}
+	+  \bnabla \dotp \RadJ^{n+\half} = 
+	 \sigma_a^{n+\half} c \biggr( 
+	a T^{4,n+\half}   -\RadE^{n+\half} 
 	\biggr)
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
@@ -720,7 +723,7 @@ $\tau = \dfrac{1}{\Delta t}$
 	\beqn 
 	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{0,1} =  \begin{bmatrix}
 		0 \\
-		-\mathbf{S}_{rp} 
+		-\frac{1}{3} \bnabla \RadE
 	\end{bmatrix}^{n+\half}
 	\eeqn 
 	
@@ -731,10 +734,10 @@ $\tau = \dfrac{1}{\Delta t}$
 	
 	\beqn 
 	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{2} = 
-	\half \sigma_a^{n+1} c  \biggr( 
-	\RadE^{n+1} + \RadE^{n}
-	-a\bigr( T^{4,n+1} + T^{4,n} \bigr)
+	-\half \sigma_a^{n+1} c  \biggr( 
+    a T^{4,n+1}   -\RadE^{n+1} 
 	\biggr)
+	- \half S_{ea}^{n}
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
 	\eeqn 
 	
@@ -742,8 +745,9 @@ $\tau = \dfrac{1}{\Delta t}$
 	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
 	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
 	\half \sigma_a^{n+1} c \biggr( 
-	a\bigr( T^{4,n+1} + T^{4,n} \bigr)  -\RadE^{n+1} - \RadE^{n}
+	a T^{4,n+1}   -\RadE^{n+1} 
 	\biggr)
+	+\half S_{re}^{n}
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
 	\eeqn
 	
@@ -826,13 +830,13 @@ where
 \beqn
 (\RadE \velocity)_{upw}^{n+\half} =
 \begin{cases}
-(\RadE \velocity)_{c,f}^{n+1} , &\text{ if } 
+(\RadE \velocity)_{c,f}^{n+\half} , &\text{ if } 
 \velocity_{c,f}^{n+\half} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f > 0 
 \quad  \rightarrow | \rightarrow \\
-(\RadE \velocity)_{cn,f}^{n+1} , &\text{ if } 
+(\RadE \velocity)_{cn,f}^{n+\half} , &\text{ if } 
 \velocity_{c,f}^{n+\half} \dotp  \NormalVec_f < 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f < 0
 \quad  \leftarrow | \leftarrow \\
-(\RadE \velocity)_{cn,f}^{n+1} + (\RadE \velocity)_{c,f}^{n+1}, &\text{ if } 
+(\RadE \velocity)_{cn,f}^{n+\half} + (\RadE \velocity)_{c,f}^{n+\half}, &\text{ if } 
 \velocity_{c,f}^{n+\half} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f < 0 
 \quad  \rightarrow | \leftarrow \\
 0, &\text{ if } 
@@ -864,15 +868,15 @@ and where $\position_{cf}$ is the vector from cell $c$'s centroid to the face ce
 Solving the above relationship for $\RadE_f$ we first set
 \beq 
 k_c = \frac{D_c}{||\position_{cf}||} , \quad \quad
-k_n = \frac{D_{cn}}{||\position_{fcn}||}
+k_{cn} = \frac{D_{cn}}{||\position_{fcn}||}
 \eeq 
 then get
 \beqn 
-k_c \RadE_f - k_c \RadE_c &= k_n \RadE_{cn} - k_n \RadE_f \\
+k_c \RadE_f - k_c \RadE_c &= k_{cn}  \RadE_{cn} - k_{cn}  \RadE_f \\
 \to \quad 
-(k_c + k_n) \RadE_f &= k_n \RadE_{cn} + k_c \RadE_c \\
+(k_c + k_{cn} ) \RadE_f &= k_{cn}  \RadE_{cn} + k_c \RadE_c \\
 \therefore
-\RadE_f &= \frac{k_n \RadE_{cn} + k_c \RadE_c}{k_c +k_n} .
+\RadE_f &= \frac{k_{cn}  \RadE_{cn} + k_c \RadE_c}{k_c +k_{cn} } .
 \eeqn 
 \newline
 \newline 
@@ -925,22 +929,22 @@ For the kinetic energy terms we use the reconstructed values as in the Hydrodyna
 \frac{1}{V_c} \sum_f \frac{1}{3} \AreaVec_f \dotp (\RadE_f^n \velocity_f^n)
 \eeqn 
 
-\subsection{Predictor phase}
+\subsubsection{Predictor phase}
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+\half} - E^{n*})= 
-	\half \sigma_a^{n+\half} c  \biggr( 
-	\RadE^{n+\half} + \RadE^{n}
-	-a\bigr( T^{4,n+\half} + T^{4,n} \bigr)
+	\sigma_a^{n+\half} c  \biggr( 
+	\RadE^{n+\half} 
+	-a T^{4,n+\half}
 	\biggr)
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
-	\half \sigma_a^{n+\half} c \biggr( 
-	a\bigr( T^{4,n+\half} + T^{4,n} \bigr)  -\RadE^{n+\half} - \RadE^{n}
+	+ \bnabla \dotp \RadJ^{n+\half} = 
+	\sigma_a^{n+\half} c \biggr( 
+	a T^{4,n+\half}  -\RadE^{n+\half} 
 	\biggr)
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
@@ -953,7 +957,7 @@ For the kinetic energy terms we use the reconstructed values as in the Hydrodyna
 \noindent
 Define:
 \beqn 
-k_1 &= \half \sigma_a^{n+\half} c \\
+k_1 &= \sigma_a^{n+\half} c \\
 k_2 &= \frac{4T^{3,n*}}{C_v}
 \eeqn 
 
@@ -962,17 +966,17 @@ k_2 &= \frac{4T^{3,n*}}{C_v}
 	\beqn 
 	\tau (E^{n+\half} - E^{n*})= 
     k_1 \biggr( 
-	\RadE^{n+\half} + \RadE^{n}
-	-a\bigr( T^{4,n+\half} + T^{4,n} \bigr)
+	\RadE^{n+\half} 
+	-a T^{4,n+\half} 
 	\biggr)
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+  \bnabla \dotp \RadJ^{n+\half} = 
 	k_1 \biggr( 
-	a\bigr( T^{4,n+\half} + T^{4,n} \bigr)  -\RadE^{n+\half} - \RadE^{n}
+	a T^{4,n+\half} -\RadE^{n+\half} 
 	\biggr)
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
@@ -987,16 +991,16 @@ k_2 &= \frac{4T^{3,n*}}{C_v}
 	\splitline
 	\beqn 
 	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} + k_1 \RadE^{n}
-	-k_1 a T^{4,n+\half} -k_1 a T^{4,n}
+	k_1 \RadE^{n+\half} 
+	-k_1 a T^{4,n+\half} 
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
-	k_1 a T^{4,n+\half} +k_1 a T^{4,n}
-	-k_1 \RadE^{n+\half} - k_1 \RadE^{n}
+	+  \bnabla \dotp \RadJ^{n+\half} = 
+	k_1 a T^{4,n+\half} 
+	-k_1 \RadE^{n+\half} 
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
 	
@@ -1011,18 +1015,16 @@ k_2 &= \frac{4T^{3,n*}}{C_v}
 	\splitline
 	\beqn 
 	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} + k_1 \RadE^{n}
+	k_1 \RadE^{n+\half} 
 	-k_1 a \bigr( T^{4,n*} + k_2 (e^{n+\half}-e^{n*}) \bigr) 
-	-k_1 a T^{4,n}
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+ \bnabla \dotp \RadJ^{n+\half}= 
 	k_1 a \bigr(T^{4,n*} + k_2 (e^{n+\half}-e^{n*}) \bigr)
-	+k_1 a T^{4,n}
-	-k_1 \RadE^{n+\half} - k_1 \RadE^{n}
+	-k_1 \RadE^{n+\half} 
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
 	
@@ -1033,18 +1035,16 @@ k_2 &= \frac{4T^{3,n*}}{C_v}
 	\splitline
 	\beqn 
 	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} + k_1 \RadE^{n}
+	k_1 \RadE^{n+\half} 
 	-k_1 a T^{4,n*} -k_1 a k_2 e^{n+\half} + k_1 a e^{n*}
-	-k_1 a T^{4,n}
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+  \bnabla \dotp \RadJ^{n+\half} = 
 	k_1 a T^{4,n*} + k_1 a k_2 e^{n+\half} - k_1 a e^{n*}
-	+k_1 a T^{4,n}
-	-k_1 \RadE^{n+\half} - k_1 \RadE^{n}
+	-k_1 \RadE^{n+\half} 
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
 	
@@ -1053,7 +1053,7 @@ k_2 &= \frac{4T^{3,n*}}{C_v}
 \newline
 Define:
 \beqn
-k_3 &=  k_1 \RadE^{n} -k_1 a T^{4,n*} + k_1 a e^{n*} -k_1 a T^{4,n}
+k_3 &=  -k_1 a T^{4,n*} + k_1 a e^{n*} 
             - \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n} \\
 k_4 &= -k_1 a k_2
 \eeqn 
@@ -1066,7 +1066,7 @@ k_4 &= -k_1 a k_2
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+  \bnabla \dotp \RadJ^{n+\half} = 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 e^{n+\half}
 	\eeqn
@@ -1086,7 +1086,7 @@ E^{n+\half} = (\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\ha
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+  \bnabla \dotp \RadJ^{n+\half}= 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 e^{n+\half}
 	\eeqn
@@ -1102,7 +1102,7 @@ E^{n+\half} = (\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\ha
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+ \bnabla \dotp  \RadJ^{n+\half} = 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 e^{n+\half}
 	\eeqn
@@ -1120,7 +1120,7 @@ E^{n+\half} = (\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\ha
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+ \bnabla \dotp  \RadJ^{n+\half} = 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 e^{n+\half}
 	\eeqn
@@ -1130,9 +1130,9 @@ E^{n+\half} = (\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\ha
 \newline
 Define:
 \beqn
-k_5 &= \frac{k_1}{\tau \rho^{n+\half}} \\
+k_5 &= \frac{k_1}{\tau \rho^{n+\half} - k_4} \\
 k_6 &= \frac{k_3 
-	- \tau(\half \rho || \velocity ||^2)^{n+\half} + \tau E^{n*}}{\tau \rho^{n+\half}}
+	- \tau(\half \rho || \velocity ||^2)^{n+\half} + \tau E^{n*}}{\tau \rho^{n+\half} - k_4}
 \eeqn 
 \begin{subequations}
 	\splitline
@@ -1142,7 +1142,7 @@ k_6 &= \frac{k_3
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+\half} +  \RadJ^{n} \bigr)= 
+	+ \bnabla \dotp \RadJ^{n+\half} = 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 e^{n+\half}
 	\eeqn
@@ -1155,7 +1155,7 @@ k_6 &= \frac{k_3
 
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \half \bnabla \dotp  \RadJ^{n+\half} +  \half \bnabla \dotp \RadJ^{n} = 
+	+ \bnabla \dotp  \RadJ^{n+\half} = 
 	-k_1 \RadE^{n+\half} 
 	-k_3 - k_4 k_5 \RadE^{n+\half} - k_4 k_6
 	\eeqn
@@ -1170,10 +1170,9 @@ k_6 &= \frac{k_3
 	\bigr(\tau 
 	+k_1 
 	+ k_4 k_5 \bigr)\RadE^{n+\half}
-	+ \half \bnabla \dotp  \RadJ^{n+\half} = 
+	+ \bnabla \dotp  \RadJ^{n+\half} = 
 	-k_3 - k_4 k_6
 	+ \tau\RadE^{n*}
-	-  \half \bnabla \dotp \RadJ^{n} 
 	\eeqn
 	
 	\splitline
@@ -1197,17 +1196,638 @@ and
 	+k_1 
 	+ k_4 k_5 \bigr)\RadE^{n+\half}
 	+  
-	 \frac{1}{2V_c} \sum_f \AreaVec_f \dotp \mathbf{k}_f^{n+\half} (\RadE_{cn}^{n+\half} - \RadE_c^{n+\half})
+	 \frac{1}{V_c} \sum_f \AreaVec_f \dotp \mathbf{k}_f^{n+\half} (\RadE_{cn}^{n+\half} - \RadE_c^{n+\half})
 	= 
 	-k_3 - k_4 k_6
 	+ \tau\RadE^{n*}
-	-  \frac{1}{2V_c} \sum_f \AreaVec_f \dotp \mathbf{k}_f^n (\RadE_{cn}^{n} - \RadE_c^{n})
 	\eeqn
 	
 	\splitline
 \end{subequations}
 
 
+
+
+
+
+
+
+
+
+\newpage
+\subsubsection{Corrector phase}
+
+\begin{subequations}
+		\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-\half \sigma_a^{n+1} c  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \half S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	\half \sigma_a^{n+1} c \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\half S_{re}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+Define:
+\beqn 
+k_1 &= \half \sigma_a^{n+1} c \\
+k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
+\eeqn 
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \half S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	k_1 \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\half S_{re}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+1}   + k_1 \RadE^{n+1} 
+	- \half S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	k_1 a T^{4,n+1}   -k_1\RadE^{n+1} 
+	+\half S_{re}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   + k_1 \RadE^{n+1} 
+	- \half S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	k_1 a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   -k_1\RadE^{n+1} 
+	+\half S_{re}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+\half*} -k_1  a k_2 e^{n+1} + k_1  a k_2 e^{n+\half*}
+	+ k_1 \RadE^{n+1} 
+	- \half S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	k_1 a T^{4,n+\half*} + k_1 a k_2 e^{n+1} - k_1 a k_2 e^{n+\half*}
+	 -k_1\RadE^{n+1} 
+	+\half S_{re}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_3 &= -k_1  a T^{4,n+\half*} + k_1  a k_2 e^{n+\half*}
+- \half S_{ea}^{n+\half}
+- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half} \\
+k_4 &= -k_1 a k_2
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	 k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	 -k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Note:
+\beqn
+E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1} 
++ \rho^{n+1} e^{n+1}
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau \big( ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \rho^{n+1} e^{n+1} - E^{n+\half*}\big) = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau \rho^{n+1} e^{n+1} - \tau E^{n+\half*} = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	(\tau \rho^{n+1}  - k_4 )e^{n+1} = 
+	k_1 \RadE^{n+1} 
+	+ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} 
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_5 &= \frac{k_1}{\tau \rho^{n+1}  - k_4} \\
+k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} }{\tau \rho^{n+1}  - k_4}
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+    e^{n+1} = 
+	k_5 \RadE^{n+1} 
+	+ k_6
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 e^{n+1} 
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 k_5 \RadE^{n+1} -k_4 k_6
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
+	+ \half \bnabla \dotp  \RadJ^{n+1} = 
+	-k_3
+    -k_4 k_6
+	+ \tau \RadE^{n+\half*}
+	- \half \bnabla \dotp \RadJ^{n}
+	\eeqn
+\end{subequations}
+
+\splitline 
+
+Recall:
+\beqn 
+\bnabla \dotp \RadJ \mapsto 
+\frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f
+\eeqn
+and
+\beqn 
+\RadJ_f = \mathbf{k}_f ( \RadE_{cn} - \RadE_c)
+\eeqn  
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
+	+ 
+	\frac{1}{2V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n+1} ( \RadE_{cn}^{n+1} - \RadE_c^{n+1}) 
+	= 
+	-k_3
+	-k_4 k_6
+	+ \tau \RadE^{n+\half*}
+	- 
+    \frac{1}{2V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n} ( \RadE_{cn}^{n} - \RadE_c^{n}) 
+	\eeqn
+\end{subequations}
+
+\splitline
+
+
+\newpage
+\subsubsection{General Predictor and Corrector phase with $\theta$ factor}
+Define:
+\beqn
+\theta_1 &\in [0,1] \\
+\theta_2 &= 1-\theta_1 
+\eeqn
+
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-\theta_1 \sigma_a^{n+1} c  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+  \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} +  \theta_2 \RadJ^{n} \bigr)= 
+	\theta_1 \sigma_a^{n+1} c \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+Define:
+\beqn 
+k_1 &= \theta_1 \sigma_a^{n+1} c \\
+k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
+\eeqn 
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} +  \theta_2 \RadJ^{n} \bigr)= 
+	k_1 \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+1}   + k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} + \theta_2 \RadJ^{n} \bigr)= 
+	k_1 a T^{4,n+1}   -k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   + k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} + \theta_2 \RadJ^{n} \bigr)= 
+	k_1 a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   -k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+\half*} -k_1  a k_2 e^{n+1} + k_1  a k_2 e^{n+\half*}
+	+ k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} + \theta_2 \RadJ^{n} \bigr)= 
+	k_1 a T^{4,n+\half*} + k_1 a k_2 e^{n+1} - k_1 a k_2 e^{n+\half*}
+	-k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_3 &= -k_1  a T^{4,n+\half*} + k_1  a k_2 e^{n+\half*}
+- \theta_2 S_{ea}^{n}
+- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half} \\
+k_4 &= -k_1 a k_2
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} + \theta_2 \RadJ^{n} \bigr)= 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Note:
+\beqn
+E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1} 
++ \rho^{n+1} e^{n+1}
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau \big( ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \rho^{n+1} e^{n+1} - E^{n+\half*}\big) = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadJ^{n+1} + \theta_2 \RadJ^{n} \bigr)= 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau \rho^{n+1} e^{n+1} - \tau E^{n+\half*} = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} + \theta_2 \bnabla \dotp \RadJ^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	(\tau \rho^{n+1}  - k_4 )e^{n+1} = 
+	k_1 \RadE^{n+1} 
+	+ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} 
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} + \theta_2 \bnabla \dotp \RadJ^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_5 &= \frac{k_1}{\tau \rho^{n+1}  - k_4} \\
+k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} }{\tau \rho^{n+1}  - k_4}
+\eeqn 
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	e^{n+1} = 
+	k_5 \RadE^{n+1} 
+	+ k_6
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} + \theta_2 \bnabla \dotp \RadJ^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 e^{n+1} 
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} + \theta_2 \bnabla \dotp \RadJ^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 k_5 \RadE^{n+1} -k_4 k_6
+	\eeqn
+\end{subequations}
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} = 
+	-k_3
+	-k_4 k_6
+	+ \tau \RadE^{n+\half*}
+	- \theta_2 \bnabla \dotp \RadJ^{n}
+	\eeqn
+\end{subequations}
+
+\splitline 
+
+Recall:
+\beqn 
+\bnabla \dotp \RadJ \mapsto 
+\frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f
+\eeqn
+and
+\beqn 
+\RadJ_f = \mathbf{k}_f ( \RadE_{cn} - \RadE_c)
+\eeqn  
+
+\splitline
+
+\begin{subequations}
+	\beqn 
+	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
+	+ 
+	\frac{\theta_1}{V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n+1} ( \RadE_{cn}^{n+1} - \RadE_c^{n+1}) 
+	= 
+	-k_3
+	-k_4 k_6
+	+ \tau \RadE^{n+\half*}
+	- 
+	\frac{\theta_2}{V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n} ( \RadE_{cn}^{n} - \RadE_c^{n}) 
+	\eeqn
+\end{subequations}
+
+\splitline
 
 \newpage
 \begin{appendices}
