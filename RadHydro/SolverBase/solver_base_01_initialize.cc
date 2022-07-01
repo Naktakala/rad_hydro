@@ -107,6 +107,17 @@ void RadHydroSolver::Initialize()
     }
   }//if field functions not created
 
+  //======================================== Initialize boundary conditions
+  std::set<int> unique_boundary_ids;
+  for (const auto& cell : grid->local_cells)
+    for (const auto& face : cell.faces)
+      if (not face.has_neighbor)
+        unique_boundary_ids.insert(static_cast<int>(face.neighbor_id));
+
+  for (int bid : unique_boundary_ids)
+    if (bc_settings.count(bid) == 0)
+      throw std::logic_error("Boundary with id " + std::to_string(bid) +
+      " not specified.");
 
   chi::log.Log() << "Done initializing RadHydroSolver entities.";
 }//Initialize

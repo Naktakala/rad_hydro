@@ -8,7 +8,7 @@ void chi_radhydro::SolverA_GDCN::
   AssembleGeneralEnergySystem(
   const chi_mesh::MeshContinuum&  grid_ref,
   std::shared_ptr<SDM_FV>&        fv_ref,
-  const std::map<int, BCSetting>& bc_setttings,
+  const std::map<uint64_t, BCSetting>& bc_setttings,
   const std::vector<double>&      kappa_a_n,
   const std::vector<double>&      kappa_t_n,
   const std::vector<double>&      kappa_a_nph,
@@ -69,6 +69,7 @@ void chi_radhydro::SolverA_GDCN::
     const double sigma_t_c_np1 = rho_c_np1 * kappa_t_nph[c];
     const double sigma_a_c_np1 = rho_c_np1 * kappa_a_nph[c];
 
+    //=========================================== Catch infinite diffusion coeffs
     if (std::fabs(sigma_t_c_np1) < 1.0e-10)
     {
       A[c][c] = 1.0; b[c] = 0.0;
@@ -92,6 +93,7 @@ void chi_radhydro::SolverA_GDCN::
       third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
     }//for f
 
+    // sigma_a c (aT^4 - radE)
     double Sea_n = sigma_a_c_n * speed_of_light_cmpsh *
                    (a * pow(T_c_n,4) - rad_E_c_n);
 
@@ -118,6 +120,7 @@ void chi_radhydro::SolverA_GDCN::
     for (size_t f=0; f<num_faces; ++f)
     {
       const auto& face = cell_c.faces[f];
+      const auto  bid  = face.neighbor_id;
       const auto& x_f  = face.centroid;
       const auto  A_f  = face_areas[f] * face.normal;
 
@@ -125,20 +128,13 @@ void chi_radhydro::SolverA_GDCN::
       double sigma_t_cn_np1 = sigma_t_c_np1;
       Vec3   x_cn          = x_c + 2*(x_f-x_c);
 
-      double rad_E_cn_n    = rad_E_n[c];
-      double rad_E_cn_np1  = 0.0;
+      double rad_E_cn_n    = 0.0;
 
-      if (not face.has_neighbor)
+      if (not face.has_neighbor) //DEFAULT REFLECTING BC for radE
       {
-        const int bid = static_cast<int>(face.neighbor_id);
-        if (bc_setttings.count(bid) > 0)
-        {
-          rad_E_cn_n   = MakeRadEFromBC(bc_setttings.at(bid), rad_E_n[c]);
-          rad_E_cn_np1 = MakeRadEFromBC(bc_setttings.at(bid), 0.0);
-        }
-
+        rad_E_cn_n   = rad_E_n[c];
       }
-      else
+      else                       //NEIGHBOR CELL
       {
         const uint64_t cn = face.neighbor_id;
         const auto& cell_cn = grid.cells[cn];
@@ -166,31 +162,21 @@ void chi_radhydro::SolverA_GDCN::
       const double coeff_LHS = (theta1 / V_c) * A_f.Dot(kf_np1);
       const double coeff_RHS = (theta2 / V_c) * A_f.Dot(kf_n);
 
-      grad_J_n += coeff_RHS * (rad_E_cn_n - rad_E_c_n);
-      if (face.has_neighbor)
+      if (not face.has_neighbor) //DEFAULT REFLECTING
       {
+        //J_f = 0 therefor no connectivity elements
+      }
+      else                       //NEIGHBOR CELL
+      {
+        grad_J_n += coeff_RHS * (rad_E_cn_n - rad_E_c_n);
         A[c][c] += -coeff_LHS;
         const uint64_t cn = face.neighbor_id;
         A[c][cn] += coeff_LHS;
-      }
-      else
-      {
-        const int bid = static_cast<int>(face.neighbor_id);
-        if (bc_setttings.count(bid) > 0)
-        {
-          const auto& bc = bc_setttings.at(bid);
-          if (bc.type == BCType::FIXED)
-          {
-            A[c][c] += -coeff_LHS;
-            b[c]    += -coeff_LHS * rad_E_cn_np1;
-          }
-        }
       }
     }//for f in connectivity
 
     //=========================================== Diagonal and rhs
     A[c][c] += tau + k1 + k4*k5;
     b[c]    += -k3 - k4*k6 + tau*rad_E_c_nphstar - grad_J_n;
-
   }//for cell
 }

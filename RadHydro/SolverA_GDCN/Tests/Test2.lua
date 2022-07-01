@@ -2,7 +2,11 @@
 -- Test:
 num_procs = 1
 
-
+function script_path()
+    local str = debug.getinfo(2, "S").source:sub(2)
+    return str:match("(.*/)")
+end
+dofile(script_path().."Z_Utils.lua")
 
 
 
@@ -19,7 +23,7 @@ end
 chiMeshHandlerCreate()
 
 mesh={}
-N=5000
+N=1000
 L=0.5
 xmin = 0.0
 dx = L/N
@@ -37,12 +41,13 @@ chiVolumeMesherSetupOrthogonalBoundaries()
 --############################################### Add materials
 materials = {}
 materials[1] = chiPhysicsAddMaterial("Test Material");
-
+gamma = 5/3
+Cv = 0.14472799784454
 chiPhysicsMaterialAddProperty(materials[1],SCALAR_VALUE, "gamma")
-chiPhysicsMaterialSetProperty(materials[1],"gamma",SINGLE_VALUE,5/3)
+chiPhysicsMaterialSetProperty(materials[1],"gamma",SINGLE_VALUE,gamma)
 
 chiPhysicsMaterialAddProperty(materials[1],SCALAR_VALUE, "Cv")
-chiPhysicsMaterialSetProperty(materials[1],"Cv",SINGLE_VALUE,0.14472799784454)
+chiPhysicsMaterialSetProperty(materials[1],"Cv",SINGLE_VALUE,Cv)
 
 function MaterialKappaSFunction(T, mat_id)
    return 0.0
@@ -53,18 +58,18 @@ function MaterialKappaAFunction(T, mat_id)
     kappa_3 = 1.0
     n_exponent = 0.0;
 
-    --return 577.35
-    return 0.0
+    return kappa_1/( kappa_2 * T^n_exponent + kappa_3 )
+    --return 0.0
 end
 
 --############################################### Setup Physics
 solver_name = "RadHydroSolverA"
 phys1 = chiCreateSolverA(solver_name);
 
-chiSolverSetBasicOption(phys1, "maximum_dt"   , 1.0e-2)
+chiSolverSetBasicOption(phys1, "maximum_dt"   , 5e-2)
 chiSolverSetBasicOption(phys1, "CFL"          , 0.3)
-chiSolverSetBasicOption(phys1, "max_timesteps", 500)
-chiSolverSetBasicOption(phys1, "max_time"     , -1)
+chiSolverSetBasicOption(phys1, "max_timesteps", 10000)
+chiSolverSetBasicOption(phys1, "max_time"     , 5.0)
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
@@ -72,36 +77,62 @@ chiSolverSetBasicOption(phys1, "max_time"     , -1)
 vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"rho",1.0)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"rho",1.29731782)
+rho0 = 1.0
+T0 = 0.1
+radE0 = a_const * T0^4
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"u",0.152172533)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"u",0.117297805)
+e0 = InternalEGiven_T_Cv(T0,Cv)
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"temperature",0.1)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"temperature",0.119475741)
+cs0 = SoundSpeedGiven_e_gamma(e0, gamma)
+u0 = 1.2 * cs0
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"radE",1.37201720e-6)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"radE",2.79562228e-6)
+u1 = (u0^2 *(gamma - 1) + 2*cs0^2)/(u0*(gamma+1))
+rho1 = rho0*u0/u1
+
+e1 = (1/2/gamma)*(u0^2 - u1^2) + e0
+
+cs1 = SoundSpeedGiven_e_gamma(e1, gamma)
+
+T1 = e1/Cv
+
+radE1 = a_const * T1^4
+
+print(string.format(" u0    %8.5g",u0   )..
+      string.format(" cs0   %8.5g",cs0  )..
+      string.format(" rho0  %8.5g",rho0 )..
+      string.format(" e0    %8.5g",e0   )..
+      string.format(" T0    %8.5g",T0   )..
+      string.format(" radE0 %8.5g",radE0))
+print(string.format(" u1    %8.5g",u1   )..
+      string.format(" cs1   %8.5g",cs1  )..
+      string.format(" rho1  %8.5g",rho1 )..
+      string.format(" e1    %8.5g",e1   )..
+      string.format(" T1    %8.5g",T1   )..
+      string.format(" radE1 %8.5g",radE1))
+os.exit()
+
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"rho",rho0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"rho",rho1)
+
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"w",u0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"w",u1)
+
+--chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"p",1.0)
+--chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"p",0.1)
+
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"temperature",T0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"temperature",T1)
+
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"radE",radE0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"radE",radE1)
 
 zmax = 4
 zmin = 5
 TRANSMISSIVE = 0
 FIXED = 1
 bctype = FIXED
-chiRadHydroSetBCSetting(phys1,zmin,bctype,
-        1.0,               --rho
-        0.152172533, 0, 0, --u v w
-        0.0144728,         --e
-        0.00964853,        --p
-        1.37202e-06)       --radE
-chiRadHydroSetBCSetting(phys1,zmax,bctype,
-        1.29731782,        --rho
-        0.117297805, 0, 0, --u v w
-        0.0172915,         --e
-        0.014955,          --p
-        2.79562e-06)       --radE
-
+chiRadHydroSetBCSetting(phys1,zmin,TRANSMISSIVE)
+chiRadHydroSetBCSetting(phys1,zmax,TRANSMISSIVE)
 
 chiSolverInitialize(phys1)
 chiSolverExecute(phys1)
@@ -115,6 +146,7 @@ table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-w") )
 table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-p") )
 table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-e") )
 table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-temperature") )
+table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-radE") )
 
 chiExportMultiFieldFunctionToVTK(ff_list, "ZResults")
 

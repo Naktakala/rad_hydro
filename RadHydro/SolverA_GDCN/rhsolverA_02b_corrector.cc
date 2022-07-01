@@ -4,7 +4,7 @@
 #include "ChiMath/chi_math_banded_solvers.h"
 
 void chi_radhydro::SolverA_GDCN::
-  Corrector(const std::map<int, BCSetting>& bc_setttings,
+  Corrector(const std::map<uint64_t, BCSetting>& bc_setttings,
             const std::vector<double>&      kappa_a_n,
             const std::vector<double>&      kappa_t_n,
             const std::vector<double>&      kappa_a_nph,
@@ -42,7 +42,7 @@ void chi_radhydro::SolverA_GDCN::
     U_nph_star, rad_E_nph_star          //Outputs
   );
 
-  //=================================== Update density and momentum to nph
+  //=================================== Update density and momentum to np1
   DensityMomentumUpdateWithRadMom(
     *grid, *fv, bc_setttings, kappa_t_nph,  //Stuff
     tau,                                    //tau input
@@ -51,7 +51,7 @@ void chi_radhydro::SolverA_GDCN::
     U_np1                                   //Output
   );
 
-  // Internal energy and radiation energy
+  //=================================== Internal energy and radiation energy
   {
     std::vector<double> k5,k6;
     MatDbl A(num_local_nodes, VecDbl(num_local_nodes,0.0));

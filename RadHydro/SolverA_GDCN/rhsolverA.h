@@ -17,7 +17,7 @@ public:
   //02
   void Execute() override;
   //02a
-  void Predictor(const std::map<int, BCSetting>& bc_setttings,
+  void Predictor(const std::map<uint64_t, BCSetting>& bc_setttings,
                  const std::vector<double>&      kappa_a_n,
                  const std::vector<double>&      kappa_t_n,
                  double dt,
@@ -30,7 +30,7 @@ public:
                  std::vector<double>&                  rad_E_nph);
 
   //02b
-  void Corrector(const std::map<int, BCSetting>& bc_setttings,
+  void Corrector(const std::map<uint64_t, BCSetting>& bc_setttings,
                  const std::vector<double>&      kappa_a_n,
                  const std::vector<double>&      kappa_t_n,
                  const std::vector<double>&      kappa_a_nph,
@@ -49,7 +49,7 @@ public:
   static void AssembleGeneralEnergySystem(
     const chi_mesh::MeshContinuum&  grid_ref,
     std::shared_ptr<SDM_FV>&        fv_ref,
-    const std::map<int, BCSetting>& bc_setttings,
+    const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&      kappa_a_n,
     const std::vector<double>&      kappa_t_n,
     const std::vector<double>&      kappa_a_nph,

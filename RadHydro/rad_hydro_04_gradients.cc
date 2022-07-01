@@ -75,7 +75,7 @@ std::vector<GradUTensor> chi_radhydro::
   ComputeUGradients(const std::vector<UVector> &U,
                     const chi_mesh::MeshContinuum &grid,
                     chi_math::SpatialDiscretization_FV &fv,
-                    const std::map<int, BCSetting> &bc_settings)
+                    const std::map<uint64_t, BCSetting> &bc_settings)
 {
   const size_t num_nodes_local = U.size();
   std::vector<GradUTensor> grad_U(num_nodes_local);
@@ -91,22 +91,20 @@ std::vector<GradUTensor> chi_radhydro::
     const size_t num_faces = cell_c.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
+      const auto&  face = cell_c.faces[f];
       const Vec3   A_f = fv_view->face_area[f]*cell_c.faces[f].normal;
       const Vec3&  x_f = cell_c.faces[f].centroid;
 
       UVector weighted_U;
 
-      if (not cell_c.faces[f].has_neighbor) //BOUNDARY CONDITION
+      if (not face.has_neighbor) //BOUNDARY CONDITION
       {
-        int bid = static_cast<int>(cell_c.faces[f].neighbor_id);
-        if (bc_settings.count(bid) > 0)
-          weighted_U = chi_radhydro::MakeUFromBC(bc_settings.at(bid),U[c]);
-        else
-          weighted_U = U[c];
+        const uint64_t bid = face.neighbor_id;
+        weighted_U = chi_radhydro::MakeUFromBC(bc_settings.at(bid),U[c]);
       }
-      else                                  //NEIGHBOR CELL
+      else                       //NEIGHBOR CELL
       {
-        const uint64_t cn = cell_c.faces[f].neighbor_id;
+        const uint64_t cn = face.neighbor_id;
         const Vec3& x_cn = grid.cells[cn].centroid;
 
         const Vec3 x_c_cn = x_cn - x_c;
@@ -146,15 +144,12 @@ std::vector<GradUTensor> chi_radhydro::
       Vec3    x_cn;
       if (not face.has_neighbor) //BOUNDARY
       {
-        int bid = static_cast<int>(face.neighbor_id);
-        if (bc_settings.count(bid) > 0)
-          U_cn = chi_radhydro::MakeUFromBC(bc_settings.at(bid),U[c]);
-        else
-          U_cn = U[c];
+        const uint64_t bid = face.neighbor_id;
+        U_cn = chi_radhydro::MakeUFromBC(bc_settings.at(bid),U[c]);
 
         x_cn = x_c + 2.0*(face.centroid - x_c);
       }
-      else
+      else                       //NEIGHBOR CELL
       {
         const uint64_t cn = face.neighbor_id;
         const auto& cell_cn = grid.cells[cn];
@@ -185,7 +180,7 @@ std::vector<chi_mesh::Vector3> chi_radhydro::
 ComputeRadEGradients(const std::vector<double> &radE,
                      const chi_mesh::MeshContinuum& grid,
                      chi_math::SpatialDiscretization_FV& fv,
-                     const std::map<int, BCSetting> &bc_settings)
+                     const std::map<uint64_t, BCSetting> &bc_settings)
 {
   const size_t num_nodes_local = radE.size();
   std::vector<Vec3> grad_rad_E(num_nodes_local);
@@ -201,20 +196,18 @@ ComputeRadEGradients(const std::vector<double> &radE,
     const size_t num_faces = cell_c.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
+      const auto&  face = cell_c.faces[f];
       const Vec3   A_f = fv_view->face_area[f]*cell_c.faces[f].normal;
       const Vec3&  x_f = cell_c.faces[f].centroid;
 
       double weighted_rad_E;
 
-      if (not cell_c.faces[f].has_neighbor) //BOUNDARY CONDITION
+      if (not face.has_neighbor) //BOUNDARY CONDITION
       {
-        int bid = static_cast<int>(cell_c.faces[f].neighbor_id);
-        if (bc_settings.count(bid) > 0)
-          weighted_rad_E = MakeRadEFromBC(bc_settings.at(bid),radE[c]);
-        else
-          weighted_rad_E = radE[c];
+        const uint64_t bid = face.neighbor_id;
+        weighted_rad_E = MakeRadEFromBC(bc_settings.at(bid),radE[c]);
       }
-      else                                  //NEIGHBOR CELL
+      else                       //NEIGHBOR CELL
       {
         const uint64_t cn = cell_c.faces[f].neighbor_id;
         const Vec3& x_cn = grid.cells[cn].centroid;
@@ -254,14 +247,12 @@ ComputeRadEGradients(const std::vector<double> &radE,
       Vec3    x_cn;
       if (not face.has_neighbor) //BOUNDARY
       {
-        int bid = static_cast<int>(face.neighbor_id);
-        if (bc_settings.count(bid) > 0)
-          rad_E_cn = chi_radhydro::MakeRadEFromBC(bc_settings.at(bid),radE[c]);
-        else
-          rad_E_cn = radE[c];
+        const uint64_t bid = face.neighbor_id;
+        rad_E_cn = chi_radhydro::MakeRadEFromBC(bc_settings.at(bid),radE[c]);
+
         x_cn = x_c + 2.0*(face.centroid - x_c);
       }
-      else
+      else                       //NEIGHBOR CELL
       {
         const uint64_t cn = face.neighbor_id;
         const auto& cell_cn = grid.cells[cn];

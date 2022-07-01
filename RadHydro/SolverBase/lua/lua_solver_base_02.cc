@@ -33,8 +33,8 @@ int chiRadHydroSetBCSetting(lua_State *L)
   auto& rad_hydro_solver = chi::GetStackItem<RadHydroSolver>(
     chi::solver_stack, solver_handle);
 
-  const int boundary_id   = lua_tointeger(L, 2);
-  const int boundary_type = lua_tointeger(L, 3);
+  const uint64_t boundary_id   = lua_tointeger(L, 2);
+  const int      boundary_type = lua_tointeger(L, 3);
 
   if (boundary_type == 1 and num_args < 10)
     LuaPostArgAmountError(fname, 10, num_args);

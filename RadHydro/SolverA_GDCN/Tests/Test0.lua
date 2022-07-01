@@ -19,7 +19,7 @@ end
 chiMeshHandlerCreate()
 
 mesh={}
-N=500
+N=1000
 L=1.0
 xmin = 0.0
 dx = L/N
@@ -73,13 +73,13 @@ vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
 
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"rho",1.0)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"rho",0.125)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"rho",1.0)
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"w",0.0)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"w",0.0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"w",1.0)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"w",1.0)
 
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"p",1.0)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"p",0.1)
+chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"p",1.0)
 
 zmax = 4
 zmin = 5

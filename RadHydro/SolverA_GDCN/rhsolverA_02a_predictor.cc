@@ -4,7 +4,7 @@
 #include "ChiMath/chi_math_banded_solvers.h"
 
 void chi_radhydro::SolverA_GDCN::
-Predictor(const std::map<int, BCSetting>& bc_setttings,
+Predictor(const std::map<uint64_t, BCSetting>& bc_setttings,
           const std::vector<double>&      kappa_a_n,
           const std::vector<double>&      kappa_t_n,
           double dt,
@@ -47,7 +47,7 @@ Predictor(const std::map<int, BCSetting>& bc_setttings,
     U_nph                                 //Output
   );
 
-  // Internal energy and radiation energy
+  //=================================== Internal energy and radiation energy
   {
     std::vector<double> k5,k6;
     MatDbl A(num_local_nodes, VecDbl(num_local_nodes,0.0));
@@ -57,7 +57,7 @@ Predictor(const std::map<int, BCSetting>& bc_setttings,
       *grid, fv, bc_setttings,
       kappa_a_n  , kappa_t_n,
       kappa_a_n  , kappa_t_n, Cv,                   //Stuff
-      dt, /*theta1=*/1.0, /*Implicit Euler*/        //tau, theta input
+      tau, /*theta1=*/1.0, /*Implicit Euler*/       //tau, theta input
       U_n, U_n, U_n_star, U_nph, grad_U_n,          //Hydro inputs
       rad_E_n, rad_E_n, rad_E_n_star, grad_rad_E_n, //RadE inputs
       k5, k6, A, b);                                //Outputs

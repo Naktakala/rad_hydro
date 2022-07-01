@@ -131,13 +131,13 @@ namespace chi_radhydro
     ComputeUGradients(const std::vector<UVector>& U,
                       const chi_mesh::MeshContinuum& grid,
                       chi_math::SpatialDiscretization_FV& fv,
-                      const std::map<int, BCSetting>& bc_settings);
+                      const std::map<uint64_t, BCSetting>& bc_settings);
 
   std::vector<Vec3>
     ComputeRadEGradients(const std::vector<double>& radE,
                          const chi_mesh::MeshContinuum& grid,
                          chi_math::SpatialDiscretization_FV& fv,
-                         const std::map<int, BCSetting> &bc_settings);
+                         const std::map<uint64_t, BCSetting> &bc_settings);
 
   //05_Riemann
   UVector
@@ -170,7 +170,7 @@ namespace chi_radhydro
   void MHM_HydroRadECorrector(
     const chi_mesh::MeshContinuum&        grid,
     chi_math::SpatialDiscretization_FV&   fv,
-    const std::map<int, BCSetting>& bc_setttings,
+    const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&            gamma,
     double                                tau,
     const std::vector<UVector>&           U_n,
@@ -186,7 +186,7 @@ namespace chi_radhydro
   void DensityMomentumUpdateWithRadMom(
     const chi_mesh::MeshContinuum&      grid,
     chi_math::SpatialDiscretization_FV& fv,
-    const std::map<int, BCSetting>& bc_setttings,
+    const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&          kappa_t,
     double tau,
     const std::vector<UVector>&           U_old,

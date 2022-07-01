@@ -30,7 +30,7 @@ public:
   std::vector<LVFieldSetting>        logvol_field_settings;
   std::map<std::string, ScalarField> scalar_fields;
 
-  std::map<int, BCSetting>           bc_settings;
+  std::map<uint64_t, BCSetting>           bc_settings;
 
 public:
   explicit RadHydroSolver(const std::string& name);
@@ -39,6 +39,8 @@ public:
   void Initialize() override;
   //02
   void Execute() override;
+  //99
+  void PrintRawOutput(const std::string& file_name);
 
 };
 

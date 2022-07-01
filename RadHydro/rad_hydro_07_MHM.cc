@@ -61,7 +61,7 @@ void chi_radhydro::
   MHM_HydroRadECorrector(
   const chi_mesh::MeshContinuum&        grid,
   chi_math::SpatialDiscretization_FV&   fv,
-  const std::map<int, BCSetting>& bc_setttings,
+  const std::map<uint64_t, BCSetting>& bc_setttings,
   const std::vector<double>&            gamma,
   double                                tau,
   const std::vector<UVector>&           U_n,
@@ -90,9 +90,10 @@ void chi_radhydro::
     const size_t num_faces = cell.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
+      const auto&  face = cell.faces[f];
       const double A_f  = fv_view->face_area[f];
-      const Vec3&  n_f  = cell.faces[f].normal;
-      const Vec3&  x_fc = cell.faces[f].centroid;
+      const Vec3&  n_f  = face.normal;
+      const Vec3&  x_fc = face.centroid;
 
       const UVector& U_L     = UplusDXGradU(U_nph[c], x_fc-x_cc, grad_U_nph[c]);
       const double   gamma_L = gamma[c];
@@ -107,16 +108,13 @@ void chi_radhydro::
       double rad_E_cn_f = rad_E_c_f;
       Vec3   u_cn_f     = u_c_f;
 
-      if (not cell.faces[f].has_neighbor)
+      if (not face.has_neighbor)
       {
-        const int bid = static_cast<int>(cell.faces[f].neighbor_id);
-        if (bc_setttings.count(bid) > 0)
-        {
-          U_R = MakeUFromBC(bc_setttings.at(bid), U_L);
-          p_R = IdealGasPressureFromCellU(U_R, gamma_R);
-          rad_E_cn_f = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_f);
-          u_cn_f = chi_radhydro::VelocityFromCellU(U_R);
-        }
+        const uint64_t bid = face.neighbor_id;
+        U_R = MakeUFromBC(bc_setttings.at(bid), U_L);
+        p_R = IdealGasPressureFromCellU(U_R, gamma_R);
+        rad_E_cn_f = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_f);
+        u_cn_f = chi_radhydro::VelocityFromCellU(U_R);
       }
       else
       {
@@ -162,7 +160,7 @@ void chi_radhydro::
   DensityMomentumUpdateWithRadMom(
     const chi_mesh::MeshContinuum&      grid,
     chi_math::SpatialDiscretization_FV& fv,
-    const std::map<int, BCSetting>& bc_setttings,
+    const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&          kappa_t,
     double tau,
     const std::vector<UVector>&           U_old,
