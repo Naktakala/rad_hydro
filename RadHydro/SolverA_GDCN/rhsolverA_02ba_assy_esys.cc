@@ -70,32 +70,62 @@ void chi_radhydro::SolverA_GDCN::
     const double sigma_a_c_np1 = rho_c_np1 * kappa_a_nph[c];
 
     //=========================================== Catch infinite diffusion coeffs
-    if (std::fabs(sigma_t_c_np1) < 1.0e-10)
+    if (std::fabs(sigma_t_c_np1) < 1.0e-6)
     {
       A[c][c] = 1.0; b[c] = 0.0;
       k5_vec[c] = 0.0; k6_vec[c] = e_c_nphstar;
       continue;
     }
 
-    //=========================================== Compute explicit terms
-    double third_grad_rad_E_dot_u = 0.0;
-    for (size_t f=0; f<num_faces; ++f)
+    //------------------------------------------- Begin Lambda
+    // Lambda to compute 3rd_Grad_RadE_Dot_u
+    auto Compute3rdGradRadE = [](const chi_mesh::Cell& cell,
+                                 const double V_c,
+                                 const std::vector<double>& face_areas,
+                                 const double radE,
+                                 const Vec3& grad_radE,
+                                 const UVector& U,
+                                 const std::vector<UVector>& grad_U)
     {
-      const auto& face = cell_c.faces[f];
-      const auto& x_f  = face.centroid;
-      const auto  x_fc = x_f - x_c;
-      const Vec3 A_f = face_areas[f] * cell_c.faces[f].normal;
+      double third_grad_rad_E_dot_u = 0.0;
+      const auto& x_c = cell.centroid;
+      size_t f = 0;
+      for (const auto& face : cell.faces)
+      {
+        const auto& x_f  = face.centroid;
+        const auto  x_fc = x_f - x_c;
+        const Vec3 A_f = face_areas[f] * face.normal;
 
-      const double  rad_E_f = rad_E_c_nph + (x_f - x_c).Dot(grad_rad_E_nph[c]);
-      const UVector U_f     = UplusDXGradU(U_nph[c], x_fc, grad_U_nph[c]);
-      const Vec3    u_f     = VelocityFromCellU(U_f);
+        const double  rad_E_f = radE + (x_f - x_c).Dot(grad_radE);
+        const UVector U_f     = UplusDXGradU(U, x_fc, grad_U);
+        const Vec3    u_f     = VelocityFromCellU(U_f);
 
-      third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
-    }//for f
+        third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
+        ++f;
+      }//for f
+      return third_grad_rad_E_dot_u;
+    };
+    //------------------------------------------- End Lambda
+    //------------------------------------------- Begin Lambda
+    // Lambda to compute Emission-absorption source
+    // Sea = sigma_a c (aT^4 - radE)
+    auto ComputeEmAbsSource = [](const double sigma_a,
+                                 const double T,
+                                 const double radE)
+    {
+      return sigma_a * speed_of_light_cmpsh *
+             (a * pow(T,4) - radE);
+    };
+    //------------------------------------------- End Lambda
+
+    //=========================================== Compute explicit terms
+    double third_grad_rad_E_dot_u =
+      Compute3rdGradRadE(cell_c, V_c, face_areas,
+                         rad_E_c_nph, grad_rad_E_nph[c],
+                         U_nph[c], grad_U_nph[c]);
 
     // sigma_a c (aT^4 - radE)
-    double Sea_n = sigma_a_c_n * speed_of_light_cmpsh *
-                   (a * pow(T_c_n,4) - rad_E_c_n);
+    double Sea_n = ComputeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
 
     //=========================================== Compute constants
     const double k1 = theta1 * sigma_a_c_np1 * speed_of_light_cmpsh;
@@ -120,7 +150,6 @@ void chi_radhydro::SolverA_GDCN::
     for (size_t f=0; f<num_faces; ++f)
     {
       const auto& face = cell_c.faces[f];
-      const auto  bid  = face.neighbor_id;
       const auto& x_f  = face.centroid;
       const auto  A_f  = face_areas[f] * face.normal;
 
@@ -128,11 +157,10 @@ void chi_radhydro::SolverA_GDCN::
       double sigma_t_cn_np1 = sigma_t_c_np1;
       Vec3   x_cn          = x_c + 2*(x_f-x_c);
 
-      double rad_E_cn_n    = 0.0;
-
+      double rad_E_cn_n = rad_E_n[c];
       if (not face.has_neighbor) //DEFAULT REFLECTING BC for radE
       {
-        rad_E_cn_n   = rad_E_n[c];
+        //Nothing to do for reflecting bc
       }
       else                       //NEIGHBOR CELL
       {
@@ -164,6 +192,7 @@ void chi_radhydro::SolverA_GDCN::
 
       if (not face.has_neighbor) //DEFAULT REFLECTING
       {
+        grad_J_n += coeff_RHS * (rad_E_cn_n - rad_E_c_n); //This will be zero
         //J_f = 0 therefor no connectivity elements
       }
       else                       //NEIGHBOR CELL
