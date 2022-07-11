@@ -9,16 +9,17 @@ void chi_radhydro::SolverA_GDCN::
             const std::vector<double>&      kappa_t_n,
             const std::vector<double>&      kappa_a_nph,
             const std::vector<double>&      kappa_t_nph,
-            double dt,
-            const std::vector<UVector> &U_n,
-            const std::vector<UVector> &U_nph,
-            const std::vector<GradUTensor> &grad_U_nph,
-            std::vector<UVector> &U_np1,
+            double                          dt,
 
-            const std::vector<double> &rad_E_n,
-            const std::vector<double> &rad_E_nph,
-            const std::vector<chi_mesh::Vector3> &grad_rad_E_nph,
-            std::vector<double> &rad_E_np1)
+            const std::vector<UVector>      &U_n,
+            const std::vector<UVector>      &U_nph,
+            const std::vector<GradUTensor>  &grad_U_nph,
+            std::vector<UVector>            &U_np1,
+
+            const std::vector<double>       &rad_E_n,
+            const std::vector<double>       &rad_E_nph,
+            const std::vector<Vec3>         &grad_rad_E_nph,
+            std::vector<double>             &rad_E_np1)
 {
   chi::log.Log0Verbose1() << "Executing corrector";
 
@@ -30,10 +31,11 @@ void chi_radhydro::SolverA_GDCN::
 
   const size_t num_local_nodes = rad_E_n.size();
 
-  //####################################################### PREDICTOR
+  //####################################################### CORRECTOR
   const double   tau     = 1/dt;
 
   //=================================== Advection of U and rad_E
+  //Applies a Riemann solver
   MHM_HydroRadECorrector(
     *grid, *fv, bc_setttings, gamma,    //Stuff
     tau,                                //tau input
@@ -61,13 +63,14 @@ void chi_radhydro::SolverA_GDCN::
       *grid, fv, bc_setttings,
       kappa_a_n  , kappa_t_n,
       kappa_a_nph, kappa_t_nph, Cv,                       //Stuff
-      tau, /*theta1=*/0.5, /*Crank-Nicolson*/             //tau, theta input
+      tau, /*theta1=*/0.5, /*theta2=*/0.5,                //tau, theta input
       U_n, U_nph, U_nph_star, U_np1, grad_U_nph,          //Hydro inputs
       rad_E_n, rad_E_nph, rad_E_nph_star, grad_rad_E_nph, //RadE inputs
       k5, k6, A, b);                                      //Outputs
 
     rad_E_np1 = chi_math::TDMA(A,b);
 
+    //============================ Back sub for internal energy
     for (const auto& cell_c : grid->local_cells)
     {
       const uint64_t c = cell_c.local_id;

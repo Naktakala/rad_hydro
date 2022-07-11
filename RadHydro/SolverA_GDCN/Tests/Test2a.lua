@@ -23,7 +23,7 @@ end
 chiMeshHandlerCreate()
 
 mesh={}
-N=1000
+N=5000
 L=0.5
 xmin = 0.0
 dx = L/N
@@ -66,17 +66,26 @@ end
 solver_name = "RadHydroSolverA"
 phys1 = chiCreateSolverA(solver_name);
 
-chiSolverSetBasicOption(phys1, "maximum_dt"   , 5e-2)
-chiSolverSetBasicOption(phys1, "CFL"          , 0.3)
-chiSolverSetBasicOption(phys1, "max_timesteps", 10000)
-chiSolverSetBasicOption(phys1, "max_time"     , 5.0)
+chiSolverSetBasicOption(phys1, "maximum_dt"    , 5e-2)
+chiSolverSetBasicOption(phys1, "CFL"           , 0.3)
+chiSolverSetBasicOption(phys1, "max_timesteps" , 100)
+total_time = 2.5
+chiSolverSetBasicOption(phys1, "max_time"      , total_time)
+time_vals = ""
+Nt = 10
+dt = total_time/Nt
+for i=1,Nt do
+    time_vals = time_vals..string.format("%.3g ", dt*i)
+end
+chiSolverSetBasicOption(phys1, "export_times"  , time_vals)
+chiSolverSetBasicOption(phys1, "output_prefix" , "Test2a_")
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
 --
 vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
-
+--0.0137201720
 rho0 = 1.0
 T0 = 0.1
 radE0 = a_const * T0^4
@@ -86,29 +95,58 @@ e0 = InternalEGiven_T_Cv(T0,Cv)
 cs0 = SoundSpeedGiven_e_gamma(e0, gamma)
 u0 = 3.0 * cs0
 
-u1 = (u0^2 *(gamma - 1) + 2*cs0^2)/(u0*(gamma+1))
-rho1 = rho0*u0/u1
+rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
+        rho0*3, T0*2.0, u0*0.25)
+--rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
+--        3.00185103, 3.66260705e-01, 1.26732249e-01)
 
-e1 = (1/2/gamma)*(u0^2 - u1^2) + e0
-
-cs1 = SoundSpeedGiven_e_gamma(e1, gamma)
-
-T1 = e1/Cv
+e1 = Cv*T1
 
 radE1 = a_const * T1^4
 
-print(string.format(" u0    %8.5g",u0   )..
-      string.format(" cs0   %8.5g",cs0  )..
-      string.format(" rho0  %8.5g",rho0 )..
-      string.format(" e0    %8.5g",e0   )..
-      string.format(" T0    %8.5g",T0   )..
-      string.format(" radE0 %8.5g",radE0))
-print(string.format(" u1    %8.5g",u1   )..
-      string.format(" cs1   %8.5g",cs1  )..
-      string.format(" rho1  %8.5g",rho1 )..
-      string.format(" e1    %8.5g",e1   )..
-      string.format(" T1    %8.5g",T1   )..
-      string.format(" radE1 %8.5g",radE1))
+--u1 = (u0^2 *(gamma - 1) + 2*cs0^2)/(u0*(gamma+1))
+--rho1 = rho0*u0/u1
+--
+--e1 = (1/2/gamma)*(u0^2 - u1^2) + e0
+--
+--cs1 = SoundSpeedGiven_e_gamma(e1, gamma)
+--
+--T1 = e1/Cv
+--
+--radE1 = a_const * T1^4
+
+--rho1 = 3.00185103
+--u0 = 3.80431331e-01; u1 = 1.26732249e-01
+--T1 = 3.66260705e-01
+--e0 = 8.68367987e-02; e1=1.83229115e-02
+--radE0 = 1.37201720e-06; radE1=2.46899872e-04
+
+--M = 3.0
+--rho0 = 1.0             --input
+--T0 = 0.1               --input
+--radE0 = 1.37200000E-06 --input
+--e0 = 1.44727998E-02;   --from Cv*T
+--cs0 = 0.126810444      --from sqrt(e*gamma*(gamma-1))
+--u0 = 0.380431331       -- verified M*cs0
+--
+--radE1=2.47993235E-04    --input
+--T1 = 3.66666667E-01     --from (radE1/a)^(0.25)
+--e1 = 5.30669325E-02     --from Cv*T1
+--
+--rho1 = 3
+--u1 = 0.126810444
+
+
+print(string.format(" rho0  %8.5e",rho0 )..
+      string.format(" u0    %8.5e",u0   )..
+      string.format(" T0    %8.5e",T0   )..
+      string.format(" e0    %8.5e",e0   )..
+      string.format(" radE0 %8.5e",radE0))
+print(string.format(" rho1  %8.5e",rho1 )..
+      string.format(" u1    %8.5e",u1   )..
+      string.format(" T1    %8.5e",T1   )..
+      string.format(" e1    %8.5e",e1   )..
+      string.format(" radE1 %8.5e",radE1))
 --os.exit()
 
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"rho",rho0)
@@ -131,8 +169,8 @@ zmin = 5
 TRANSMISSIVE = 0
 FIXED = 1
 bctype = FIXED
-chiRadHydroSetBCSetting(phys1,zmin,TRANSMISSIVE)
-chiRadHydroSetBCSetting(phys1,zmax,TRANSMISSIVE)
+chiRadHydroSetBCSetting(phys1,zmin,FIXED,rho0,0,0,u0,e0,p0,radE0)
+chiRadHydroSetBCSetting(phys1,zmax,FIXED,rho1,0,0,u1,e1,p1,radE1)
 
 chiSolverInitialize(phys1)
 chiSolverExecute(phys1)

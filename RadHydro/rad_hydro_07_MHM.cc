@@ -11,12 +11,12 @@ void chi_radhydro::
                          chi_math::SpatialDiscretization_FV& fv,
                          const std::vector<double>&            gamma,
                          double tau,
-                         const std::vector<UVector>&           U_n,
-                         const std::vector<GradUTensor>&       grad_U_n,
-                         const std::vector<double>&            rad_E_n,
-                         const std::vector<chi_mesh::Vector3>& grad_rad_E_n,
-                         std::vector<UVector>&                 U_n_star,
-                         std::vector<double>&                  rad_E_n_star)
+                         const std::vector<UVector>&           U_a,
+                         const std::vector<GradUTensor>&       grad_U_a,
+                         const std::vector<double>&            rad_E_a,
+                         const std::vector<chi_mesh::Vector3>& grad_rad_E_a,
+                         std::vector<UVector>&                 U_a_star,
+                         std::vector<double>&                  rad_E_a_star)
 {
   for (const auto& cell : grid.local_cells)
   {
@@ -25,13 +25,13 @@ void chi_radhydro::
     const double   V_c     = fv_view->volume;
     const Vec3&    x_cc    = cell.centroid;
 
-    const UVector U_c_n    = U_n[c];
-    const double  rad_E_c_n = rad_E_n[c];
+    const UVector U_c_a    = U_a[c];
+    const double  rad_E_c_a = rad_E_a[c];
 
-    const double p_c_n = IdealGasPressureFromCellU(U_c_n, gamma[c]);
+    const double p_c_n = IdealGasPressureFromCellU(U_c_a, gamma[c]);
 
-    UVector U_c_n_star     = U_c_n;
-    double  rad_E_c_n_star = rad_E_c_n;
+    UVector U_c_a_star     = U_c_a;
+    double  rad_E_c_a_star = rad_E_c_a;
 
     const size_t num_faces = cell.faces.size();
     for (size_t f=0; f<num_faces; ++f)
@@ -40,18 +40,18 @@ void chi_radhydro::
       const Vec3&  n_f  = cell.faces[f].normal;
       const Vec3&  x_fc = cell.faces[f].centroid;
 
-      const UVector  U_f   = UplusDXGradU(U_c_n, x_fc-x_cc, grad_U_n[c]);
+      const UVector  U_f   = UplusDXGradU(U_c_a, x_fc - x_cc, grad_U_a[c]);
       const Vec3&    u_f   = Vec3(U_f[1],U_f[2],U_f[3])/U_f[0]; // rho*u/rho
 
       const UVector F_f = MakeF(U_f, p_c_n, n_f);
-      const double rad_E_f = rad_E_c_n + (x_fc-x_cc).Dot(grad_rad_E_n[c]);
+      const double rad_E_f = rad_E_c_a + (x_fc - x_cc).Dot(grad_rad_E_a[c]);
 
-      U_c_n_star     -= (1/tau) * (1/V_c) *           A_f * F_f;
-      rad_E_c_n_star -= (1/tau) * (1/V_c) * (4.0/3) * A_f * n_f.Dot(rad_E_f * u_f);
+      U_c_a_star     -= (1 / tau) * (1 / V_c) * A_f * F_f;
+      rad_E_c_a_star -= (1 / tau) * (1 / V_c) * (4.0 / 3) * A_f * n_f.Dot(rad_E_f * u_f);
     }//for f
 
-    U_n_star[c]     = U_c_n_star;
-    rad_E_n_star[c] = rad_E_c_n_star;
+    U_a_star[c]     = U_c_a_star;
+    rad_E_a_star[c] = rad_E_c_a_star;
   }//for cell
 }
 
@@ -64,14 +64,14 @@ void chi_radhydro::
   const std::map<uint64_t, BCSetting>& bc_setttings,
   const std::vector<double>&            gamma,
   double                                tau,
-  const std::vector<UVector>&           U_n,
-  const std::vector<UVector>&           U_nph,
-  const std::vector<GradUTensor>&       grad_U_nph,
-  const std::vector<double>&            rad_E_n,
-  const std::vector<double>&            rad_E_nph,
-  const std::vector<chi_mesh::Vector3>& grad_rad_E_nph,
-  std::vector<UVector>&                 U_nph_star,
-  std::vector<double>&                  rad_E_nph_star
+  const std::vector<UVector>&           U_a,
+  const std::vector<UVector>&           U_b,
+  const std::vector<GradUTensor>&       grad_U_b,
+  const std::vector<double>&            rad_E_a,
+  const std::vector<double>&            rad_E_b,
+  const std::vector<chi_mesh::Vector3>& grad_rad_E_b,
+  std::vector<UVector>&                 U_b_star,
+  std::vector<double>&                  rad_E_b_star
 )
 {
   for (const auto& cell : grid.local_cells)
@@ -81,21 +81,22 @@ void chi_radhydro::
     const double   V_c     = fv_view->volume;
     const Vec3&    x_cc    = cell.centroid;
 
-    const UVector& U_c_n   = U_n[c];
-    const double   rad_E_c_n = rad_E_n[c];
+    const UVector& U_c_a   = U_a[c];
+    const double   rad_E_c_a = rad_E_a[c];
 
-    UVector  U_c_nph_star     = U_c_n;
-    double   rad_E_c_nph_star = rad_E_c_n;
+    UVector  U_c_b_star     = U_c_a;
+    double   rad_E_c_b_star = rad_E_c_a;
 
     const size_t num_faces = cell.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
-      const auto&  face = cell.faces[f];
-      const double A_f  = fv_view->face_area[f];
-      const Vec3&  n_f  = face.normal;
-      const Vec3&  x_fc = face.centroid;
+      const auto&  face  = cell.faces[f];
+      const uint64_t bid = face.neighbor_id;
+      const double A_f   = fv_view->face_area[f];
+      const Vec3&  n_f   = face.normal;
+      const Vec3&  x_fc  = face.centroid;
 
-      const UVector& U_L     = UplusDXGradU(U_nph[c], x_fc-x_cc, grad_U_nph[c]);
+      const UVector& U_L     = UplusDXGradU(U_b[c], x_fc - x_cc, grad_U_b[c]);
       const double   gamma_L = gamma[c];
       const double   p_L     = IdealGasPressureFromCellU(U_L, gamma_L);
 
@@ -103,18 +104,17 @@ void chi_radhydro::
       double   gamma_R = gamma_L;
       double   p_R     = p_L;
 
-      double rad_E_c_f  = rad_E_c_n + (x_fc-x_cc).Dot(grad_rad_E_nph[c]);
-      Vec3   u_c_f      = chi_radhydro::VelocityFromCellU(U_L);
+      double rad_E_c_f  = rad_E_c_a + (x_fc - x_cc).Dot(grad_rad_E_b[c]);
+      Vec3   u_c_f      = VelocityFromCellU(U_L);
       double rad_E_cn_f = rad_E_c_f;
       Vec3   u_cn_f     = u_c_f;
 
       if (not face.has_neighbor)
       {
-        const uint64_t bid = face.neighbor_id;
-        U_R = MakeUFromBC(bc_setttings.at(bid), U_L);
-        p_R = IdealGasPressureFromCellU(U_R, gamma_R);
+        U_R        = MakeUFromBC(bc_setttings.at(bid), U_L);
         rad_E_cn_f = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_f);
-        u_cn_f = chi_radhydro::VelocityFromCellU(U_R);
+        p_R        = IdealGasPressureFromCellU(U_R, gamma_R);
+        u_cn_f     = VelocityFromCellU(U_R);
       }
       else
       {
@@ -122,11 +122,11 @@ void chi_radhydro::
         const auto&    adjacent_cell = grid.cells[cn];
         const Vec3&    adj_x_cc       = adjacent_cell.centroid;
 
-        U_R     = UplusDXGradU(U_nph[cn], x_fc-adj_x_cc, grad_U_nph[cn]);
+        U_R     = UplusDXGradU(U_b[cn], x_fc - adj_x_cc, grad_U_b[cn]);
         gamma_R = gamma[cn];
         p_R     = IdealGasPressureFromCellU(U_R, gamma_R);
-        rad_E_cn_f = rad_E_nph[cn] + (x_fc-adj_x_cc).Dot(grad_rad_E_nph[cn]);
-        u_cn_f = chi_radhydro::VelocityFromCellU(U_R);
+        rad_E_cn_f = rad_E_b[cn] + (x_fc - adj_x_cc).Dot(grad_rad_E_b[cn]);
+        u_cn_f = VelocityFromCellU(U_R);
       }
 
       //Upwinding rad_Eu
@@ -139,17 +139,18 @@ void chi_radhydro::
         rad_Eu_upw = rad_E_c_f * u_c_f + rad_E_cn_f * u_cn_f;
       else
         rad_Eu_upw = Vec3(0,0,0);
+//      Vec3 rad_Eu_upw = rad_E_c_f * u_c_f;
 
       const FVector F_hllc_f = HLLC_RiemannSolve(U_L    , U_R,
                                                  p_L    , p_R,
                                                  gamma_L, gamma_R,
                                                  n_f);
 
-      U_c_nph_star -= (1/tau) * (1/V_c)* A_f * F_hllc_f;
-      rad_E_c_nph_star -= (1/tau) * (1/V_c) * (4.0/3) * A_f * n_f.Dot(rad_Eu_upw);
+      U_c_b_star     -= (1/tau) * (1/V_c) * A_f * F_hllc_f;
+      rad_E_c_b_star -= (1/tau) * (1/V_c) * (4.0/3) * A_f * n_f.Dot(rad_Eu_upw);
     }//for f
-    U_nph_star[c] = U_c_nph_star;
-    rad_E_nph_star[c] = rad_E_c_nph_star;
+    U_b_star[c] = U_c_b_star;
+    rad_E_b_star[c] = rad_E_c_b_star;
   }//for cell
 }
 
@@ -188,24 +189,20 @@ void chi_radhydro::
     const size_t num_faces = cell.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
-      const Vec3 A_f  = fv_view->face_area[f] * cell.faces[f].normal;
-      const Vec3 x_cf = cell.faces[f].centroid - cell.centroid;
+      const auto&    face = cell.faces[f];
+      const uint64_t bid  = face.neighbor_id;
+      const Vec3     A_f  = fv_view->face_area[f] * face.normal;
+      const Vec3     x_cf = face.centroid - cell.centroid;
 
       const double k_c = D_c/x_cf.Norm();
 
       double k_cn = k_c;
       double rad_E_cn_old = rad_E_c_old;
-      if (not cell.faces[f].has_neighbor)
+      if (not face.has_neighbor)
+        rad_E_cn_old = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_old);
+      else
       {
-        const int bid = static_cast<int>(cell.faces[f].neighbor_id);
-        if (bc_setttings.count(bid) > 0)
-          rad_E_cn_old = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_old);
-        else
-          rad_E_cn_old = rad_E_c_old;
-      }
-      if (cell.faces[f].has_neighbor)
-      {
-        const uint64_t cn = cell.faces[f].neighbor_id;
+        const uint64_t cn = face.neighbor_id;
         const auto& adj_cell = grid.cells[cn];
         const Vec3   x_fcn = adj_cell.centroid - cell.faces[f].centroid;
 

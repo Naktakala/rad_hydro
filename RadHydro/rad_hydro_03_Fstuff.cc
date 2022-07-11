@@ -51,7 +51,7 @@ MakeTransformationMatrix(const Vec3 &n)
 //###################################################################
 /**Makes a flux vector, F, from a U vector.*/
 chi_radhydro::FVector chi_radhydro::
-MakeF(const UVector& U, double pressure, const Vec3& n_f/*=Vec3(1,0,0)*/)
+MakeF(const UVector& U, double pressure, const Vec3& n_f/*=Vec3(0,0,1)*/)
 {
   const auto T    = MakeTransformationMatrix(n_f);
   const auto Tinv = T.Inverse();
@@ -66,4 +66,26 @@ MakeF(const UVector& U, double pressure, const Vec3& n_f/*=Vec3(1,0,0)*/)
   const UVector D({0.0,1.0,0.0,0.0,u});
 
   return Tinv * (u*U_t + pressure*D);
+}
+
+//###################################################################
+/**Makes a flux vector, F, from a U vector.*/
+chi_radhydro::FVector chi_radhydro::
+MakeFWithRadE(const UVector& U, const double pressure, const double radE,
+              const Vec3& n_f/*=Vec3(0,0,1)*/)
+{
+  const auto T    = MakeTransformationMatrix(n_f);
+  const auto Tinv = T.Inverse();
+
+  const UVector U_t = T * U;
+
+  const double rho   = U_t[0];
+  const double rho_u = U_t[1];
+
+  const double u = rho_u/rho;
+
+  const UVector D({0.0,1.0,0.0,0.0,u});
+  const UVector e_1_radE({0.0,radE/3.0,0.0,0.0,(4.0/3.0)*radE*u});
+
+  return Tinv * (u*U_t + pressure*D + e_1_radE);
 }

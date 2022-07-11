@@ -9,6 +9,8 @@ namespace chi_radhydro
 class SolverA_GDCN : public RadHydroSolver
 {
 protected:
+  double m_gamma;
+  double m_Cv;
 public:
   //00
   explicit SolverA_GDCN(const std::string& name);
@@ -57,6 +59,7 @@ public:
     const std::vector<double>&      Cv,
     double                          tau,
     double                          theta1,
+    double                          theta2,
     const std::vector<UVector>&     U_n,
     const std::vector<UVector>&     U_nph,
     const std::vector<UVector>&     U_nphstar,
@@ -69,6 +72,14 @@ public:
     std::vector<double>&            k5_vec,
     std::vector<double>&            k6_vec,
     MatDbl &A, VecDbl &b);
+
+  static double ComputeGradDotJ(const chi_mesh::MeshContinuum& grid,
+                                std::shared_ptr<SDM_FV>&       fv_ref,
+                                const chi_mesh::Cell&          cell_c,
+                                      double                   sigma_t_c_n,
+                                const std::vector<double>&     kappa_t_n,
+                                const std::vector<UVector>&    U_n,
+                                const std::vector<double>&     rad_E_n);
 };
 
 }//namespace chi_radhydro

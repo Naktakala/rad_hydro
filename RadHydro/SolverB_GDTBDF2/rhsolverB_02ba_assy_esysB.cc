@@ -1,11 +1,11 @@
-#include "rhsolverA.h"
+#include "rhsolverB.h"
 
 #include "ChiMesh/MeshContinuum/chi_meshcontinuum.h"
 
 #include "ChiMath/SpatialDiscretization/FiniteVolume/fv.h"
 
-void chi_radhydro::SolverA_GDCN::
-  AssembleGeneralEnergySystem(
+void chi_radhydro::SolverB_GDTBDF::
+AssembleGeneralEnergySystemB(
   const chi_mesh::MeshContinuum&  grid_ref,
   std::shared_ptr<SDM_FV>&        fv_ref,
   const std::map<uint64_t, BCSetting>& bc_setttings,
@@ -13,19 +13,27 @@ void chi_radhydro::SolverA_GDCN::
   const std::vector<double>&      kappa_t_n,
   const std::vector<double>&      kappa_a_nph,
   const std::vector<double>&      kappa_t_nph,
+  const std::vector<double>&      kappa_a_np3q,
+  const std::vector<double>&      kappa_t_np3q,
   const std::vector<double>&      Cv,
   double                          tau,
   double                          theta1,
   double                          theta2,
+  double                          theta3,
+
   const std::vector<UVector>&     U_n,
   const std::vector<UVector>&     U_nph,
-  const std::vector<UVector>&     U_nphstar,
+  const std::vector<UVector>&     U_np3q,
+  const std::vector<UVector>&     U_np3qstar,
   const std::vector<UVector>&     U_np1,
-  const std::vector<GradUTensor>& grad_U_nph,
+  const std::vector<GradUTensor>& grad_U_np3q,
+
   const std::vector<double>&      rad_E_n,
   const std::vector<double>&      rad_E_nph,
-  const std::vector<double>&      rad_E_nphstar,
-  const std::vector<Vec3>&        grad_rad_E_nph,
+  const std::vector<double>&      rad_E_np3q,
+  const std::vector<double>&      rad_E_np3qstar,
+  const std::vector<Vec3>&        grad_rad_E_np3q,
+
   std::vector<double>&            k5_vec,
   std::vector<double>&            k6_vec,
   MatDbl &A, VecDbl &b)
@@ -48,31 +56,37 @@ void chi_radhydro::SolverA_GDCN::
     const double   V_c         = fv_view_c->volume;
 
     //=========================================== Get cell physics-info
-    const double   rho_c_n     = U_n[c][0];
-    const double   rho_c_np1   = U_np1[c][0];
-    const double   T_c_n       = IdealGasTemperatureFromCellU(U_n[c], Cv[c]);
-    const double   T_c_nphstar = IdealGasTemperatureFromCellU(U_nphstar[c], Cv[c]);
+    const double   rho_c_n      = U_n[c][0];
+    const double   rho_c_nph    = U_nph[c][0];
+    const double   rho_c_np1    = U_np1[c][0];
 
-    const double   E_c_nphstar = U_nphstar[c][4];
+    const double   T_c_n        = IdealGasTemperatureFromCellU(U_n[c], Cv[c]);
+    const double   T_c_nph      = IdealGasTemperatureFromCellU(U_nph[c], Cv[c]);
+    const double   T_c_np3qstar = IdealGasTemperatureFromCellU(U_np3qstar[c], Cv[c]);
 
-    const double   e_c_nphstar     = InternalEnergyFromCellU(U_nphstar[c]);
-    const double   rad_E_c_n       = rad_E_n[c];
-    const double   rad_E_c_nph     = rad_E_nph[c];
-    const double   rad_E_c_nphstar = rad_E_nphstar[c];
+    const double   E_c_np3qstar = U_np3qstar[c][4];
 
-    const Vec3     u_c_np1         = VelocityFromCellU(U_np1[c]);
+    const double   e_c_np3qstar     = InternalEnergyFromCellU(U_np3qstar[c]);
+    const double   rad_E_c_n        = rad_E_n[c];
+    const double   rad_E_c_nph      = rad_E_nph[c];
+    const double   rad_E_c_np3q     = rad_E_np3q[c];
+    const double   rad_E_c_np3qstar = rad_E_np3qstar[c];
+
+    const Vec3     u_c_np1          = VelocityFromCellU(U_np1[c]);
 
     //=========================================== Compute sigmas
     const double sigma_t_c_n   = rho_c_n * kappa_t_n[c];
     const double sigma_a_c_n   = rho_c_n * kappa_a_n[c];
-    const double sigma_t_c_np1 = rho_c_np1 * kappa_t_nph[c];
-    const double sigma_a_c_np1 = rho_c_np1 * kappa_a_nph[c];
+    const double sigma_t_c_nph = rho_c_nph * kappa_t_nph[c];
+    const double sigma_a_c_nph = rho_c_nph * kappa_a_nph[c];
+    const double sigma_t_c_np1 = rho_c_np1 * kappa_t_np3q[c];
+    const double sigma_a_c_np1 = rho_c_np1 * kappa_a_np3q[c];
 
     //=========================================== Catch infinite diffusion coeffs
     if (std::fabs(sigma_t_c_np1) < 1.0e-6)
     {
-      A[c][c] = 1.0; b[c] = rad_E_c_nphstar;
-      k5_vec[c] = 0.0; k6_vec[c] = e_c_nphstar;
+      A[c][c] = 1.0; b[c] = 0.0;
+      k5_vec[c] = 0.0; k6_vec[c] = e_c_np3qstar;
       continue;
     }
 
@@ -118,31 +132,36 @@ void chi_radhydro::SolverA_GDCN::
     //------------------------------------------- End Lambda
 
     //=========================================== Compute explicit terms
-    double third_grad_rad_E_dot_u_nph =
+    double third_grad_rad_E_dot_u_np3q =
       Compute3rdGradRadE(cell_c, V_c, face_areas,
-                         rad_E_c_n, grad_rad_E_nph[c],
-                         U_n[c], grad_U_nph[c]);
+                         rad_E_c_np3q, grad_rad_E_np3q[c],
+                         U_np3q[c], grad_U_np3q[c]);
 
     // sigma_a c (aT^4 - radE)
-    double Sea_n = ComputeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
+    double Sea_n   = ComputeEmAbsSource(sigma_a_c_n  , T_c_n, rad_E_c_n);
+    double Sea_nph = ComputeEmAbsSource(sigma_a_c_nph, T_c_nph, rad_E_c_nph);
 
     double grad_dot_J_n = ComputeGradDotJ(grid, fv_ref, cell_c,
                                           sigma_t_c_n, kappa_t_n,
                                           U_n, rad_E_n);
+    double grad_dot_J_nph = ComputeGradDotJ(grid, fv_ref, cell_c,
+                                            sigma_t_c_nph, kappa_t_nph,
+                                            U_nph, rad_E_nph);
 
     //=========================================== Compute constants
     const double k1 = theta1 * sigma_a_c_np1 * speed_of_light_cmpsh;
-    const double k2 = 4 * pow(T_c_nphstar, 3) / Cv[c];
+    const double k2 = 4 * pow(T_c_np3qstar, 3) / Cv[c];
 
-    const double k3 = - k1*a*pow(T_c_nphstar, 4)
-                      + k1*a*k2*e_c_nphstar
-                      - theta2 * Sea_n
-                      - third_grad_rad_E_dot_u_nph;
+    const double k3 = - k1*a*pow(T_c_np3qstar, 4)
+                      + k1 * a * k2 * e_c_np3qstar
+                      - theta2 * Sea_nph
+                      - theta3 * Sea_n
+                      - third_grad_rad_E_dot_u_np3q;
     const double k4 = -k1*a*k2;
 
     const double k5 = k1/(tau * rho_c_np1 - k4);
     const double k6 =
-      (k3 - tau * 0.5 * rho_c_np1 * pow(u_c_np1.Norm(), 2) + tau * E_c_nphstar) /
+      (k3 - tau * 0.5 * rho_c_np1 * pow(u_c_np1.Norm(), 2) + tau * E_c_np3qstar) /
       (tau * rho_c_np1 - k4);
 
     k5_vec[c] = k5;
@@ -170,7 +189,7 @@ void chi_radhydro::SolverA_GDCN::
 
         const double rho_cn_np1 = U_np1[cn][0];
 
-        sigma_t_cn_np1 = rho_cn_np1 * kappa_t_nph[cn];
+        sigma_t_cn_np1 = rho_cn_np1 * kappa_t_np3q[cn];
       }
 
       const double sigma_tf_np1 = (sigma_t_c_np1 + sigma_t_cn_np1) / 2.0;
@@ -196,6 +215,7 @@ void chi_radhydro::SolverA_GDCN::
 
     //=========================================== Diagonal and rhs
     A[c][c] += tau + k1 + k4*k5;
-    b[c]    += -k3 - k4*k6 + tau*rad_E_c_nphstar - theta2*grad_dot_J_n;
+    b[c]    += -k3 - k4*k6 + tau * rad_E_c_np3qstar - theta2*grad_dot_J_nph
+                                                    - theta3*grad_dot_J_n;
   }//for cell
 }

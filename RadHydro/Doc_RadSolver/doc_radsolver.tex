@@ -83,7 +83,11 @@
 \newcommand{\RadP}{\boldsymbol{\mathcal{P}}}
 \newcommand{\HydroF}{\mathcal{F}^H}
 \newcommand{\HydroU}{\mathbf{U}}
-\newcommand{\RadJ}{\mathbf{J}}
+\newcommand{\HydroRhoRhoU}{\begin{bmatrix}
+		\rho \\ \rho \velocity
+\end{bmatrix}}
+%\newcommand{\RadJ}{\mathbf{J}}
+\newcommand{\RadJ}{\RadF_0}
 
 \newcommand{\SumOverCellFaces}{\sum_f^{N_{f,c}{-1}}}
 \newcommand{\AreaVec}{\mathbf{A}}
@@ -98,6 +102,8 @@
 \newcommand{\hatbf}[1]{\hat{\mathbf{#1}}}
 
 \newcommand{\half}{\frac{1}{2}}
+\newcommand{\quarter}{\frac{1}{4}}
+\newcommand{\triquarter}{\frac{3}{4}}
 
 %\newcommand{\ihat}{\boldsymbol{\hat{\textbf{\i}}}}
 %\newcommand{\jhat}{\boldsymbol{\hat{\textbf{\j}}}}
@@ -600,15 +606,13 @@ S_{ea} =  \sigma_a c \bigr( aT^4 - \RadE \bigr)
 S_{re} =S_{ea} 
 +\frac{1}{3} \bnabla \RadE  \dotp \velocity
 \eeqn 
-\item The conserved hydrodynamic variables
+\item The conserved hydrodynamic variables, $\HydroU$, and associated hydrodynamic flux, $\HydroF$,
 \beqn
 \HydroU = 
 \begin{bmatrix}
 	\rho \\ \rho \mathbf{u} \\ E
 \end{bmatrix} 
-\eeqn
-\item The hydrodynamic flux
-\beqn 
+\quad \quad
 \HydroF = 
 \begin{bmatrix}
 	\rho u \\
@@ -618,9 +622,9 @@ S_{re} =S_{ea}
 	(E+p)u
 \end{bmatrix}
 \eeqn 
-\item The radiation energy current
+\item The stationary reference frame radiation energy flux
 \beqn 
-\mathbf{J} = -\frac{c}{3\sigma_t} \bnabla \RadE
+\RadJ = -\frac{c}{3\sigma_t} \bnabla \RadE
 \eeqn 
 \end{itemize}
 \end{subequations}
@@ -638,138 +642,15 @@ Next, we use these terms to define a more condensed version of the RHGD equation
 \beqn 
 \frac{\partial \RadE}{\partial t} 
 +\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
-&=  S_{re}.
+&=  S_{ea} + \frac{1}{3} \bnabla \RadE  \dotp \velocity.
 \eeqn
-
-\newpage
-\section{Overview of temporal numerical scheme}
-\begin{subequations}
-\beqn 
-\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
-\begin{bmatrix}
-	0 \\
-	-\mathbf{S}_{rp} \\
-	-S_{re} 
-\end{bmatrix}
-\eeqn 
-\beqn 
-\frac{\partial \RadE}{\partial t} 
-+\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
-&=  S_{re}.
-\eeqn
-\end{subequations}
-
-
-
-\subsection{Predictor phase}
-$\tau = \dfrac{1}{\half \Delta t}$
-\begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n}) = \mathbf{0}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (\HydroU^{n+\half} - \HydroU^{n*})_{0,1} =  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n}
-	\eeqn 
-	
-	\beqn 
-	\sigma_t^{n+\half} &= \rho^{n+\half}(\kappa_s(T^n) + \kappa_a(T^n)) \\
-	\sigma_a^{n+\half} &= \rho^{n+\half}\kappa_a(T^n)
-	\eeqn 
-	
-	\beqn 
-	\tau (\HydroU^{n+\half} - \HydroU^{n*})_{2} = 
-	 \sigma_a^{n+\half} c  \biggr( 
-	\RadE^{n+\half} 
-	-a T^{4,n+\half} 
-	\biggr)
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half} = 
-	 \sigma_a^{n+\half} c \biggr( 
-	a T^{4,n+\half}   -\RadE^{n+\half} 
-	\biggr)
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-
-	\beqn 
-	T^{4,n+\half} = T^{4,n*} + \frac{4T^{3,n*}}{C_v} (e^{n+\half}-e^{n*})
-	\eeqn 
-	
-\end{subequations}
-
-%\newpage
-\subsection{Corrector phase}
-$\tau = \dfrac{1}{\Delta t}$
-\begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n+\half*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n+\half}) = \mathbf{0}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{0,1} =  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\sigma_t^{n+1} &= \rho^{n+1}(\kappa_s(T^{n+\half}) + \kappa_a(T^{n+\half})) \\
-	\sigma_a^{n+1} &= \rho^{n+1}\kappa_a(T^{n+\half})
-	\eeqn 
-	
-	\beqn 
-	\tau (\HydroU^{n+1} - \HydroU^{n+\half*})_{2} = 
-	-\half \sigma_a^{n+1} c  \biggr( 
-    a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	- \half S_{ea}^{n}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	\half \sigma_a^{n+1} c \biggr( 
-	a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	+\half S_{re}^{n}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-	
-	
-	\beqn 
-	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
-	\eeqn 
-	
-
-\end{subequations}
-
-
-
-
-
-
 
 \newpage
 \section{Finite Volume Spatial Discretization}
 To apply a finite volume spatial discretization we integrate our time-discretized equations over the volume, $V_c$, of cell $c$, and afterwards divide by $V_c$. This leaves all the terms containing $\tau$ unchanged. In this process we develop the following terms:
 
 \subsection{Hydrodynamic and Radiation-energy advection}
+\label{section:fv_hydro_and_radE_advection}
 \beqn 
 \frac{1}{V_c} \int_{V_c} 
 \bnabla \dotp \HydroF (\HydroU) 
@@ -786,70 +667,71 @@ dV = \frac{1}{V_c}
 The face values are reconstructed from gradients in both the predictor and corrector phases. In the corrector-phase the hydrodynamic flux, $\HydroF$, is used in its earlier defined form, whilst in the corrector-phase the flux is determined by an approximate Riemann-solver, i.e., the HLLC Riemann solver.
 \newline
 \newline 
-\textbf{Predictor phase:}\newline 
+\textbf{Predictor phases:}\newline 
 For the predictor phase we have the following:
 \beqn 
-\bnabla \dotp \HydroF (\HydroU^n)
+\bnabla \dotp \HydroF (\HydroU)
 \mapsto 
 \frac{1}{V_c}
-\sum_f \AreaVec_f \dotp  \HydroF(\HydroU_f^n)
+\sum_f \AreaVec_f \dotp  \HydroF(\HydroU_f)
 \eeqn 
 \beqn 
-\biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^n 
+\biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)
 \mapsto 
 \frac{1}{V_c}
-\sum_f \frac{4}{3}  \AreaVec_f \dotp (\RadE \velocity)_f^n
+\sum_f \frac{4}{3}  \AreaVec_f \dotp (\RadE \velocity)_f
 \eeqn 
 
 \beqn 
-\HydroU_f^n = \HydroU_c^n + (\position_f - \position_c) \dotp \{ \bnabla\HydroU \}_c^n
+\HydroU_f = \HydroU_c + (\position_f - \position_c) \dotp \{ \bnabla\HydroU \}_c
 \eeqn 
 \beqn 
-\RadE_f^n = \RadE_c^n + (\position_f - \position_c) \dotp \{ \bnabla\RadE \}_c^n
+\RadE_f = \RadE_c + (\position_f - \position_c) \dotp \{ \bnabla\RadE \}_c
 \eeqn 
 
 \noindent
-\textbf{Corrector phase:}\newline
+\textbf{Corrector phases:}\newline
 For the corrector phase we have the following:
 \beqn 
-\bnabla \dotp \HydroF (\HydroU^{n+\half})
+\bnabla \dotp \HydroF (\HydroU)
 \mapsto 
 \frac{1}{V_c}
-\sum_f \AreaVec_f \dotp  \mathbf{F}^{*hllc}(\HydroU_f^{n+\half})
+\sum_f \AreaVec_f \dotp  \mathbf{F}^{*hllc}(\HydroU_f)
 \eeqn 
 \beqn 
-\biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half}
+\biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)
 \mapsto 
 \frac{1}{V_c}
-\sum_f \frac{4}{3}  \AreaVec_f \dotp (\RadE \velocity)_{upw}^{n+\half}
+\sum_f \frac{4}{3}  \AreaVec_f \dotp (\RadE \velocity)_{upw}
 \eeqn 
 where
 \beqn 
-\HydroU_f^{n+\half} = \HydroU_c^{n+\half}+ (\position_f - \position_c) \dotp \{ \bnabla\HydroU \}_c^{n+\half}
+\HydroU_f = \HydroU_c+ (\position_f - \position_c) \dotp \{ \bnabla\HydroU \}_c
 \eeqn  
 \beqn
-(\RadE \velocity)_{upw}^{n+\half} =
+(\RadE \velocity)_{upw} =
 \begin{cases}
-(\RadE \velocity)_{c,f}^{n+\half} , &\text{ if } 
-\velocity_{c,f}^{n+\half} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f > 0 
-\quad  \rightarrow | \rightarrow \\
-(\RadE \velocity)_{cn,f}^{n+\half} , &\text{ if } 
-\velocity_{c,f}^{n+\half} \dotp  \NormalVec_f < 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f < 0
-\quad  \leftarrow | \leftarrow \\
-(\RadE \velocity)_{cn,f}^{n+\half} + (\RadE \velocity)_{c,f}^{n+\half}, &\text{ if } 
-\velocity_{c,f}^{n+\half} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f < 0 
-\quad  \rightarrow | \leftarrow \\
-0, &\text{ if } 
-\velocity_{c,f}^{n+\half} \dotp  \NormalVec_f < 0 \text{ and } \velocity_{cn,f}^{n+\half} \dotp  \NormalVec_f > 0
-\quad  \leftarrow | \rightarrow \\
+	(\RadE \velocity)_{c,f} , &\text{ if } 
+	\velocity_{c,f} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f} \dotp  \NormalVec_f > 0 
+	\quad  \rightarrow | \rightarrow \\
+	(\RadE \velocity)_{cn,f} , &\text{ if } 
+	\velocity_{c,f} \dotp  \NormalVec_f < 0 \text{ and } \velocity_{cn,f} \dotp  \NormalVec_f < 0
+	\quad  \leftarrow | \leftarrow \\
+	(\RadE \velocity)_{cn,f} + (\RadE \velocity)_{c,f}, &\text{ if } 
+	\velocity_{c,f} \dotp  \NormalVec_f > 0 \text{ and } \velocity_{cn,f} \dotp  \NormalVec_f < 0 
+	\quad  \rightarrow | \leftarrow \\
+	0, &\text{ if } 
+	\velocity_{c,f} \dotp  \NormalVec_f < 0 \text{ and } \velocity_{cn,f} \dotp  \NormalVec_f > 0
+	\quad  \leftarrow | \rightarrow \\
 \end{cases}
 \eeqn 
 \beqn 
-\RadE_{c,f}^{n+\half} = \RadE_c^{n+\half} + (\position_f - \position_c) \dotp \{ \bnabla\RadE \}_c^{n+\half}
+\RadE_{c,f} = \RadE_c + (\position_f - \position_c) \dotp \{ \bnabla\RadE \}_c
 \eeqn
 
 \newpage
-\subsection{Density and momentum updates}
+\subsection{Density and momentum updates} 
+\label{section:fv_density_momentum_update}
 We apply the same process as before:
 \beqn 
 -\frac{1}{V_c} \int_{V_c} \mathbf{S}_{rp} dV = -\frac{1}{V_c}  \sum_f \frac{1}{3} \AreaVec_f \RadE_f,
@@ -880,28 +762,28 @@ k_c \RadE_f - k_c \RadE_c &= k_{cn}  \RadE_{cn} - k_{cn}  \RadE_f \\
 \eeqn 
 \newline
 \newline 
-\textbf{Predictor phase:} \newline 
+\textbf{Predictor and corrector phases:} \newline 
+We do the same for both,
 \beqn
--\mathbf{S}_{rp} ^n\mapsto  -\frac{1}{V_c}  \sum_f  \frac{1}{3} \AreaVec_f \RadE_f^n
-\eeqn
-\textbf{Corrector phase:} \newline 
-\beqn
--\mathbf{S}_{rp} ^{n+\half} \mapsto  -\frac{1}{V_c}  \sum_f  \frac{1}{3} \AreaVec_f \RadE_f^{n+\half}
+-\mathbf{S}_{rp} \mapsto  -\frac{1}{V_c}  \sum_f  \frac{1}{3} \AreaVec_f \RadE_f
 \eeqn
 
+
+
 \subsection{Energy equations}
-Only two terms require special consideration here, the current and the kinetic energy terms,
+\label{section:fv_energy_equations}
+Only two terms require special consideration here. They are: the divergence of the co-moving frame radiation energy flux, and the kinetic energy terms source terms,
 \beqn 
-\frac{1}{V_c} \int_{V_c} \bnabla \dotp \RadJ \ dV &= \frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f \\
+\frac{1}{V_c} \int_{V_c} \bnabla \dotp \RadJ \ dV &= \frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f \\
 \frac{1}{V_c} \int_{V_c} \frac{1}{3} \bnabla \RadE \dotp \velocity \ dV &= \frac{1}{V_c} \sum_f \frac{1}{3} \AreaVec_f \dotp (\RadE \velocity)_f.
 \eeqn 
-Therefore
+Considering the $\RadJ$-term first, we apply Gauss' divergence theorem to get
 \beqn 
-\bnabla \dotp \RadJ^n \mapsto \frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f^n
+\bnabla \dotp \RadJ \mapsto \frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f.
 \eeqn 
-For $\RadJ_f$ we have
+For $(\RadJ)_f$ we have
 \beqn 
-\RadJ_f = - \frac{c}{3\sigma_{tf}} \bigr(\bnabla \RadE \bigr)_f
+(\RadJ)_f = - \frac{c}{3\sigma_{tf}} \bigr(\bnabla \RadE \bigr)_f.
 \eeqn 
 Now define
 \beqn
@@ -910,7 +792,7 @@ D_f &= - \frac{c}{3\sigma_{tf}}
 \eeqn 
 To get
 \beqn 
-\RadJ_f = D_f \bigr( \RadE_{cn} - \RadE_{c} \bigr) \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c} ||^2}
+(\RadJ)_f = D_f \bigr( \RadE_{cn} - \RadE_{c} \bigr) \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c} ||^2}
 \eeqn 
 Define
 \beqn 
@@ -918,614 +800,149 @@ Define
 \eeqn 
 from which we get
 \beqn 
-\RadJ_f = \mathbf{k}_f \bigr( \RadE_{cn} - \RadE_{c} \bigr)
+(\RadJ)_f = \mathbf{k}_f \bigr( \RadE_{cn} - \RadE_{c} \bigr)
 \eeqn 
 \newline
 \newline
-For the kinetic energy terms we use the reconstructed values as in the Hydrodynamic and radiation-energy advection portion.
+For the kinetic energy source terms, we similarly have
 \beqn 
 \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^n
 \mapsto 
 \frac{1}{V_c} \sum_f \frac{1}{3} \AreaVec_f \dotp (\RadE_f^n \velocity_f^n)
 \eeqn 
+where we use the reconstructed values as in the Hydrodynamic and radiation-energy advection portion.
 
-\subsubsection{Predictor phase}
+\newpage
+\section{Temporal scheme A - Implicit Euler Predictor, Crank-Nicolson Corrector}
+\begin{subequations}
+\beqn 
+\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+\begin{bmatrix}
+	0 \\
+	-\mathbf{S}_{rp} \\
+	-S_{re} 
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
+&=  S_{re}.
+\eeqn
+\end{subequations}
+
+
+
+\subsection{Predictor phase}
+$\tau = \dfrac{1}{\half \Delta t}$
 \begin{subequations}
 	\beqn 
-	\tau (E^{n+\half} - E^{n*})= 
-	\sigma_a^{n+\half} c  \biggr( 
-	\RadE^{n+\half} 
-	-a T^{4,n+\half}
-	\biggr)
+	\tau (\HydroU^{n*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n}) = \mathbf{0}
+	\eeqn 
+	
+	\beqn 
+	\tau \begin{pmatrix}
+		\HydroRhoRhoU^{n+\half} - \HydroRhoRhoU^{n*}
+	\end{pmatrix} =  
+	\begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n} = 0
+	\eeqn 
+	
+	\beqn 
+	\tau (E^{n+\half} - E^{n*}) = 
+	-\theta_1 S_{ea}^{n+\half}
+	- \theta_2 S_{ea}^n
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp \RadJ^{n+\half} = 
-	\sigma_a^{n+\half} c \biggr( 
-	a T^{4,n+\half}  -\RadE^{n+\half} 
-	\biggr)
+	+  \theta_1 \bnabla \dotp \RadJ^{n+\half} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n}= 
+	 \theta_1 S_{ea}^{n+\half}
+	+ \theta_2 S_{ea}^n
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
 	\eeqn
+For $S_{ea}$ and $\RadJ$ both at $n+\half$:
+	\beqn 
+	\sigma^{n+\half} &= \rho^{n+\half}\kappa(T^n)
+	\eeqn 
 	
 	\beqn 
 	T^{4,n+\half} = T^{4,n*} + \frac{4T^{3,n*}}{C_v} (e^{n+\half}-e^{n*})
 	\eeqn 
 	
 \end{subequations}
-\noindent
-Define:
-\beqn 
-k_1 &= \sigma_a^{n+\half} c \\
-k_2 &= \frac{4T^{3,n*}}{C_v}
-\eeqn 
 
+%\newpage
+\subsection{Corrector phase}
+$\tau = \dfrac{1}{\Delta t}$
 \begin{subequations}
-	\splitline
 	\beqn 
-	\tau (E^{n+\half} - E^{n*})= 
-    k_1 \biggr( 
-	\RadE^{n+\half} 
-	-a T^{4,n+\half} 
-	\biggr)
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\tau (\HydroU^{n+\half*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n+\half}) = \mathbf{0}
 	\eeqn 
 	
 	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half} = 
-	k_1 \biggr( 
-	a T^{4,n+\half} -\RadE^{n+\half} 
-	\biggr)
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-	
-	\beqn 
-	T^{4,n+\half} = T^{4,n*} + k_2(e^{n+\half}-e^{n*})
-	\eeqn 
-	\splitline
-\end{subequations}
-
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} 
-	-k_1 a T^{4,n+\half} 
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\tau 
+	\begin{pmatrix}
+	\HydroRhoRhoU^{n+1} - \HydroRhoRhoU^{n+\half*}
+	\end{pmatrix} = 
+    \begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n+\half}
 	\eeqn 
 	
 	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half} = 
-	k_1 a T^{4,n+\half} 
-	-k_1 \RadE^{n+\half} 
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-	
-	\beqn 
-	T^{4,n+\half} = T^{4,n*} + k_2 (e^{n+\half}-e^{n*})
-	\eeqn 
-	\splitline
-\end{subequations}
-
-\newpage
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} 
-	-k_1 a \bigr( T^{4,n*} + k_2 (e^{n+\half}-e^{n*}) \bigr) 
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\tau (\RadE^{n+\half*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half} = 0
 	\eeqn 
 	
 	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp \RadJ^{n+\half}= 
-	k_1 a \bigr(T^{4,n*} + k_2 (e^{n+\half}-e^{n*}) \bigr)
-	-k_1 \RadE^{n+\half} 
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau (E^{n+\half} - E^{n*})= 
-	k_1 \RadE^{n+\half} 
-	-k_1 a T^{4,n*} -k_1 a k_2 e^{n+\half} + k_1 a e^{n*}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half} = 
-	k_1 a T^{4,n*} + k_1 a k_2 e^{n+\half} - k_1 a e^{n*}
-	-k_1 \RadE^{n+\half} 
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-\newline
-Define:
-\beqn
-k_3 &=  -k_1 a T^{4,n*} + k_1 a e^{n*} 
-            - \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n} \\
-k_4 &= -k_1 a k_2
-\eeqn 
-
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau (E^{n+\half} - E^{n*})=k_1 \RadE^{n+\half} +  k_3 + k_4 e^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half} = 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 e^{n+\half}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-\newline 
-Note:
-\beqn 
-E^{n+\half} = (\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\half} 
-\eeqn 
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau ((\half \rho || \velocity ||^2)^{n+\half} + \rho^{n+\half} e^{n+\half}  - E^{n*})=k_1 \RadE^{n+\half} +  k_3 + k_4 e^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+  \bnabla \dotp \RadJ^{n+\half}= 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 e^{n+\half}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\begin{subequations}
-	\splitline
-	\beqn 
-	\tau(\half \rho || \velocity ||^2)^{n+\half} + \tau \rho^{n+\half} e^{n+\half}  - \tau E^{n*}=k_1 \RadE^{n+\half} +  k_3 + k_4 e^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp  \RadJ^{n+\half} = 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 e^{n+\half}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\newpage
-\begin{subequations}
-	\splitline
-	\beqn 
-   \bigr( \tau \rho^{n+\half} - k_4 \bigr) e^{n+\half} = k_1 \RadE^{n+\half} +  k_3 
-   - \tau(\half \rho || \velocity ||^2)^{n+\half} + \tau E^{n*}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp  \RadJ^{n+\half} = 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 e^{n+\half}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-\newline
-Define:
-\beqn
-k_5 &= \frac{k_1}{\tau \rho^{n+\half} - k_4} \\
-k_6 &= \frac{k_3 
-	- \tau(\half \rho || \velocity ||^2)^{n+\half} + \tau E^{n*}}{\tau \rho^{n+\half} - k_4}
-\eeqn 
-\begin{subequations}
-	\splitline
-	\beqn 
-    e^{n+\half}  = k_5 \RadE^{n+\half} +  k_6
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp \RadJ^{n+\half} = 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 e^{n+\half}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\begin{subequations}
-	\splitline
-
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n*}) 
-	+ \bnabla \dotp  \RadJ^{n+\half} = 
-	-k_1 \RadE^{n+\half} 
-	-k_3 - k_4 k_5 \RadE^{n+\half} - k_4 k_6
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\begin{subequations}
-	\splitline
-	
-	\beqn 
-	\bigr(\tau 
-	+k_1 
-	+ k_4 k_5 \bigr)\RadE^{n+\half}
-	+ \bnabla \dotp  \RadJ^{n+\half} = 
-	-k_3 - k_4 k_6
-	+ \tau\RadE^{n*}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-\noindent
-Recall:
-\beqn 
-\bnabla \dotp \RadJ \mapsto \frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f
-\eeqn 
-and
-\beqn 
-\RadJ_f = \mathbf{k}_f \bigr( \RadE_{cn} - \RadE_{c} \bigr)
-\eeqn 
-
-\begin{subequations}
-	\splitline
-	
-	\beqn 
-	\bigr(\tau 
-	+k_1 
-	+ k_4 k_5 \bigr)\RadE^{n+\half}
-	+  
-	 \frac{1}{V_c} \sum_f \AreaVec_f \dotp \mathbf{k}_f^{n+\half} (\RadE_{cn}^{n+\half} - \RadE_c^{n+\half})
-	= 
-	-k_3 - k_4 k_6
-	+ \tau\RadE^{n*}
-	\eeqn
-	
-	\splitline
-\end{subequations}
-
-
-
-
-
-
-
-
-
-
-\newpage
-\subsubsection{Corrector phase}
-
-\begin{subequations}
-		\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
-	-\half \sigma_a^{n+1} c  \biggr( 
-	a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	- \half S_{ea}^{n+\half}
+	-\theta_1 S_{ea}^{n+1}
+	- \theta_2 S_{ea}^{n}
 	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
 	\eeqn 
 	
 	\beqn 
 	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	\half \sigma_a^{n+1} c \biggr( 
-	a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	+\half S_{re}^{n+\half}
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n} = 
+	\theta_1 S_{ea}^{n+1}
+	+\theta_2 S_{re}^{n}
 	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
 	\eeqn
-	
+For $S_{ea}$ and $\RadJ$ both at $n+1$:
+	\beqn 
+	\sigma^{n+1} &= \rho^{n+1}\kappa(T^{n+\half})
+	\eeqn 
 	
 	\beqn 
 	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
 	\eeqn 
+	
+
 \end{subequations}
 
-Define:
-\beqn 
-k_1 &= \half \sigma_a^{n+1} c \\
-k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
-\eeqn 
-\splitline
 
-\begin{subequations}
-	\beqn 
-	\tau (E^{n+1} - E^{n+\half*}) = 
-	-k_1  \biggr( 
-	a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	- \half S_{ea}^{n+\half}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	k_1 \biggr( 
-	a T^{4,n+1}   -\RadE^{n+1} 
-	\biggr)
-	+\half S_{re}^{n+\half}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-	
-	
-	\beqn 
-	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
-	\eeqn 
-\end{subequations}
 
-\splitline
 
-\begin{subequations}
-	\beqn 
-	\tau (E^{n+1} - E^{n+\half*}) = 
-	-k_1  a T^{4,n+1}   + k_1 \RadE^{n+1} 
-	- \half S_{ea}^{n+\half}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	k_1 a T^{4,n+1}   -k_1\RadE^{n+1} 
-	+\half S_{re}^{n+\half}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-	
-	
-	\beqn 
-	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
-	\eeqn 
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau (E^{n+1} - E^{n+\half*}) = 
-	-k_1  a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   + k_1 \RadE^{n+1} 
-	- \half S_{ea}^{n+\half}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	k_1 a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   -k_1\RadE^{n+1} 
-	+\half S_{re}^{n+\half}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau (E^{n+1} - E^{n+\half*}) = 
-	-k_1  a T^{4,n+\half*} -k_1  a k_2 e^{n+1} + k_1  a k_2 e^{n+\half*}
-	+ k_1 \RadE^{n+1} 
-	- \half S_{ea}^{n+\half}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	k_1 a T^{4,n+\half*} + k_1 a k_2 e^{n+1} - k_1 a k_2 e^{n+\half*}
-	 -k_1\RadE^{n+1} 
-	+\half S_{re}^{n+\half}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-\end{subequations}
-
-\splitline
-
-Define:
-\beqn 
-k_3 &= -k_1  a T^{4,n+\half*} + k_1  a k_2 e^{n+\half*}
-- \half S_{ea}^{n+\half}
-- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half} \\
-k_4 &= -k_1 a k_2
-\eeqn 
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau (E^{n+1} - E^{n+\half*}) = 
-	 k_4 e^{n+1} 
-	+ k_1 \RadE^{n+1} 
-	+ k_3
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	 -k_4 e^{n+1} 
-	-k_1\RadE^{n+1} 
-	-k_3
-	\eeqn
-\end{subequations}
-
-\splitline
-
-Note:
-\beqn
-E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1} 
-+ \rho^{n+1} e^{n+1}
-\eeqn 
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau \big( ( \half \rho ||\velocity||^2 )^{n+1} 
-	+ \rho^{n+1} e^{n+1} - E^{n+\half*}\big) = 
-	k_4 e^{n+1} 
-	+ k_1 \RadE^{n+1} 
-	+ k_3
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp \bigr( \RadJ^{n+1} +  \RadJ^{n} \bigr)= 
-	-k_4 e^{n+1} 
-	-k_1\RadE^{n+1} 
-	-k_3
-	\eeqn
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau ( \half \rho ||\velocity||^2 )^{n+1} 
-	+ \tau \rho^{n+1} e^{n+1} - \tau E^{n+\half*} = 
-	k_4 e^{n+1} 
-	+ k_1 \RadE^{n+1} 
-	+ k_3
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
-	-k_4 e^{n+1} 
-	-k_1\RadE^{n+1} 
-	-k_3
-	\eeqn
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	(\tau \rho^{n+1}  - k_4 )e^{n+1} = 
-	k_1 \RadE^{n+1} 
-	+ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
-	+ \tau E^{n+\half*} 
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
-	-k_4 e^{n+1} 
-	-k_1\RadE^{n+1} 
-	-k_3
-	\eeqn
-\end{subequations}
-
-\splitline
-
-Define:
-\beqn 
-k_5 &= \frac{k_1}{\tau \rho^{n+1}  - k_4} \\
-k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
-	+ \tau E^{n+\half*} }{\tau \rho^{n+1}  - k_4}
-\eeqn 
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-    e^{n+1} = 
-	k_5 \RadE^{n+1} 
-	+ k_6
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
-	-k_1\RadE^{n+1} 
-	-k_3
-	-k_4 e^{n+1} 
-	\eeqn
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
-	+ \half \bnabla \dotp  \RadJ^{n+1} + \half \bnabla \dotp \RadJ^{n} = 
-	-k_1\RadE^{n+1} 
-	-k_3
-	-k_4 k_5 \RadE^{n+1} -k_4 k_6
-	\eeqn
-\end{subequations}
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
-	+ \half \bnabla \dotp  \RadJ^{n+1} = 
-	-k_3
-    -k_4 k_6
-	+ \tau \RadE^{n+\half*}
-	- \half \bnabla \dotp \RadJ^{n}
-	\eeqn
-\end{subequations}
-
-\splitline 
-
-Recall:
-\beqn 
-\bnabla \dotp \RadJ \mapsto 
-\frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f
-\eeqn
-and
-\beqn 
-\RadJ_f = \mathbf{k}_f ( \RadE_{cn} - \RadE_c)
-\eeqn  
-
-\splitline
-
-\begin{subequations}
-	\beqn 
-	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
-	+ 
-	\frac{1}{2V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n+1} ( \RadE_{cn}^{n+1} - \RadE_c^{n+1}) 
-	= 
-	-k_3
-	-k_4 k_6
-	+ \tau \RadE^{n+\half*}
-	- 
-    \frac{1}{2V_c} \sum_f \AreaVec_f \dotp  \mathbf{k}_f^{n} ( \RadE_{cn}^{n} - \RadE_c^{n}) 
-	\eeqn
-\end{subequations}
-
-\splitline
 
 
 \newpage
-\subsubsection{General Predictor and Corrector phase with $\theta$ factor}
-Define:
+\subsection{General energy equations, Predictor and Corrector phase, with $\theta$ factors}
+Time integration scheme A uses \textbf{implicit Euler} for the predictor phase and \textbf{Crank-Nicolson} in the corrector phase. Both these schemes can be represented wit a general $\theta$-scheme where we define:
 \beqn
 \theta_1 &\in [0,1] \\
-\theta_2 &= 1-\theta_1 
+\theta_2 &= 1-\theta_1.
 \eeqn
+\noindent
+For implicit Euler, $\theta_1 = 1, \ \theta_2=0$, and for Crank-Nicolson, $\theta_1 = \theta_2 = \half$. With these factors defined we can repeat the energy equations and apply a series of manipulations. First we attempt to segregate known terms from all unknown terms. Thereafter we eliminate the internal energy, $e$, from the two sets of equations to get a single formulation for the radiation energy, $\RadE$. The latter formulation forms a diffusion system that needs to be assembled and solved for $\RadE$.
 
 
 \begin{subequations}
@@ -1552,6 +969,8 @@ Define:
 	\beqn 
 	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
 	\eeqn 
+
+\splitline
 \end{subequations}
 
 Define:
@@ -1561,6 +980,7 @@ k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
 \eeqn 
 \splitline
 
+and plug them into the equations above,
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
@@ -1589,6 +1009,7 @@ k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
 
 \splitline
 
+ungroup right-hand side elements by multiplying out terms within parentheses,
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
@@ -1613,6 +1034,7 @@ k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
 
 \splitline
 
+now plug in the temperature equation into both the energy equations,
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
@@ -1632,6 +1054,7 @@ k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
 
 \splitline
 
+ungroup elements on the both the right-hand sides,
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
@@ -1663,6 +1086,7 @@ k_4 &= -k_1 a k_2
 
 \splitline
 
+and plug them into the equations above,
 \begin{subequations}
 	\beqn 
 	\tau (E^{n+1} - E^{n+\half*}) = 
@@ -1690,6 +1114,7 @@ E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+which gives,
 \begin{subequations}
 	\beqn 
 	\tau \big( ( \half \rho ||\velocity||^2 )^{n+1} 
@@ -1710,6 +1135,7 @@ E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+ungroup the material energy in the first equation,
 \begin{subequations}
 	\beqn 
 	\tau ( \half \rho ||\velocity||^2 )^{n+1} 
@@ -1730,6 +1156,7 @@ E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+and isolate the internal energy in the first equation,
 \begin{subequations}
 	\beqn 
 	(\tau \rho^{n+1}  - k_4 )e^{n+1} = 
@@ -1758,6 +1185,7 @@ k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+and plug these constants into the first equation above,
 \begin{subequations}
 	\beqn 
 	e^{n+1} = 
@@ -1776,6 +1204,7 @@ k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+now plug the first equation into the second,
 \begin{subequations}
 	\beqn 
 	\tau (\RadE^{n+1} - \RadE^{n+\half*}) 
@@ -1788,6 +1217,7 @@ k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1}
 
 \splitline
 
+now collect all the $\RadE^{n+1}$ terms on the left-hand side,
 \begin{subequations}
 	\beqn 
 	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
@@ -1804,15 +1234,16 @@ k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1}
 Recall:
 \beqn 
 \bnabla \dotp \RadJ \mapsto 
-\frac{1}{V_c} \sum_f \AreaVec_f \dotp \RadJ_f
+\frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f
 \eeqn
 and
 \beqn 
-\RadJ_f = \mathbf{k}_f ( \RadE_{cn} - \RadE_c)
+(\RadJ)_f = \mathbf{k}_f ( \RadE_{cn} - \RadE_c)
 \eeqn  
 
 \splitline
 
+which gives the system,
 \begin{subequations}
 	\beqn 
 	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
@@ -1828,6 +1259,273 @@ and
 \end{subequations}
 
 \splitline
+
+This system is SPD and in one dimension forms a tridiagonal system.
+
+
+
+
+
+\newpage
+\subsection{Using the energy related algebra for both the predictor and the corrector}
+To perform the energy related algebra for the corrector step we need the following inputs:
+\beq
+&\kappa_a^n &&\text{For }\sigma_a^n \text{ in }S_{ea}^n \\
+&\kappa_t^n &&\text{For }\sigma_t^n \text{ in }\bnabla \dotp \RadJ^{n}\\
+&\kappa_a^{n+\half} &&\text{For }\sigma_a^{n+1} \text{ in }S_{ea}^{n+1} \\
+&\kappa_t^{n+\half} &&\text{For }\sigma_t^{n+1} \text{ in }\bnabla \dotp \RadJ^{n+1}\\
+&C_v && \text{ For the linearization of } T^{4,n+1}\\
+&\tau && \text{ For the time constant} \\
+&\theta_1 ,\theta_2 &&\text{ For the time scheme} \\
+&\HydroU^{n} && \text{ For } T, \rho \text{ in } S_{ea}^n \\
+&\HydroU^{n+\half} && \text{ For } \velocity \text{ in }  \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}\\
+&\HydroU^{n+\half*}  &&\text{ For } E^{n+\half*}\text{ and } e^{n+\half*}\\
+&\HydroU_{0,1}^{n+1} = \HydroRhoRhoU_{n+1} &&\text{ For the kinetic energy in } E^{n+1}\text{, and }\rho^{n+1} \to \sigma_a^{n+1}, \sigma_t^{n+1} \\
+&\bnabla \HydroU^{n+\half} && \text{ For the reconstructions in } \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}\\
+&\RadE^{n} && \text{ For } S_{ea}^n \\
+&\RadE^{n+\half} &&\text{ For } \RadE \text{ in }\biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}\\
+&\RadE^{n+\half*} &&\text{ For itself}\\
+&\bnabla \RadE^{n+\half} &&\text{ For the reconstructions in } \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}\\
+\eeq
+
+To following remapping(s) then applies to the predictor:
+\begin{multicols}{2}
+\beq 
+&\kappa_a^n &&\to &&\kappa_a^n \\
+&\kappa_t^n &&\to &&\kappa_t^n \\
+&\kappa_a^{n} &&\to &&\kappa_a^{n+\half} \\
+&\kappa_t^{n} &&\to &&\kappa_t^{n+\half} \\
+\eeq
+\beq 
+&\HydroU^{n}        &&\to &&\HydroU^{n}        \\
+&\HydroU^{n}        &&\to &&\HydroU^{n+\half}  \\
+&\HydroU^{n*}       &&\to &&\HydroU^{n+\half*} \\
+&\HydroU^{n+\half}  &&\to &&\HydroU^{n+1}      \\
+&\bnabla \HydroU^{n}        &&\to &&\bnabla \HydroU^{n+\half}  \\
+\eeq
+\columnbreak
+\beq 
+&\RadE^{n}        &&\to &&\RadE^{n}        \\
+&\RadE^{n}        &&\to &&\RadE^{n+\half}  \\
+&\RadE^{n*}       &&\to &&\RadE^{n+\half*} \\
+&\bnabla \RadE^{n}        &&\to &&\bnabla \RadE^{n+\half}  \\
+\eeq
+\end{multicols}
+ 
+
+
+
+\newpage
+\section{Temporal scheme B - Phase A: Implicit Euler Predictor, Crank-Nicolson Corrector, Phase B: Implicit Euler Predictor, Weighted $
+\theta$'s Corrector}
+\begin{subequations}
+	\beqn 
+	\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+	\begin{bmatrix}
+		0 \\
+		-\mathbf{S}_{rp} \\
+		-S_{re} 
+	\end{bmatrix}
+	\eeqn 
+	\beqn 
+	\frac{\partial \RadE}{\partial t} 
+	+\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
+	&=  S_{re}.
+	\eeqn
+\end{subequations}
+
+
+
+\subsection{Predictor phase A}
+$\tau = \dfrac{1}{\quarter \Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n}) = \mathbf{0}
+	\eeqn 
+	
+	\beqn 
+	\tau \begin{pmatrix}
+	\HydroRhoRhoU^{n+\quarter} - \HydroRhoRhoU^{n*} 
+    \end{pmatrix} =  \begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n} = 0
+	\eeqn 
+	
+	\beqn 
+	\tau (E^{n+\quarter} - E^{n*}) = 
+	-\theta_1 S_{ea}^{n+\quarter}
+	- \theta_2 S_{ea}^n
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\quarter} - \RadE^{n*}) 
+	+  \theta_1 \bnabla \dotp \RadJ^{n+\quarter} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n}= 
+	\theta_1 S_{ea}^{n+\quarter}
+	+ \theta_2 S_{ea}^n
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
+	\eeqn
+For $S_{ea}$ and $\RadJ$ both at $n+\quarter$:
+	\beqn 
+	\sigma^{n+\quarter} &= \rho^{n+\quarter}\kappa(T^n)
+	\eeqn 
+	
+	\beqn 
+	T^{4,n+\quarter} = T^{4,n*} + \frac{4T^{3,n*}}{C_v} (e^{n+\quarter}-e^{n*})
+	\eeqn 
+	
+\end{subequations}
+
+%\newpage
+\subsection{Corrector phase A}
+$\tau = \dfrac{1}{\half \Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n+\quarter*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n+\quarter}) = \mathbf{0}
+	\eeqn 
+	
+	\beqn 
+	\tau \begin{pmatrix}
+		\HydroRhoRhoU^{n+\half} - \HydroRhoRhoU^{n+\quarter*}
+    \end{pmatrix} =  \begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n+\quarter}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\quarter*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\quarter} = 0
+	\eeqn 
+	
+	\beqn 
+	\tau (E^{n+\half} - E^{n+\quarter*}) = 
+	-\theta_1 S_{ea}^{n+\half}
+	- \theta_2 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\quarter}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\half} - \RadE^{n+\quarter*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+\half} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n} = 
+	\theta_1 S_{ea}^{n+\half}
+	+\theta_2 S_{re}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\quarter}
+	\eeqn
+For $S_{ea}$ and $\RadJ$ both at $n+\half$:
+	\beqn 
+	\sigma^{n+\half} &= \rho^{n+\half}\kappa(T^{n+\quarter})
+	\eeqn 
+	
+	\beqn 
+	T^{4,n+\half} = T^{4,n+\quarter*} + \frac{4T^{3,n+\quarter*}}{C_v} (e^{n+\half}-e^{n+\quarter*})
+	\eeqn 
+	
+	
+\end{subequations}
+
+\subsection{Predictor phase B}
+$\tau = \dfrac{1}{\quarter \Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n+\half*} - \HydroU^{n+\half}) + \bnabla \dotp \HydroF(\HydroU^{n+\half}) = \mathbf{0}
+	\eeqn 
+		
+	\beqn 
+	\tau \begin{pmatrix}
+		\HydroRhoRhoU^{n+\triquarter} - \HydroRhoRhoU^{n+\half*}
+	\end{pmatrix}=  \begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\half*} - \RadE^{n+\half}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half} = 0
+	\eeqn 
+	
+	\beqn 
+	\tau (E^{n+\triquarter} - E^{n+\half*}) = 
+	-\theta_1 S_{ea}^{n+\triquarter}
+	- \theta_2 S_{ea}^{n+\half}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\triquarter} - \RadE^{n+\half*}) 
+	+  \theta_1 \bnabla \dotp \RadJ^{n+\triquarter} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n+\half}= 
+	\theta_1 S_{ea}^{n+\triquarter}
+	+ \theta_2 S_{ea}^{n+\half}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+For $S_{ea}$ and $\RadJ$ both at $n+\triquarter$:
+	\beqn 
+	\sigma^{n+\triquarter} &= \rho^{n+\triquarter}\kappa(T^{n+\half})
+	\eeqn 
+	
+	\beqn 
+	T^{4,n+\triquarter} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+\triquarter}-e^{n+\half*})
+	\eeqn 
+	
+\end{subequations}
+
+\subsection{Corrector phase B}
+$\tau = \dfrac{1}{\half \Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau (\HydroU^{n+\triquarter*} - \HydroU^{n+\half}) + \bnabla \dotp \HydroF(\HydroU^{n+\triquarter}) = \mathbf{0}
+	\eeqn 
+	
+	\beqn 
+	\tau \begin{pmatrix}
+		\HydroRhoRhoU^{n+1} - \HydroRhoRhoU^{n+\triquarter*}
+    \end{pmatrix} =  \begin{bmatrix}
+		0 \\
+		-\frac{1}{3} \bnabla \RadE
+	\end{bmatrix}^{n+\triquarter}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+\triquarter*} - \RadE^{n+\half}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\triquarter} = 0
+	\eeqn 
+	
+	\beqn 
+	\tau (E^{n+1} - E^{n+\triquarter*}) = 
+	-\theta_1 S_{ea}^{n+1}
+	- \theta_2 S_{ea}^{n+\half}
+	- \theta_3 S_{ea}^{n}
+	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\triquarter}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n+\triquarter*}) 
+	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} 
+	+ \theta_2 \bnabla \dotp \RadJ^{n+\half} 
+	+ \theta_3 \bnabla \dotp \RadJ^{n}= 
+	\theta_1 S_{ea}^{n+1}
+	+\theta_2 S_{re}^{n+\half}
+	+ \theta_3 S_{ea}^{n}
+	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\triquarter}
+	\eeqn
+For $S_{ea}$ and $\RadJ$ both at $n+1$:
+	\beqn 
+	\sigma^{n+1} &= \rho^{n+1}\kappa(T^{n+\triquarter})
+	\eeqn 
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\triquarter*} + \frac{4T^{3,n+\triquarter*}}{C_v} (e^{n+1}-e^{n+\triquarter*})
+	\eeqn 
+	
+	
+\end{subequations}
+
 
 \newpage
 \begin{appendices}
@@ -1856,7 +1554,246 @@ and
 	
 \end{description}
 
+\section{Boundary and initial conditions for radiation hydrodynamic problems} \label{appendix:bndry_initial_conditions}
+In a one dimensional simulation we can simulate steady-state shocks by setting the appropriate pre- and post-shock conditions. Pre-shock conditions will be denoted with a subscript $L$ whereas post-shock conditions will be denoted with a subscript $R$. 
+
+\subsection{Hydrodynamics only}
+With no radiation energy present we wish to have $\HydroF_L = \HydroF_R$, therefore
+\beqn 
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2 + p \\
+	(E+p)u
+\end{bmatrix}_L
+=
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2 + p \\
+	(E+p)u
+\end{bmatrix}_R.
+\eeqn 
+Here we have three equations but 4 unknowns, i.e., $\rho$, $u$, $p$ and $e$. Fortunately, we can express both $e$ and $p$ in terms of temperature since
+\beq 
+p = (\gamma-1)\rho e
+\eeq 
+and
+\beq 
+e = C_v T.
+\eeq
+Therefore, 
+\beq 
+p = (\gamma-1)\rho C_v T
+\eeq 
+and
+\beqn 
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2 + (\gamma-1)\rho C_v T \\
+	\half \rho u^3 + \rho C_v T u + pu
+\end{bmatrix}_L
+=
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2 + (\gamma-1)\rho C_v T \\
+	\half \rho u^3 + \rho C_v T u + pu
+\end{bmatrix}_R.
+\eeqn 
+When the left state is known then we can frame these equations as seeking the non-linear solution of
+\beqn 
+\mathbf{F}
+\begin{pmatrix}
+	\rho_R \\ T_R \\ u_R
+\end{pmatrix}
+= 
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2 + (\gamma-1)\rho C_v T \\
+	\half \rho u^3 + \rho C_v T u + pu
+\end{bmatrix}_R
+- 
+\HydroF_L = \mathbf{0}
+\eeqn 
+or simply
+\beqn 
+\mathbf{F}(\mathbf{x}) = \HydroF(\mathbf{x}_R) - \HydroF_L = \mathbf{0}.
+\eeqn 
+to which Newton-iteration can be applied in the form
+\beq
+\mathbf{x}_R^{\ell+1} = \mathbf{x}_R^\ell - J^{-1}(\mathbf{x}_R^\ell) \mathbf{F}(\mathbf{x}_R^\ell)
+\eeq 
+where the Jacobian matrix, $J$, is given by
+\beqn 
+J = 
+\begin{bmatrix}
+	u & 0 & \rho \\
+	u^2 + (\gamma-1)C_v T & (\gamma-1)\rho C_v & 2\rho u \\
+	\half u^3 + C_v T u  & \rho C_v u & \frac{3}{2}\rho u^2 + \rho C_v T  + p
+\end{bmatrix}
+\eeqn 
+\newline 
+\newline
+\textbf{Note:} The initial guess, $\mathbf{x}^0$ cannot be the same as $\mathbf{x}_L$ since the iteration will terminate immediately. Generally the values need to be perturbed sufficiently such that $\rho_R > \rho_L$, $T_R > T_L$ and $u_R < a_R$ where $a$ is the sound-speed.
+
+\vspace{1cm}
+\subsection{Hydrodynamics with radiation energy}
+With radiation energy present we are concerned with the following set of equations
+\begin{subequations}
+	\beqn 
+	\partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
+	\eeqn 
+	\beqn 
+	\partialderiv{(\rho\velocity)}{t} + \bnabla \dotp \{ \rho \velocity \otimes \velocity\}  + \bnabla p 
+	= -\frac{1}{3} \bnabla \RadE,
+	\eeqn 
+	\beqn 
+	\partialderiv{E}{t} + \bnabla \dotp [(E + p)\velocity] 
+	= \sigma_a c (\RadE - a T^4) - \frac{1}{3} \bnabla \RadE \dotp \velocity
+	\eeqn 
+	\beqn 
+	\frac{\partial \RadE}{\partial t} 
+	+\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) + \frac{4}{3} \bnabla \bigr( \RadE \mathbf{u}  \bigr)
+	&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+	+\frac{1}{3} \bnabla \RadE  \dotp \velocity.
+	\eeqn
+\end{subequations}
+which for a steady-steady, one dimensional simulation becomes
+\begin{subequations}
+	\beqn 
+	\bnabla \dotp (\rho u) = 0
+	\eeqn 
+	\beqn 
+   \bnabla \dotp ( \rho u^2 )  + \bnabla p 
+	= -\frac{1}{3} \bnabla \RadE,
+	\eeqn 
+	\beqn 
+    \bnabla \dotp [(E + p)u] 
+	= \sigma_a c (\RadE - a T^4) - \frac{1}{3} \bnabla \RadE \dotp u
+	\eeqn 
+	\beqn 
+	\bnabla \dotp \biggr(  -\frac{c}{3\sigma_t} \bnabla \RadE \biggr) + \frac{4}{3} \bnabla \bigr( \RadE u  \bigr)
+	&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+	+\frac{1}{3} \bnabla \RadE u.
+	\eeqn
+\end{subequations}
+Additionally, far away from the interface the co-moving frame radiation flux, $\RadF_0$, is zero, therefore
+$$
+\RadF_0 = -\frac{c}{3\sigma_t} \bnabla \RadE = 0
+$$
+and the equation set becomes
+\begin{subequations}
+	\beqn 
+	\bnabla \dotp (\rho u) = 0
+	\eeqn 
+	\beqn 
+	\bnabla \dotp ( \rho u^2 )  + \bnabla p 
+	= -\frac{1}{3} \bnabla \RadE,
+	\eeqn 
+	\beqn 
+	\bnabla \dotp [(E + p)u] 
+	= \sigma_a c (\RadE - a T^4) - \frac{1}{3} \bnabla \RadE \dotp u
+	\eeqn 
+	\beqn 
+	\frac{4}{3} \bnabla \bigr( \RadE u  \bigr)
+	&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+	+\frac{1}{3} \bnabla \RadE u.
+	\eeqn
+\end{subequations}
+Now, adding the last equation to the third ,we get
+
+\begin{subequations}
+	\beqn 
+	\bnabla \dotp (\rho u) = 0
+	\eeqn 
+	\beqn 
+	\bnabla \dotp ( \rho u^2 )  + \bnabla p 
+	 +\frac{1}{3} \bnabla \RadE = 0,
+	\eeqn 
+	\beqn 
+	\bnabla \dotp [(E + p)u] + \frac{4}{3} \bnabla \bigr( \RadE u  \bigr)
+	= 0.
+	\eeqn 
+\end{subequations}
+We now express internal energy, $e$, the pressure, $p$, and the radiation energy, $\RadE$, in terms of temperature
+\begin{subequations}
+	\beqn 
+	\bnabla \dotp (\rho u) = 0
+	\eeqn 
+	\beqn 
+	\bnabla \dotp ( \rho u^2 )  + \bnabla \bigr( (\gamma-1) \rho C_v T \bigr)
+	+\frac{1}{3} \bnabla a T^4 = 0,
+	\eeqn 
+	\beqn 
+	\bnabla \dotp [(\half \rho u^2 + \rho C_v T + (\gamma-1)\rho C_v T)u] + \frac{4}{3} \bnabla \bigr( aT^4 u  \bigr)
+	= 0.
+	\eeqn 
+\end{subequations}
+Finally we integrate this equation set over the entire domain to get
+\begin{subequations}
+	\beqn 
+	\begin{bmatrix}
+ 		\rho u \\
+		 \rho u^2   +  (\gamma-1) \rho C_v T 
+		+\frac{1}{3} a T^4 \\
+		\half \rho u^3 + \gamma \rho C_v T u  + \frac{4}{3} a T^4 u  
+	\end{bmatrix}_L	
+=
+	\begin{bmatrix}
+		\rho u \\
+		\rho u^2   +  (\gamma-1) \rho C_v T 
+		+\frac{1}{3} a T^4 \\
+		\half \rho u^3 + \gamma \rho C_v T u + \frac{4}{3} a T^4 u  
+	\end{bmatrix}_R
+	\eeqn 
+\end{subequations}
+
+Similar to the previous case we can now define
+\beqn 
+\mathbf{F} 
+\begin{pmatrix}
+	\rho_R \\ T_R \\ u_R
+\end{pmatrix}
+=
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2   +  (\gamma-1) \rho C_v T 
+	+\frac{1}{3} a T^4 \\
+	\half \rho u^3 + \gamma \rho C_v T u + \frac{4}{3} a T^4 u  
+\end{bmatrix}_R
+-
+\begin{bmatrix}
+	\rho u \\
+	\rho u^2   +  (\gamma-1) \rho C_v T 
+	+\frac{1}{3} a T^4 \\
+	\half \rho u^3 + \gamma \rho C_v T u + \frac{4}{3} a T^4 u  
+\end{bmatrix}_L = \mathbf{0},
+\eeqn 
+where the subscript $L$ quantities are all known. Applying Newton-iteration to this equation again is 
+\beq
+\mathbf{x}_R^{\ell+1} = \mathbf{x}_R^\ell - J^{-1}(\mathbf{x}_R^\ell) \mathbf{F}(\mathbf{x}_R^\ell)
+\eeq 
+where the Jacobian matrix, $J$ is given by
+\beqn 
+J = 
+\begin{bmatrix}
+	u & 0 & \rho \\
+	u^2 + (\gamma-1)C_v T & (\gamma-1)\rho C_v + \frac{4}{3}a T^3 & 2\rho u \\
+	\half u^3 + \gamma C_v T u & \gamma \rho C_v u + \frac{16}{3} a T^3 u & \frac{3}{2} \rho u^2 + \gamma \rho C_v T + \frac{4}{3} a T^4 
+\end{bmatrix}
+\eeqn 
+Example mach 3 conditions, $C_v = 0.14472799784454$ and $\gamma = \frac{5}{3}$:
+{\smaller
+\begin{verbatim}
+[0]   rho0  1.00000000e+00 u0    3.80431331e-01 T0    1.00000000e-01 e0    1.44727998e-02 radE0 1.37223549e-06
+[0]   rho1  3.00185103e+00 u1    1.26732249e-01 T1    3.66260705e-01 e1    5.30081785e-02 radE1 2.46939153e-04
+\end{verbatim}
+}
+\vspace{1cm}
+\noindent
+\textbf{Note:} The initial guess, $\mathbf{x}^0$ cannot be the same as $\mathbf{x}_L$ since the iteration will terminate immediately. Generally the values need to be perturbed sufficiently such that $\rho_R > \rho_L$, $T_R > T_L$, $u_R < a_R$ where $a$ is the sound-speed, and $\RadE_R > \RadE_L$.
+
 \end{appendices}
+
+
 
 
 \newpage
@@ -1905,7 +1842,6 @@ and
 \beqn 
 R = I + \sin\theta A + (1-\cos\theta) A^2
 \eeqn
-
 
 \end{appendices}
 

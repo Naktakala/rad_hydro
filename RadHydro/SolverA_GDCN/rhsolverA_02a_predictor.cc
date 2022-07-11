@@ -57,7 +57,7 @@ Predictor(const std::map<uint64_t, BCSetting>& bc_setttings,
       *grid, fv, bc_setttings,
       kappa_a_n  , kappa_t_n,
       kappa_a_n  , kappa_t_n, Cv,                   //Stuff
-      tau, /*theta1=*/1.0, /*Implicit Euler*/       //tau, theta input
+      tau, /*theta1=*/0.5, /*theta2=*/0.5,          //tau, theta input
       U_n, U_n, U_n_star, U_nph, grad_U_n,          //Hydro inputs
       rad_E_n, rad_E_n, rad_E_n_star, grad_rad_E_n, //RadE inputs
       k5, k6, A, b);                                //Outputs

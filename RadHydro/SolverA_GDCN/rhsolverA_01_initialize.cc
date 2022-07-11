@@ -32,7 +32,10 @@ void chi_radhydro::SolverA_GDCN::Initialize()
         {
           const double value = property->GetScalarValue();
           if (value > 1.0)
+          {
             gamma[cell.local_id] = value;
+            m_gamma = value;
+          }
           else
           {
             chi::log.LogAllError()
@@ -47,7 +50,10 @@ void chi_radhydro::SolverA_GDCN::Initialize()
         {
           const double value = property->GetScalarValue();
           if (value > 0.01)
+          {
             Cv[cell.local_id] = value;
+            m_Cv = value;
+          }
           else
           {
             chi::log.LogAllError()

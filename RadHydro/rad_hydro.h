@@ -20,11 +20,12 @@ namespace chi_radhydro
   static const double planck_constant_h2 = 4.13380133E-10;   // keV-sh
 
 //  static const double speed_of_light_mps =  299792458.0;
-  static const double speed_of_light_cmpsh = 299.792;
+  static const double speed_of_light_cmpsh = 299.792458;
 
 //  static const double a = (8.0/15.0)*pow(M_PI,5)*pow(boltzmann_constant_kb1,4)/
 //                          (pow(planck_constant_h1*speed_of_light_cmpsh,3));
-  static const double a = 0.013722354852;
+//  static const double a = 0.013722354852;
+  static const double a = 0.0137201720;
 
   enum class BCType : int
   {
@@ -117,8 +118,10 @@ namespace chi_radhydro
   //03_Fstuff
   MatDbl MakeRotationMatrix(const Vec3 &axis, double theta);
   chi_math::MatrixNXxNX<5,double> MakeTransformationMatrix(const Vec3 &n);
-  FVector
-  MakeF(const UVector& U, double pressure, const Vec3& n_f=Vec3(1,0,0));
+  FVector MakeF(const UVector& U, double pressure, const Vec3& n_f=Vec3(1,0,0));
+  FVector MakeFWithRadE(const UVector& U, double pressure,
+                        double radE, const Vec3& n_f=Vec3(0,0,1));
+
 
   //04_gradients
   UVector MinModU(const std::vector<UVector> &vec_of_U,
@@ -159,12 +162,12 @@ namespace chi_radhydro
     chi_math::SpatialDiscretization_FV&   fv,
     const std::vector<double>&            gamma,
     double                                tau,
-    const std::vector<UVector>&           U_n,
-    const std::vector<GradUTensor>&       grad_U_n,
-    const std::vector<double>&            rad_E_n,
-    const std::vector<chi_mesh::Vector3>& grad_rad_E_n,
-    std::vector<UVector>&                 U_n_star,
-    std::vector<double>&                  rad_E_n_star
+    const std::vector<UVector>&           U_a,
+    const std::vector<GradUTensor>&       grad_U_a,
+    const std::vector<double>&            rad_E_a,
+    const std::vector<chi_mesh::Vector3>& grad_rad_E_a,
+    std::vector<UVector>&                 U_a_star,
+    std::vector<double>&                  rad_E_a_star
     );
 
   void MHM_HydroRadECorrector(
@@ -173,14 +176,14 @@ namespace chi_radhydro
     const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&            gamma,
     double                                tau,
-    const std::vector<UVector>&           U_n,
-    const std::vector<UVector>&           U_nph,
-    const std::vector<GradUTensor>&       grad_U_nph,
-    const std::vector<double>&            rad_E_n,
-    const std::vector<double>&            rad_E_nph,
-    const std::vector<chi_mesh::Vector3>& grad_rad_E_nph,
-    std::vector<UVector>&                 U_nph_star,
-    std::vector<double>&                  rad_E_nph_star
+    const std::vector<UVector>&           U_a,
+    const std::vector<UVector>&           U_b,
+    const std::vector<GradUTensor>&       grad_U_b,
+    const std::vector<double>&            rad_E_a,
+    const std::vector<double>&            rad_E_b,
+    const std::vector<chi_mesh::Vector3>& grad_rad_E_b,
+    std::vector<UVector>&                 U_b_star,
+    std::vector<double>&                  rad_E_b_star
     );
 
   void DensityMomentumUpdateWithRadMom(
@@ -194,6 +197,16 @@ namespace chi_radhydro
     const std::vector<double>&            rad_E_old,
     std::vector<UVector>&                 U_new
   );
+
+  //08
+  std::vector<double> MakePostShockConditionsRH(double Cv,
+                                                double gamma,
+                                                double rho0,
+                                                double T0,
+                                                double u0,
+                                                double rho1_guess,
+                                                double T1_guess,
+                                                double u1_guess);
 }//namespace chi_radhydro 
 
 #endif //CHI_RADHYDRO_H
