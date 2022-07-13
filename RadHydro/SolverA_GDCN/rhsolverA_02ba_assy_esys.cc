@@ -13,7 +13,7 @@ void chi_radhydro::SolverA_GDCN::
   const std::vector<double>&      kappa_t_n,
   const std::vector<double>&      kappa_a_nph,
   const std::vector<double>&      kappa_t_nph,
-  const std::vector<double>&      Cv,
+  const double                    Cv,
   double                          tau,
   double                          theta1,
   double                          theta2,
@@ -48,12 +48,13 @@ void chi_radhydro::SolverA_GDCN::
     const double   V_c         = fv_view_c->volume;
 
     //=========================================== Get cell physics-info
-    const double   rho_c_n     = U_n[c][0];
-    const double   rho_c_np1   = U_np1[c][0];
-    const double   T_c_n       = IdealGasTemperatureFromCellU(U_n[c], Cv[c]);
-    const double   T_c_nphstar = IdealGasTemperatureFromCellU(U_nphstar[c], Cv[c]);
+    const double   rho_c_n     = U_n[c][RHO];
+    const double   rho_c_np1   = U_np1[c][RHO];
+    const double   T_c_n       = IdealGasTemperatureFromCellU(U_n[c], Cv);
+    const double   T_c_nph     = IdealGasTemperatureFromCellU(U_nph[c], Cv);
+    const double   T_c_nphstar = IdealGasTemperatureFromCellU(U_nphstar[c], Cv);
 
-    const double   E_c_nphstar = U_nphstar[c][4];
+    const double   E_c_nphstar = U_nphstar[c][MAT_E];
 
     const double   e_c_nphstar     = InternalEnergyFromCellU(U_nphstar[c]);
     const double   rad_E_c_n       = rad_E_n[c];
@@ -76,55 +77,14 @@ void chi_radhydro::SolverA_GDCN::
       continue;
     }
 
-    //------------------------------------------- Begin Lambda
-    // Lambda to compute 3rd_Grad_RadE_Dot_u
-    auto Compute3rdGradRadE = [](const chi_mesh::Cell& cell,
-                                 const double V_c,
-                                 const std::vector<double>& face_areas,
-                                 const double radE,
-                                 const Vec3& grad_radE,
-                                 const UVector& U,
-                                 const std::vector<UVector>& grad_U)
-    {
-      double third_grad_rad_E_dot_u = 0.0;
-      const auto& x_c = cell.centroid;
-      size_t f = 0;
-      for (const auto& face : cell.faces)
-      {
-        const auto& x_f  = face.centroid;
-        const auto  x_fc = x_f - x_c;
-        const Vec3 A_f = face_areas[f] * face.normal;
-
-        const double  rad_E_f = radE + (x_f - x_c).Dot(grad_radE);
-        const UVector U_f     = UplusDXGradU(U, x_fc, grad_U);
-        const Vec3    u_f     = VelocityFromCellU(U_f);
-
-        third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
-        ++f;
-      }//for f
-      return third_grad_rad_E_dot_u;
-    };
-    //------------------------------------------- End Lambda
-    //------------------------------------------- Begin Lambda
-    // Lambda to compute Emission-absorption source
-    // Sea = sigma_a c (aT^4 - radE)
-    auto ComputeEmAbsSource = [](const double sigma_a,
-                                 const double T,
-                                 const double radE)
-    {
-      return sigma_a * speed_of_light_cmpsh *
-             (a * pow(T,4) - radE);
-    };
-    //------------------------------------------- End Lambda
-
     //=========================================== Compute explicit terms
     double third_grad_rad_E_dot_u_nph =
-      Compute3rdGradRadE(cell_c, V_c, face_areas,
-                         rad_E_c_n, grad_rad_E_nph[c],
-                         U_n[c], grad_U_nph[c]);
+      Make3rdGradRadE(cell_c, V_c, face_areas,
+                      rad_E_c_nph, grad_rad_E_nph[c],
+                      U_nph[c], grad_U_nph[c]);
 
     // sigma_a c (aT^4 - radE)
-    double Sea_n = ComputeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
+    double Sea_n = MakeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
 
     double grad_dot_J_n = ComputeGradDotJ(grid, fv_ref, cell_c,
                                           sigma_t_c_n, kappa_t_n,
@@ -132,7 +92,7 @@ void chi_radhydro::SolverA_GDCN::
 
     //=========================================== Compute constants
     const double k1 = theta1 * sigma_a_c_np1 * speed_of_light_cmpsh;
-    const double k2 = 4 * pow(T_c_nphstar, 3) / Cv[c];
+    const double k2 = 4 * pow(T_c_nphstar, 3) / Cv;
 
     const double k3 = - k1*a*pow(T_c_nphstar, 4)
                       + k1*a*k2*e_c_nphstar
@@ -142,7 +102,7 @@ void chi_radhydro::SolverA_GDCN::
 
     const double k5 = k1/(tau * rho_c_np1 - k4);
     const double k6 =
-      (k3 - tau * 0.5 * rho_c_np1 * pow(u_c_np1.Norm(), 2) + tau * E_c_nphstar) /
+      (k3 - tau * 0.5 * rho_c_np1 * u_c_np1.NormSquare() + tau * E_c_nphstar) /
       (tau * rho_c_np1 - k4);
 
     k5_vec[c] = k5;
@@ -193,6 +153,55 @@ void chi_radhydro::SolverA_GDCN::
         A[c][cn] += coeff_LHS;
       }
     }//for f in connectivity
+
+//    for (size_t f=0; f<num_faces; ++f)
+//    {
+//      const auto& face = cell_c.faces[f];
+//      const auto& x_f  = face.centroid;
+//      const auto  A_f  = face_areas[f] * face.normal;
+//      const auto  x_cf = x_f - x_c;
+//
+//      const double D_c = -speed_of_light_cmpsh / (3 * sigma_t_c_np1);
+//      const double k_c = D_c/x_cf.Norm();
+//
+//      double sigma_t_cn_np1 = sigma_t_c_np1;
+//      Vec3   x_cn          = x_c + 2*(x_f-x_c);
+//
+//      if (not face.has_neighbor) //DEFAULT REFLECTING BC for radE
+//      {
+//        //Nothing to do for reflecting bc
+//      }
+//      else                       //NEIGHBOR CELL
+//      {
+//        const uint64_t cn = face.neighbor_id;
+//        const auto& cell_cn = grid.cells[cn];
+//        x_cn = cell_cn.centroid;
+//
+//        const double rho_cn_np1 = U_np1[cn][0];
+//
+//        sigma_t_cn_np1 = rho_cn_np1 * kappa_t_nph[cn];
+//      }
+//      const auto x_fcn = x_cn - x_f;
+//
+//      const double D_cn = -speed_of_light_cmpsh / (3 * sigma_t_cn_np1);
+//      const double k_cn = D_cn/x_fcn.Norm();
+//
+//      const Vec3 x_ccn = x_cn - x_c;
+//      const Vec3 kf_np1 = (k_c * k_cn / (k_c + k_cn)) * x_ccn.Normalized();
+//
+//      const double coeff_LHS = (theta1 / V_c) * A_f.Dot(kf_np1);
+//
+//      if (not face.has_neighbor) //DEFAULT REFLECTING
+//      {
+//        //J_f = 0 therefor no connectivity elements
+//      }
+//      else                       //NEIGHBOR CELL
+//      {
+//        A[c][c] += -coeff_LHS;
+//        const uint64_t cn = face.neighbor_id;
+//        A[c][cn] += coeff_LHS;
+//      }
+//    }//for f in connectivity
 
     //=========================================== Diagonal and rhs
     A[c][c] += tau + k1 + k4*k5;

@@ -50,8 +50,6 @@ void SolverB_GDTBDF::Execute()
   const auto max_time      = basic_options("max_time"     ).FloatValue();
 
   const auto& CCL   = scalar_fields.at("cell_char_length");
-  const auto& gamma = scalar_fields.at("gamma");
-  const auto& Cv    = scalar_fields.at("Cv");
 
   auto kappa_s_function = basic_options("kappa_s_function").StringValue();
   auto kappa_a_function = basic_options("kappa_a_function").StringValue();
@@ -69,7 +67,7 @@ void SolverB_GDTBDF::Execute()
   for (int n=0; n<num_timesteps; ++n)
   {
     //================================= Compute delta_t
-    const double dt_hydro = ComputeCourantLimitDelta_t(U_n, gamma, CCL, CFL);
+    const double dt_hydro = ComputeCourantLimitDelta_t(U_n, m_gamma, CCL, CFL);
     const double dt       = std::min(delta_t_max, dt_hydro);
 
     chi::log.Log() << "Timestep " << n
@@ -85,7 +83,7 @@ void SolverB_GDTBDF::Execute()
     auto grad_rad_E_n = ComputeRadEGradients(rad_E_n,*grid,*fv,bc_settings);
 
     //================================= Compute kappas at n
-    chi_radhydro::ComputeCellKappas(*grid, Cv, U_n,
+    chi_radhydro::ComputeCellKappas(*grid, m_Cv, U_n,
                                     kappa_s_function, kappa_a_function,
                                     kappa_a_n,kappa_t_n);
 
@@ -101,7 +99,7 @@ void SolverB_GDTBDF::Execute()
     auto grad_rad_E_npq = ComputeRadEGradients(rad_E_npq,*grid,*fv,bc_settings);
 
     //=================================== Compute kappas at nph
-    chi_radhydro::ComputeCellKappas(*grid, Cv, U_nph,
+    chi_radhydro::ComputeCellKappas(*grid, m_Cv, U_nph,
                                     kappa_s_function, kappa_a_function,
                                     kappa_a_npq,kappa_t_npq);
 
@@ -120,7 +118,7 @@ void SolverB_GDTBDF::Execute()
     auto grad_rad_E_nph = ComputeRadEGradients(rad_E_nph,*grid,*fv,bc_settings);
 
     //================================= Compute kappas at n
-    chi_radhydro::ComputeCellKappas(*grid, Cv, U_nph,
+    chi_radhydro::ComputeCellKappas(*grid, m_Cv, U_nph,
                                     kappa_s_function, kappa_a_function,
                                     kappa_a_nph,kappa_t_nph);
 
@@ -137,7 +135,7 @@ void SolverB_GDTBDF::Execute()
     auto grad_rad_E_np3q  = ComputeRadEGradients(rad_E_np3q,*grid,*fv,bc_settings);
 
     //=================================== Compute kappas at nph
-    chi_radhydro::ComputeCellKappas(*grid, Cv, U_np3q,
+    chi_radhydro::ComputeCellKappas(*grid, m_Cv, U_np3q,
                                     kappa_s_function, kappa_a_function,
                                     kappa_a_np3q,kappa_t_np3q);
 
@@ -149,9 +147,6 @@ void SolverB_GDTBDF::Execute()
                dt / 2.0,
                U_n, U_nph, U_np3q, grad_U_np3q, U_np1,
                rad_E_n, rad_E_nph, rad_E_np3q, grad_rad_E_np3q, rad_E_np1);
-
-
-
 
 
 
@@ -200,7 +195,7 @@ void SolverB_GDTBDF::Execute()
             scalar_fields.at("w"),
             scalar_fields.at("e"),
             scalar_fields.at("p"),
-            scalar_fields.at("gamma"));
+            m_gamma);
 
   scalar_fields.at("radE") = rad_E_n;
 
@@ -210,7 +205,7 @@ void SolverB_GDTBDF::Execute()
   const auto& e  = scalar_fields.at("e");
 
   for (uint64_t c=0; c < num_local_nodes; ++c)
-    temperature[c] = e[c] / Cv[c];
+    temperature[c] = e[c] / m_Cv;
 
   //======================================== Print outputs
   PrintRawOutput("ZRawOutput.txt");

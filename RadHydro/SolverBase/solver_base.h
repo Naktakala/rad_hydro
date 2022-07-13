@@ -41,6 +41,7 @@ public:
   void Execute() override;
   //99
   void PrintRawOutput(const std::string& file_name);
+  static VecDbl MakeOutputTimesFromStr(const std::string& output_times_str);
 
 };
 

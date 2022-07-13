@@ -15,11 +15,11 @@ AssembleGeneralEnergySystemB(
   const std::vector<double>&      kappa_t_nph,
   const std::vector<double>&      kappa_a_np3q,
   const std::vector<double>&      kappa_t_np3q,
-  const std::vector<double>&      Cv,
-  double                          tau,
-  double                          theta1,
-  double                          theta2,
-  double                          theta3,
+  const double                    Cv,
+  const double                    tau,
+  const double                    theta1,
+  const double                    theta2,
+  const double                    theta3,
 
   const std::vector<UVector>&     U_n,
   const std::vector<UVector>&     U_nph,
@@ -60,9 +60,9 @@ AssembleGeneralEnergySystemB(
     const double   rho_c_nph    = U_nph[c][0];
     const double   rho_c_np1    = U_np1[c][0];
 
-    const double   T_c_n        = IdealGasTemperatureFromCellU(U_n[c], Cv[c]);
-    const double   T_c_nph      = IdealGasTemperatureFromCellU(U_nph[c], Cv[c]);
-    const double   T_c_np3qstar = IdealGasTemperatureFromCellU(U_np3qstar[c], Cv[c]);
+    const double   T_c_n        = IdealGasTemperatureFromCellU(U_n[c], Cv);
+    const double   T_c_nph      = IdealGasTemperatureFromCellU(U_nph[c], Cv);
+    const double   T_c_np3qstar = IdealGasTemperatureFromCellU(U_np3qstar[c], Cv);
 
     const double   E_c_np3qstar = U_np3qstar[c][4];
 
@@ -150,7 +150,7 @@ AssembleGeneralEnergySystemB(
 
     //=========================================== Compute constants
     const double k1 = theta1 * sigma_a_c_np1 * speed_of_light_cmpsh;
-    const double k2 = 4 * pow(T_c_np3qstar, 3) / Cv[c];
+    const double k2 = 4 * pow(T_c_np3qstar, 3) / Cv;
 
     const double k3 = - k1*a*pow(T_c_np3qstar, 4)
                       + k1 * a * k2 * e_c_np3qstar

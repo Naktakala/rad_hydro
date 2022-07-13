@@ -120,6 +120,7 @@ void RadHydroSolver::Initialize()
       " not specified.");
 
   chi::log.Log() << "Done initializing RadHydroSolver entities.";
+
 }//Initialize
 
 }//namespace chi_radhydro

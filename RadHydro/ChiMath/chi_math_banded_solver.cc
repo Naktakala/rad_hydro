@@ -11,15 +11,15 @@ namespace chi_math
    * \param b A rhs-vector of length N.
    *
    * \return X A vector of length N, the solution to the system.*/
-  std::vector<double> TDMA(MatDbl& dense_A,
-                           VecDbl& b)
+  std::vector<double> TDMA(const MatDbl& dense_A,
+                           const VecDbl& b)
   {
     const size_t N = dense_A.size();
 
     VecDbl  A(N,0.0);
     VecDbl  B(N,0.0);
     VecDbl  C(N,0.0);
-    VecDbl& D = b;
+    VecDbl  D = b;
 
     for (size_t i=0; i<N; ++i)
     {

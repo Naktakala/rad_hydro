@@ -1,5 +1,5 @@
-a_const = 0.013722354852
-c_const = 299.792
+a_const = 0.0137201720
+c_const = 299.792458
 
 function SoundSpeedGiven_e_gamma(e, gamma)
     return math.sqrt(e * gamma * (gamma-1))

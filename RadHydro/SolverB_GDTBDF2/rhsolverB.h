@@ -45,7 +45,7 @@ public:
     const std::vector<double>&      kappa_t_nph,
     const std::vector<double>&      kappa_a_np3q,
     const std::vector<double>&      kappa_t_np3q,
-    const std::vector<double>&      Cv,
+    double                          Cv,
     double                          tau,
     double                          theta1,
     double                          theta2,

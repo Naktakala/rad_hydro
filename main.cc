@@ -5,7 +5,6 @@
 
 #include "RadHydro/lua/lua_radhydro.h"
 #include "RadHydro/HydroSolver/lua/compinfflow_lua.h"
-#include "RadHydro/RadSolver/lua/radtran_lua.h"
 #include "RadHydro/SolverBase/lua/lua_solver_base.h"
 #include "RadHydro/SolverA_GDCN/lua/lua_rhsolverA.h"
 #include "RadHydro/SolverB_GDTBDF2/lua/lua_rhsolverB.h"
@@ -18,7 +17,6 @@ int main(int argc, char* argv[])
 
   auto& L = chi::console.consoleState;
   chi_hydro::compinfflow_lua_utils::RegisterLuaEntities(L);
-  chi_radhydro::lua_utils::RegisterLuaEntities(L);
   chi_radhydro::solver_base_lua_utils::RegisterLuaEntities(L);
 
   chi::console.RegisterFunction(

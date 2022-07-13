@@ -16,8 +16,8 @@ inp.limiter = 'double minmod'
 
 # Geometry Specifications
 inp.geometry = 'slab'   # geometry type
-inp.rL = -0.025  # left boundary coordinate [cm]
-inp.rR =  0.025   # right boundary coordinate [cm]
+inp.rL = -0.25  # left boundary coordinate [cm]
+inp.rR =  0.25   # right boundary coordinate [cm]
 inp.N  = 500  # number of cells
 
 # Material Parameters
@@ -32,9 +32,9 @@ inp.c        = 299.792              # speed of light [cm / sh]
 # Time Specifications
 inp.cfl         = 0.3  # cfl factor
 inp.T_start     = 0.0   # start time [sh]
-inp.T_final     = 0.5   # final time [sh]
+inp.T_final     = 5.0   # final time [sh]
 inp.relErFactor = 0.2 # Relative change in Er per time step
-inp.maxTimeStep = 1.0e-3
+inp.maxTimeStep = 5.0e-2
 
 # Initial Conditions
 inp.rho = lambda r: 1. * (r < 0) + 3.00185103 * (r >= 0)

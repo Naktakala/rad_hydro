@@ -148,6 +148,7 @@ class Fields:
         for i in range(self.geo.N):
             Emat += self.geo.V[i] * self.Em_old[i]
             Erad += self.geo.V[i] * self.Er_old[i]
+        print("Emat Erad", Emat, Erad)
         self.material_energy.append(Emat)
         self.material_advection.append(0)
         self.radiation_energy.append(Erad)
@@ -314,6 +315,7 @@ class Fields:
         for i in range(self.geo.N):
             Emat += V[i] * Em[i] 
             Erad += V[i] * Er[i]
+        print("Er0 ErNm1 Em0 EmNm1",Er[0],Er[self.geo.N-1],Em[0],Em[self.geo.N-1])
         material_energy.append(Emat)
         radiation_energy.append(Erad)
         
@@ -367,6 +369,16 @@ class Fields:
         total_mat_adv = self.total_material_advection
         total_rad_adv = self.total_radiation_advection
         total_rad_leak = self.total_radiation_leakage
+
+        print("dEmat          ",dEmat         ,"\n",
+              "dErad          ",dErad         ,"\n",
+              "total_mat_adv  ",total_mat_adv ,"\n",
+              "total_rad_adv  ",total_rad_adv ,"\n",
+              "total_rad_leak ",total_rad_leak,"\n",
+              "mat_adv        ",mat_adv       ,"\n",
+              "rad_adv        ",rad_adv       ,"\n",
+              "rad_leakage    ",rad_leakage   ,"\n",
+              )
         
         return dEmat + dErad + total_mat_adv + total_rad_adv + total_rad_leak
         

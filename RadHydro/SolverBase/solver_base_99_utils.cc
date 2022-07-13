@@ -1,5 +1,7 @@
 #include "solver_base.h"
 
+#include "ChiTimer/chi_timer.h"
+
 #include <fstream>
 
 namespace chi_radhydro
@@ -39,5 +41,23 @@ void RadHydroSolver::PrintRawOutput(const std::string &file_name)
 
   file.close();
 }
+
+std::vector<double> RadHydroSolver::
+  MakeOutputTimesFromStr(const std::string &output_times_str)
+{
+  std::vector<double> output_times;
+
+  std::istringstream iss(output_times_str);
+  while (iss.tellg() >= 0)
+  {
+    double value; iss >> value;
+    if (not (iss.rdstate() & std::istringstream::failbit))
+      output_times.push_back(value);
+  }
+
+  return output_times;
+}
+
+
 
 }//namespace chi_radhydro

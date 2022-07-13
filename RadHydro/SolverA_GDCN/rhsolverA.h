@@ -11,6 +11,11 @@ class SolverA_GDCN : public RadHydroSolver
 protected:
   double m_gamma;
   double m_Cv;
+
+  std::string m_kappa_s_function;
+  std::string m_kappa_a_function;
+
+  std::vector<uint64_t> m_bndry_cells_local_ids;
 public:
   //00
   explicit SolverA_GDCN(const std::string& name);
@@ -56,7 +61,7 @@ public:
     const std::vector<double>&      kappa_t_n,
     const std::vector<double>&      kappa_a_nph,
     const std::vector<double>&      kappa_t_nph,
-    const std::vector<double>&      Cv,
+    double                          Cv,
     double                          tau,
     double                          theta1,
     double                          theta2,
@@ -80,6 +85,27 @@ public:
                                 const std::vector<double>&     kappa_t_n,
                                 const std::vector<UVector>&    U_n,
                                 const std::vector<double>&     rad_E_n);
+
+  //91_utils
+  void ProcessAndExportFields(const std::string& file_name,
+                              const std::vector<UVector>& U,
+                              const std::vector<double>& rad_E,
+                              size_t num_local_nodes);
+
+  struct SystemEnergy
+  {
+    double Emat = 0.0;
+    double Erad = 0.0;
+    double me_adv = 0.0;
+    double re_adv = 0.0;
+  };
+  SystemEnergy ComputeSysEnergyChange(
+                                double dt,
+                                const std::vector<UVector>& U,
+                                const std::vector<double>& rad_E,
+                                const std::vector<GradUTensor>& grad_U,
+                                const std::vector<chi_mesh::Vector3>& grad_rad_E,
+                                const std::map<uint64_t, BCSetting>& bc_setttings);
 };
 
 }//namespace chi_radhydro

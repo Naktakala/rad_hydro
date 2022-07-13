@@ -22,8 +22,37 @@ end
 --############################################### Setup mesh
 chiMeshHandlerCreate()
 
+--mesh={}
+--N1 = 20
+--N2 = 100
+--L=0.5
+--L1 = (L/2)*(1-0.08)
+--L2 = (L/2)*(0.08)
+--dx1 = L1/N1
+--dx2 = L2/N2
+--
+--print("L1dx1",L1,dx1)
+--print("L2dx2",L2,dx2)
+--xmin = 0.0
+--i=1
+--for k=0,N1 do
+--    mesh[i] = xmin + k*dx1
+--    i = i + 1
+--end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--for k=1,2*N2 do
+--    mesh[i] = L1 + k*dx2
+--    i = i + 1
+--end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--for k=1,N1 do
+--    mesh[i] = L1 + 2*L2 + k*dx1
+--    i = i + 1
+--end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--N = 2*N1 + 2*N2
 mesh={}
-N=5000
+N=500
 
 L=0.5
 xmin = 0.0
@@ -34,6 +63,7 @@ for i=1,(N+1) do
 end
 chiMeshCreateUnpartitioned1DOrthoMesh(mesh)
 chiVolumeMesherExecute();
+--os.exit()
 
 --############################################### Set Material IDs
 chiVolumeMesherSetMatIDToAll(0)
@@ -68,9 +98,9 @@ solver_name = "RadHydroSolverA"
 phys1 = chiCreateSolverA(solver_name);
 
 chiSolverSetBasicOption(phys1, "maximum_dt"    , 5e-2)
-chiSolverSetBasicOption(phys1, "CFL"           , 0.3)
-chiSolverSetBasicOption(phys1, "max_timesteps" , 20000)
-total_time = 2.5
+chiSolverSetBasicOption(phys1, "CFL"           , 0.1)
+chiSolverSetBasicOption(phys1, "max_timesteps" , -1750)
+total_time = 10
 chiSolverSetBasicOption(phys1, "max_time"      , total_time)
 time_vals = ""
 Nt = 10
@@ -79,7 +109,7 @@ for i=1,Nt do
     time_vals = time_vals..string.format("%.3g ", dt*i)
 end
 chiSolverSetBasicOption(phys1, "export_times"  , time_vals)
-chiSolverSetBasicOption(phys1, "output_prefix" , "Test2a_")
+chiSolverSetBasicOption(phys1, "output_prefix" , "Test3a_")
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
@@ -96,58 +126,28 @@ e0 = InternalEGiven_T_Cv(T0,Cv)
 cs0 = SoundSpeedGiven_e_gamma(e0, gamma)
 u0 = 3.0 * cs0
 
-rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
-        rho0*3, T0*2.0, u0*0.25)
 --rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
---        3.00185103, 3.66260705e-01, 1.26732249e-01)
+--        rho0*3, T0*2.0, u0*0.25)
+rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
+        3.00185103, 3.66260705e-01, 1.26565579e-01)
 
 e1 = Cv*T1
 
 radE1 = a_const * T1^4
 
---u1 = (u0^2 *(gamma - 1) + 2*cs0^2)/(u0*(gamma+1))
---rho1 = rho0*u0/u1
---
---e1 = (1/2/gamma)*(u0^2 - u1^2) + e0
---
---cs1 = SoundSpeedGiven_e_gamma(e1, gamma)
---
---T1 = e1/Cv
---
---radE1 = a_const * T1^4
+--u1 = u1 - 0.00016667 - 0.00004167 --400
+--u1 = u1 - 0.00050001 --100
 
---rho1 = 3.00185103
---u0 = 3.80431331e-01; u1 = 1.26732249e-01
---T1 = 3.66260705e-01
---e0 = 8.68367987e-02; e1=1.83229115e-02
---radE0 = 1.37201720e-06; radE1=2.46899872e-04
-
---M = 3.0
---rho0 = 1.0             --input
---T0 = 0.1               --input
---radE0 = 1.37200000E-06 --input
---e0 = 1.44727998E-02;   --from Cv*T
---cs0 = 0.126810444      --from sqrt(e*gamma*(gamma-1))
---u0 = 0.380431331       -- verified M*cs0
---
---radE1=2.47993235E-04    --input
---T1 = 3.66666667E-01     --from (radE1/a)^(0.25)
---e1 = 5.30669325E-02     --from Cv*T1
---
---rho1 = 3
---u1 = 0.126810444
-
-
-print(string.format(" rho0  %8.5e",rho0 )..
-      string.format(" u0    %8.5e",u0   )..
-      string.format(" T0    %8.5e",T0   )..
-      string.format(" e0    %8.5e",e0   )..
-      string.format(" radE0 %8.5e",radE0))
-print(string.format(" rho1  %8.5e",rho1 )..
-      string.format(" u1    %8.5e",u1   )..
-      string.format(" T1    %8.5e",T1   )..
-      string.format(" e1    %8.5e",e1   )..
-      string.format(" radE1 %8.5e",radE1))
+print(string.format(" rho0  %8.8e",rho0 )..
+      string.format(" u0    %8.8e",u0   )..
+      string.format(" T0    %8.8e",T0   )..
+      string.format(" e0    %8.8e",e0   )..
+      string.format(" radE0 %8.8e",radE0))
+print(string.format(" rho1  %8.8e",rho1 )..
+      string.format(" u1    %8.8e",u1   )..
+      string.format(" T1    %8.8e",T1   )..
+      string.format(" e1    %8.8e",e1   )..
+      string.format(" radE1 %8.8e",radE1))
 --os.exit()
 
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"rho",rho0)
@@ -162,18 +162,19 @@ chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"w",u1)
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"temperature",T0)
 chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"temperature",T1)
 
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"radE",radE0)
-chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"radE",radE1)
+--chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_L,"radE",radE0)
+--chiRadHydroSolverSetScalarFieldWithLV(phys1,vol_R,"radE",radE1)
 
 zmax = 4
 zmin = 5
 TRANSMISSIVE = 0
 FIXED = 1
-bctype = FIXED
-chiRadHydroSetBCSetting(phys1,zmin,FIXED,rho0,0,0,u0,e0,p0,radE0)
-chiRadHydroSetBCSetting(phys1,zmax,FIXED,rho1,0,0,u1,e1,p1,radE1)
+bctype = TRANSMISSIVE
+chiRadHydroSetBCSetting(phys1,zmin,bctype,rho0,0,0,u0,e0,p0,radE0)
+chiRadHydroSetBCSetting(phys1,zmax,bctype,rho1,0,0,u1,e1,p1,radE1)
 
 chiSolverInitialize(phys1)
+--os.exit()
 chiSolverExecute(phys1)
 
 ff_list = {}
@@ -189,39 +190,6 @@ table.insert(ff_list, chiGetFieldFunctionHandleByName(solver_name.."-radE") )
 
 chiExportMultiFieldFunctionToVTK(ff_list, "ZResults")
 
---############################################### Line plot
---Testing consolidated interpolation
-cline = chiFFInterpolationCreate(LINE)
-chiFFInterpolationSetProperty(cline,LINE_FIRSTPOINT, 0.0,0.0,0.0+dx/2)
-chiFFInterpolationSetProperty(cline,LINE_SECONDPOINT,0.0,0.0,L-dx/2)
-chiFFInterpolationSetProperty(cline,LINE_NUMBEROFPOINTS, N)
 
-chiFFInterpolationSetProperty(cline,ADD_FIELDFUNCTION,ff_list[1]) --rho
-chiFFInterpolationSetProperty(cline,ADD_FIELDFUNCTION,ff_list[4]) --w
-chiFFInterpolationSetProperty(cline,ADD_FIELDFUNCTION,ff_list[5]) --p
-chiFFInterpolationSetProperty(cline,ADD_FIELDFUNCTION,ff_list[6]) --e
 
-chiFFInterpolationInitialize(cline)
-chiFFInterpolationExecute(cline)
 
-arrays = chiFFInterpolationGetValue(cline)
-
---############################################### Write to file
-x = mesh
-rho = arrays[1]
-u   = arrays[2]
-p   = arrays[3]
-e   = arrays[4]
-
-ofile = io.open("Test1_output.txt", "w")
-io.output(ofile)
-io.write("   i           x    density     pressure    velocity    energy  \n")
-for k,v in pairs(arrays[1]) do
-    io.write(string.format("%4d  %10.2e  %10.2e  %10.2e  %10.2e  %10.2e\n",
-            k, 0.5*(x[k]+x[k+1]), rho[k], p[k], u[k], e[k]))
-end
-io.close(ofile)
-
-os.execute("mv Test1_output.txt RadHydro/SolverA_GDCN/Tests/")
-os.execute("python3 RadHydro/SolverA_GDCN/Tests/Test1.py")
-os.execute("mv Test1_output.png RadHydro/SolverA_GDCN/Tests/")

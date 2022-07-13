@@ -68,6 +68,30 @@ namespace chi_math{
       return *this;
     }
 
+    /**Component-wise assignment from initializer list.*/
+    MatrixNXxNX& operator=(const std::initializer_list<std::initializer_list<NumberFormat>>& lst)
+    {
+      if (lst.size() != N)
+        throw std::logic_error("MatrixNXxNX constructor from initializer list "
+                               "encountered incompatible dimensions.");
+
+      int i = 0;
+      for (auto &row: lst)
+      {
+        if (row.size() != N)
+          throw std::logic_error("MatrixNXxNX constructor from initializer list "
+                                 "encountered incompatible dimensions.");
+
+        int j = 0;
+        for (NumberFormat value: row)
+          elements[i](j++) = value;
+
+        ++i;
+      }
+
+      return *this;
+    }
+
     //============================================ Addition
     /** Component-wise addition by a scalar.*/
     MatrixNXxNX& Shift( const NumberFormat value )

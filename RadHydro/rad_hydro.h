@@ -7,6 +7,8 @@
 #include "ChiMath/chi_math_vectorNX.h"
 #include "ChiMath/chi_math_matrixNXxNX.h"
 
+#include "ChiTimer/chi_timer.h"
+
 #include <map>
 
 namespace chi_radhydro 
@@ -27,6 +29,19 @@ namespace chi_radhydro
 //  static const double a = 0.013722354852;
   static const double a = 0.0137201720;
 
+  static const chi_mesh::Vector3 ihat(1,0,0);
+  static const chi_mesh::Vector3 jhat(0,1,0);
+  static const chi_mesh::Vector3 khat(0,0,1);
+
+  enum UVectorEntries
+  {
+    RHO   = 0,
+    U     = 1,
+    V     = 2,
+    W     = 3,
+    MAT_E = 4
+  };
+
   enum class BCType : int
   {
     TRANSMISSIVE = 0,
@@ -46,18 +61,18 @@ namespace chi_radhydro
   typedef chi_math::MatrixNXxNX<5,double> TMatrix;
   typedef std::vector<double> VecDbl;
   typedef std::vector<VecDbl> MatDbl;
-
+  typedef std::pair<TMatrix, TMatrix> TMatrixPair;
 
   //00_general
   double SoundSpeed(double gamma, double p, double rho);
 
   double ComputeCourantLimitDelta_t(const std::vector<UVector>& vecU,
-                                    const std::vector<double>& gamma,
+                                    double gamma,
                                     const std::vector<double>& cell_char_length,
                                     double C_cfl);
 
   void ComputeCellKappas(const chi_mesh::MeshContinuum& grid,
-                         const std::vector<double>&     Cv,
+                         double                         Cv,
                          const std::vector<UVector>&    U,
                          const std::string&             kappa_s_function,
                          const std::string&             kappa_a_function,
@@ -68,16 +83,20 @@ namespace chi_radhydro
                       const UVector& U_default);
   double MakeRadEFromBC(const BCSetting& bc_setting,
                         double radE_default);
+  double GetResetTimer(chi_objects::ChiTimer& timer);
+
+  double MakeEmAbsSource(double sigma_a,
+                         double T,
+                         double radE);
+  double Make3rdGradRadE(const chi_mesh::Cell& cell,
+                               double V_c,
+                         const std::vector<double>& face_areas,
+                               double radE,
+                         const Vec3& grad_radE,
+                         const UVector& U,
+                         const std::vector<UVector>& grad_U);
 
   //01_fieldsToFrom
-  void FieldsToU(std::vector<UVector> &pU,
-                 const chi_mesh::MeshContinuum& grid,
-                 const std::vector<double>& rho,
-                 const std::vector<double>& u,
-                 const std::vector<double>& v,
-                 const std::vector<double>& w,
-                 const std::vector<double>& e);
-
   void FieldsToU(const std::vector<double>& rho,
                  const std::vector<double>& u,
                  const std::vector<double>& v,
@@ -87,24 +106,13 @@ namespace chi_radhydro
 
   void
   UToFields(const std::vector<UVector> &pU,
-            const chi_mesh::MeshContinuum& grid,
             std::vector<double>& rho,
             std::vector<double>& u,
             std::vector<double>& v,
             std::vector<double>& w,
             std::vector<double>& e,
             std::vector<double>& p,
-            const std::vector<double>& gamma);
-
-  void
-  UToFields(const std::vector<UVector> &pU,
-            std::vector<double>& rho,
-            std::vector<double>& u,
-            std::vector<double>& v,
-            std::vector<double>& w,
-            std::vector<double>& e,
-            std::vector<double>& p,
-            const std::vector<double>& gamma);
+            double gamma);
 
   //02_Ustuff
   UVector
@@ -118,7 +126,11 @@ namespace chi_radhydro
   //03_Fstuff
   MatDbl MakeRotationMatrix(const Vec3 &axis, double theta);
   chi_math::MatrixNXxNX<5,double> MakeTransformationMatrix(const Vec3 &n);
-  FVector MakeF(const UVector& U, double pressure, const Vec3& n_f=Vec3(1,0,0));
+  TMatrixPair MakeTandTinv(const Vec3& n);
+  FVector MakeF(const UVector& U, double pressure, const Vec3& n_f=Vec3(0,0,1));
+  FVector MakeFNoTransform(const UVector& U, double pressure);
+  FVector Fswap_w_and_u(const FVector &F);
+  UVector Uswap_w_and_u(const UVector &U);
   FVector MakeFWithRadE(const UVector& U, double pressure,
                         double radE, const Vec3& n_f=Vec3(0,0,1));
 
@@ -146,10 +158,7 @@ namespace chi_radhydro
   UVector
   HLLC_RiemannSolve(const UVector &U_L_raw,
                     const UVector &U_R_raw,
-                    double p_L,
-                    double p_R,
-                    double gamma_L,
-                    double gamma_R,
+                    double gamma,
                     const Vec3& n_f,
                     bool verbose=false);
 
@@ -160,7 +169,7 @@ namespace chi_radhydro
   void MHM_HydroRadEPredictor(
     const chi_mesh::MeshContinuum&        grid,
     chi_math::SpatialDiscretization_FV&   fv,
-    const std::vector<double>&            gamma,
+    double                                gamma,
     double                                tau,
     const std::vector<UVector>&           U_a,
     const std::vector<GradUTensor>&       grad_U_a,
@@ -173,17 +182,17 @@ namespace chi_radhydro
   void MHM_HydroRadECorrector(
     const chi_mesh::MeshContinuum&        grid,
     chi_math::SpatialDiscretization_FV&   fv,
-    const std::map<uint64_t, BCSetting>& bc_setttings,
-    const std::vector<double>&            gamma,
+    const std::map<uint64_t, BCSetting>&  bc_setttings,
+    double                                gamma,
     double                                tau,
-    const std::vector<UVector>&           U_a,
-    const std::vector<UVector>&           U_b,
-    const std::vector<GradUTensor>&       grad_U_b,
-    const std::vector<double>&            rad_E_a,
-    const std::vector<double>&            rad_E_b,
-    const std::vector<chi_mesh::Vector3>& grad_rad_E_b,
-    std::vector<UVector>&                 U_b_star,
-    std::vector<double>&                  rad_E_b_star
+    const std::vector<UVector>&           U_old,
+    const std::vector<UVector>&           U_int,
+    const std::vector<GradUTensor>&       grad_U_int,
+    const std::vector<double>&            rad_E_old,
+    const std::vector<double>&            rad_E_int,
+    const std::vector<chi_mesh::Vector3>& grad_rad_E_int,
+    std::vector<UVector>&                 U_int_star,
+    std::vector<double>&                  rad_E_int_star
     );
 
   void DensityMomentumUpdateWithRadMom(
@@ -191,10 +200,13 @@ namespace chi_radhydro
     chi_math::SpatialDiscretization_FV& fv,
     const std::map<uint64_t, BCSetting>& bc_setttings,
     const std::vector<double>&          kappa_t,
+    double Cv,
     double tau,
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
     const std::vector<double>&            rad_E_old,
+    const std::string&                    kappa_s_function,
+    const std::string&                    kappa_a_function,
     std::vector<UVector>&                 U_new
   );
 

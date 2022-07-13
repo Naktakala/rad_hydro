@@ -88,9 +88,9 @@ std::string chi_radhydro::PrintU(const UVector &U,
   for (double val : U.elements)
   {
     if (std::fabs(val) > epsilon)
-      output << std::setprecision(3) << std::scientific << val << " ";
+      output << std::setprecision(8) << std::scientific << val << " ";
     else
-      output << std::setprecision(3) << std::scientific << 0.0 << " ";
+      output << std::setprecision(8) << std::scientific << 0.0 << " ";
   }
   output << "]";
 

@@ -9,10 +9,6 @@ chi_radhydro::SolverA_GDCN::SolverA_GDCN(const std::string &name) :
   basic_options.AddOption("kappa_a_function",
                           std::string("MaterialKappaAFunction"));
   //======================================== Add scalar fields
-  //Material properties
-  scalar_fields["gamma"] = {};
-  scalar_fields["Cv"   ] = {};
-
   //Unknowns
   scalar_fields["rho"  ] = {};
   scalar_fields["u"    ] = {};

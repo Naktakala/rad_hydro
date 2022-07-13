@@ -12,7 +12,7 @@ SoundSpeed(double gamma, double p, double rho)
 
 double chi_radhydro::
   ComputeCourantLimitDelta_t(const std::vector<UVector> &vecU,
-                             const std::vector<double> &gamma,
+                             const double gamma,
                              const std::vector<double> &cell_char_length,
                              double C_cfl)
 {
@@ -24,9 +24,9 @@ double chi_radhydro::
     const auto& U_c = vecU[c];
 
     const double u_norm_c = chi_radhydro::VelocityFromCellU(U_c).Norm();
-    const double p_c      = chi_radhydro::IdealGasPressureFromCellU(U_c, gamma[c]);
+    const double p_c      = chi_radhydro::IdealGasPressureFromCellU(U_c, gamma);
     const double rho_c    = U_c[0];
-    const double a_c      = SoundSpeed(gamma[c],p_c,rho_c);
+    const double a_c      = SoundSpeed(gamma,p_c,rho_c);
     const double L_c      = cell_char_length[c];
 
     const double u_norm = u_norm_c + a_c;
@@ -41,7 +41,7 @@ double chi_radhydro::
 
 void chi_radhydro::
   ComputeCellKappas(const chi_mesh::MeshContinuum &grid,
-                    const std::vector<double> &Cv,
+                    const double               Cv,
                     const std::vector<UVector> &U,
                     const std::string &kappa_s_function,
                     const std::string &kappa_a_function,
@@ -53,7 +53,7 @@ void chi_radhydro::
     const uint64_t c = cell.local_id;
     const int mat_id = cell.material_id;
 
-    const double T_c = IdealGasTemperatureFromCellU(U[c], Cv[c]);
+    const double T_c = IdealGasTemperatureFromCellU(U[c], Cv);
 
     const double kappa_s_c = ComputeKappaFromLua(T_c, mat_id, kappa_s_function);
     const double kappa_a_c = ComputeKappaFromLua(T_c, mat_id, kappa_a_function);
@@ -94,4 +94,51 @@ double chi_radhydro::MakeRadEFromBC(const BCSetting& bc_setting,
   if (bc_setting.type == BCType::TRANSMISSIVE) return radE_default;
 
   return bc_setting.values[6];
+}
+
+double chi_radhydro::GetResetTimer(chi_objects::ChiTimer &timer)
+{
+  double time = timer.GetTime();
+  timer.Reset();
+  return time;
+}
+
+/**Computes Emission-absorption source.
+ * Sea = sigma_a c (aT^4 - radE)*/
+double chi_radhydro::MakeEmAbsSource(const double sigma_a,
+                                     const double T,
+                                     const double radE)
+{
+  return sigma_a * speed_of_light_cmpsh *
+         (a * pow(T,4.0) - radE);
+}
+
+double chi_radhydro::Make3rdGradRadE(const chi_mesh::Cell &cell,
+                                     double V_c,
+                                     const std::vector<double> &face_areas,
+                                     double radE,
+                                     const Vec3 &grad_radE,
+                                     const UVector &U,
+                                     const std::vector<UVector> &grad_U)
+{
+  double third_grad_rad_E_dot_u = 0.0;
+  const auto& x_c = cell.centroid;
+
+//  const Vec3    u_f     = VelocityFromCellU(U);
+
+  size_t f = 0;
+  for (const auto& face : cell.faces)
+  {
+    const auto& x_f  = face.centroid;
+    const auto  x_fc = x_f - x_c;
+    const Vec3 A_f = face_areas[f] * face.normal;
+
+    const double  rad_E_f = radE + (x_f - x_c).Dot(grad_radE);
+    const UVector U_f     = UplusDXGradU(U, x_fc, grad_U);
+    const Vec3    u_f     = VelocityFromCellU(U_f);
+
+    third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
+    ++f;
+  }//for f
+  return third_grad_rad_E_dot_u;
 }
