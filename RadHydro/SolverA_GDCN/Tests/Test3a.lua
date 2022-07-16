@@ -22,46 +22,46 @@ end
 --############################################### Setup mesh
 chiMeshHandlerCreate()
 
-mesh={}
-N1 = 20
-N2 = 400
-L=0.5
-L1 = (L/2)*(1-0.08*2)
-L2 = (L/2)*(0.08*2)
-dx1 = L1/N1
-dx2 = L2/N2
-
-print("L1dx1",L1,dx1)
-print("L2dx2",L2,dx2)
-xmin = 0.0
-i=1
-for k=0,N1 do
-    mesh[i] = xmin + k*dx1
-    i = i + 1
-end
-print("Last mesh point: ", i-1, mesh[i-1])
-for k=1,2*N2 do
-    mesh[i] = L1 + k*dx2
-    i = i + 1
-end
-print("Last mesh point: ", i-1, mesh[i-1])
-for k=1,N1 do
-    mesh[i] = L1 + 2*L2 + k*dx1
-    i = i + 1
-end
-print("Last mesh point: ", i-1, mesh[i-1])
-N = 2*N1 + 2*N2
-
 --mesh={}
---N=2000
---
+--N1 = 20
+--N2 = 400
 --L=0.5
+--L1 = (L/2)*(1-0.08*2)
+--L2 = (L/2)*(0.08*2)
+--dx1 = L1/N1
+--dx2 = L2/N2
+--
+--print("L1dx1",L1,dx1)
+--print("L2dx2",L2,dx2)
 --xmin = 0.0
---dx = L/N
---for i=1,(N+1) do
---    k=i-1
---    mesh[i] = xmin + k*dx
+--i=1
+--for k=0,N1 do
+--    mesh[i] = xmin + k*dx1
+--    i = i + 1
 --end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--for k=1,2*N2 do
+--    mesh[i] = L1 + k*dx2
+--    i = i + 1
+--end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--for k=1,N1 do
+--    mesh[i] = L1 + 2*L2 + k*dx1
+--    i = i + 1
+--end
+--print("Last mesh point: ", i-1, mesh[i-1])
+--N = 2*N1 + 2*N2
+
+mesh={}
+N=1000
+
+L=0.5
+xmin = 0.0
+dx = L/N
+for i=1,(N+1) do
+    k=i-1
+    mesh[i] = xmin + k*dx
+end
 chiMeshCreateUnpartitioned1DOrthoMesh(mesh)
 chiVolumeMesherExecute();
 --os.exit()

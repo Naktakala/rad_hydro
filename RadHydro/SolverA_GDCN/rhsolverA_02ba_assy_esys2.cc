@@ -5,7 +5,7 @@
 #include "ChiMath/SpatialDiscretization/FiniteVolume/fv.h"
 
 void chi_radhydro::SolverA_GDCN::
-  AssembleGeneralEnergySystem(
+  AssembleGeneralEnergySystem2(
   SimRefs&                        sim_refs,
   const std::vector<double>&      kappa_a_n,
   const std::vector<double>&      kappa_t_n,
@@ -23,21 +23,16 @@ void chi_radhydro::SolverA_GDCN::
   const std::vector<double>&      rad_E_nph,
   const std::vector<double>&      rad_E_nphstar,
   const std::vector<Vec3>&        grad_rad_E_nph,
-  std::vector<double>&            k5_vec,
-  std::vector<double>&            k6_vec,
   MatDbl &A, VecDbl &b)
 {
   const auto&  grid = sim_refs.grid;
         auto&  fv   = sim_refs.fv;
   const double Cv   = sim_refs.Cv;
 
+
   const size_t N = grid.local_cells.size();
-  A.assign(N,VecDbl(N,0.0));
-  b.assign(N, 0.0);
-
-  k5_vec.assign(N, 0.0);
-  k6_vec.assign(N, 0.0);
-
+  A.assign(2*N,VecDbl(2*N,0.0));
+  b.assign(2*N, 0.0);
   for (const auto& cell_c : grid.local_cells)
   {
     //=========================================== Get cell geometry info
@@ -73,7 +68,7 @@ void chi_radhydro::SolverA_GDCN::
     if (std::fabs(sigma_t_c_np1) < 1.0e-6)
     {
       A[c][c] = 1.0; b[c] = rad_E_c_nphstar;
-      k5_vec[c] = 0.0; k6_vec[c] = e_c_nphstar;
+      A[c+N][c+N] = 1.0; b[c+N] = e_c_nphstar;
       continue;
     }
 
@@ -106,9 +101,6 @@ void chi_radhydro::SolverA_GDCN::
     const double k6 =
       (k3 - tau * 0.5 * rho_c_np1 * u_c_np1.NormSquare() + tau * E_c_nphstar) /
       (tau * rho_c_np1 - k4);
-
-    k5_vec[c] = k5;
-    k6_vec[c] = k6;
 
     //=========================================== Assemble connectivity
     for (size_t f=0; f<num_faces; ++f)
@@ -161,7 +153,11 @@ void chi_radhydro::SolverA_GDCN::
     }//for f in connectivity
 
     //=========================================== Diagonal and rhs
-    A[c][c] += tau + k1 + k4*k5;
+    A[c][c] += tau + k1;
     b[c]    += -k3 - k4*k6 + tau*rad_E_c_nphstar - theta2*grad_dot_J_n;
+
+    A[c+N][c+N] = 1.0;
+    A[c+N][c]   = k5;
+    b[c+N]      = k6;
   }//for cell
 }

@@ -126,7 +126,7 @@ void chi_radhydro::SolverA_GDCN::Execute()
   SystemEnergy new_system_energy = ComputeSysEnergyChange(0.0, U_n, rad_E_n,
                                                           {}, {},
                                                           m_bc_settings);
-  SystemEnergy old_system_energy;
+  SystemEnergy old_system_energy = new_system_energy;
   const double initial_total_E = new_system_energy.Emat+new_system_energy.Erad;
 
   //======================================== Pickup references
@@ -173,9 +173,9 @@ void chi_radhydro::SolverA_GDCN::Execute()
         << " radE_adv: " << setw(12)
         << scientific << setprecision(8) << new_system_energy.re_adv
         << " u_L: " << setw(12)
-        << scientific << setprecision(8) << (U_n[0][MAT_E] + rad_E_n[0] + p_l)*u_l
+        << scientific << setprecision(16) << (U_n[0][MAT_E] + rad_E_n[0] + p_l)*u_l
         << " u_R: " << setw(12)
-        << scientific << setprecision(8) << (U_n.back()[MAT_E] + rad_E_n.back() + p_r)*u_r;
+        << scientific << setprecision(16) << (U_n.back()[MAT_E] + rad_E_n.back() + p_r)*u_r;
 
     }
 

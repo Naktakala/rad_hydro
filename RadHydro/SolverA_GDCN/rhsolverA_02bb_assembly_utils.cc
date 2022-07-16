@@ -169,14 +169,14 @@ double chi_radhydro::SolverA_GDCN::
 //###################################################################
 /**This does what you think it does.*/
 double chi_radhydro::SolverA_GDCN::
-  Make3rdGradRadEDot_u_Upwinded(SimRefs&                        sim_refs,
-                                const chi_mesh::Cell&           cell,
-                                double                          V_c,
-                                const std::vector<double>&      face_areas,
-                                const std::vector<double>&      rad_E,
-                                const std::vector<Vec3>&        grad_rad_E,
-                                const std::vector<UVector>&     U,
-                                const std::vector<GradUTensor>& grad_U)
+  Make3rdGradRadEDot_u(SimRefs&                        sim_refs,
+                       const chi_mesh::Cell&           cell,
+                       double                          V_c,
+                       const std::vector<double>&      face_areas,
+                       const std::vector<double>&      rad_E,
+                       const std::vector<Vec3>&        grad_rad_E,
+                       const std::vector<UVector>&     U,
+                       const std::vector<GradUTensor>& grad_U)
 {
   const auto&  grid        = sim_refs.grid;
   const double Cv          = sim_refs.Cv;

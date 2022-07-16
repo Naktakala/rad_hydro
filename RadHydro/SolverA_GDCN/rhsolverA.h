@@ -75,6 +75,26 @@ public:
     std::vector<double>&            k6_vec,
     MatDbl &A, VecDbl &b);
 
+  static void AssembleGeneralEnergySystem2(
+    SimRefs&                        sim_refs,
+    const std::vector<double>&      kappa_a_n,
+    const std::vector<double>&      kappa_t_n,
+    const std::vector<double>&      kappa_a_nph,
+    const std::vector<double>&      kappa_t_nph,
+    double                          tau,
+    double                          theta1,
+    double                          theta2,
+    const std::vector<UVector>&     U_n,
+    const std::vector<UVector>&     U_nph,
+    const std::vector<UVector>&     U_nphstar,
+    const std::vector<UVector>&     U_np1,
+    const std::vector<GradUTensor>& grad_U_nph,
+    const std::vector<double>&      rad_E_n,
+    const std::vector<double>&      rad_E_nph,
+    const std::vector<double>&      rad_E_nphstar,
+    const std::vector<Vec3>&        grad_rad_E_nph,
+    MatDbl &A, VecDbl &b);
+
   //02bb
   static double ComputeGradDotJ(SimRefs&                       sim_refs,
                                 const chi_mesh::Cell&          cell_c,
@@ -95,7 +115,7 @@ public:
                          double T,
                          double radE);
 
-  static double Make3rdGradRadEDot_u_Upwinded(
+  static double Make3rdGradRadEDot_u(
     SimRefs&                        sim_refs,
     const chi_mesh::Cell&           cell,
     double                          V_c,

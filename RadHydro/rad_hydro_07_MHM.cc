@@ -131,7 +131,7 @@ void chi_radhydro::
 
         U_R        = UplusDXGradU(U_int[cn], x_fc - x_cn, grad_U_int[cn]);
         rad_E_cn_f = rad_E_int[cn] + (x_fc - x_cn).Dot(grad_rad_E_int[cn]);
-        u_cn_f     = VelocityFromCellU(U_int[cn]);
+        u_cn_f     = VelocityFromCellU(U_R);
       }
 
       //Upwinding rad_Eu
@@ -182,8 +182,6 @@ void chi_radhydro::
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
     const std::vector<double>&            rad_E_old,
-    const std::string&                    kappa_s_function,
-    const std::string&                    kappa_a_function,
     std::vector<UVector>&                 U_new
     )
 {
@@ -193,6 +191,9 @@ void chi_radhydro::
   const auto& bc_settings = sim_refs.bc_settings;
   const auto& grid        = sim_refs.grid;
         auto& fv          = sim_refs.fv;
+
+  const auto& kappa_s_function = sim_refs.kappa_s_function;
+  const auto& kappa_a_function = sim_refs.kappa_a_function;
 
   for (const auto& cell : sim_refs.grid.local_cells)
   {

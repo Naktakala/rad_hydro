@@ -42,7 +42,6 @@ Predictor(SimRefs& sim_refs,
     tau,                                      //tau input
     U_n, U_n_star,                            //Hydro inputs
     rad_E_n,                                  //RadE input
-    m_kappa_s_function, m_kappa_a_function,   //Opacity functions
     U_nph                                     //Output
   );
 

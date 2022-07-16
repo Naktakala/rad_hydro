@@ -194,8 +194,6 @@ namespace chi_radhydro
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
     const std::vector<double>&            rad_E_old,
-    const std::string&                    kappa_s_function,
-    const std::string&                    kappa_a_function,
     std::vector<UVector>&                 U_new
   );
 
