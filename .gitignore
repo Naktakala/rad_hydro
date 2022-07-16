@@ -39,3 +39,7 @@ chi_build
 cmake-build-release/
 cmake-build-debug/
 Makefile
+
+#video files
+*.avi
+*.mp4
