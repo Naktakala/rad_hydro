@@ -24,7 +24,7 @@ public:
   //02
   void Execute() override;
   //02a
-  void Predictor(const std::map<uint64_t, BCSetting>& bc_setttings,
+  void Predictor(SimRefs& sim_refs,
                  const std::vector<double>&      kappa_a_n,
                  const std::vector<double>&      kappa_t_n,
                  double dt,
@@ -37,7 +37,7 @@ public:
                  std::vector<double>&                  rad_E_nph);
 
   //02b
-  void Corrector(const std::map<uint64_t, BCSetting>& bc_setttings,
+  void Corrector(SimRefs& sim_refs,
                  const std::vector<double>&      kappa_a_n,
                  const std::vector<double>&      kappa_t_n,
                  const std::vector<double>&      kappa_a_nph,
@@ -54,14 +54,11 @@ public:
                  std::vector<double>&                  rad_E_np1);
 
   static void AssembleGeneralEnergySystem(
-    const chi_mesh::MeshContinuum&  grid_ref,
-    std::shared_ptr<SDM_FV>&        fv_ref,
-    const std::map<uint64_t, BCSetting>& bc_setttings,
+    SimRefs&                        sim_refs,
     const std::vector<double>&      kappa_a_n,
     const std::vector<double>&      kappa_t_n,
     const std::vector<double>&      kappa_a_nph,
     const std::vector<double>&      kappa_t_nph,
-    double                          Cv,
     double                          tau,
     double                          theta1,
     double                          theta2,
@@ -78,19 +75,42 @@ public:
     std::vector<double>&            k6_vec,
     MatDbl &A, VecDbl &b);
 
-  static double ComputeGradDotJ(const chi_mesh::MeshContinuum& grid,
-                                std::shared_ptr<SDM_FV>&       fv_ref,
+  //02bb
+  static double ComputeGradDotJ(SimRefs&                       sim_refs,
                                 const chi_mesh::Cell&          cell_c,
                                       double                   sigma_t_c_n,
                                 const std::vector<double>&     kappa_t_n,
                                 const std::vector<UVector>&    U_n,
                                 const std::vector<double>&     rad_E_n);
 
+  static double Make3rdGradRadEDot_u(const chi_mesh::Cell& cell,
+                              double V_c,
+                              const std::vector<double>& face_areas,
+                              double radE,
+                              const Vec3& grad_radE,
+                              const UVector& U,
+                              const std::vector<UVector>& grad_U);
+
+  static double MakeEmAbsSource(double sigma_a,
+                         double T,
+                         double radE);
+
+  static double Make3rdGradRadEDot_u_Upwinded(
+    SimRefs&                        sim_refs,
+    const chi_mesh::Cell&           cell,
+    double                          V_c,
+    const std::vector<double>&      face_areas,
+    const std::vector<double>&      rad_E,
+    const std::vector<Vec3>&        grad_rad_E,
+    const std::vector<UVector>&     U,
+    const std::vector<GradUTensor>& grad_U);
+
   //91_utils
   void ProcessAndExportFields(const std::string& file_name,
                               const std::vector<UVector>& U,
                               const std::vector<double>& rad_E,
-                              size_t num_local_nodes);
+                              size_t num_local_nodes,
+                              const std::map<std::string,double>& scalar_properties);
 
   struct SystemEnergy
   {

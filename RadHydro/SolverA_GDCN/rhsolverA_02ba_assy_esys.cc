@@ -6,14 +6,11 @@
 
 void chi_radhydro::SolverA_GDCN::
   AssembleGeneralEnergySystem(
-  const chi_mesh::MeshContinuum&  grid_ref,
-  std::shared_ptr<SDM_FV>&        fv_ref,
-  const std::map<uint64_t, BCSetting>& bc_setttings,
+  SimRefs&                        sim_refs,
   const std::vector<double>&      kappa_a_n,
   const std::vector<double>&      kappa_t_n,
   const std::vector<double>&      kappa_a_nph,
   const std::vector<double>&      kappa_t_nph,
-  const double                    Cv,
   double                          tau,
   double                          theta1,
   double                          theta2,
@@ -30,8 +27,9 @@ void chi_radhydro::SolverA_GDCN::
   std::vector<double>&            k6_vec,
   MatDbl &A, VecDbl &b)
 {
-  const auto& grid    = grid_ref;
-  const auto& fv      = fv_ref;
+  const auto&  grid = sim_refs.grid;
+        auto&  fv   = sim_refs.fv;
+  const double Cv   = sim_refs.Cv;
 
   k5_vec.assign(grid.local_cells.size(), 0.0);
   k6_vec.assign(grid.local_cells.size(), 0.0);
@@ -42,7 +40,7 @@ void chi_radhydro::SolverA_GDCN::
     const uint64_t c         = cell_c.local_id;
     const size_t   num_faces = cell_c.faces.size();
 
-    const auto&    fv_view_c   = fv->MapFeView(c);
+    const auto&    fv_view_c   = fv.MapFeView(c);
     const auto&    face_areas  = fv_view_c->face_area;
     const Vec3&    x_c         = cell_c.centroid;
     const double   V_c         = fv_view_c->volume;
@@ -61,7 +59,10 @@ void chi_radhydro::SolverA_GDCN::
     const double   rad_E_c_nph     = rad_E_nph[c];
     const double   rad_E_c_nphstar = rad_E_nphstar[c];
 
+    const Vec3     u_c_nphstar     = VelocityFromCellU(U_nphstar[c]);
     const Vec3     u_c_np1         = VelocityFromCellU(U_np1[c]);
+
+    const double   mod_E_c_nphstar = rho_c_np1*(0.5*u_c_nphstar.NormSquare() + e_c_nphstar);
 
     //=========================================== Compute sigmas
     const double sigma_t_c_n   = rho_c_n * kappa_t_n[c];
@@ -78,15 +79,21 @@ void chi_radhydro::SolverA_GDCN::
     }
 
     //=========================================== Compute explicit terms
+//    double third_grad_rad_E_dot_u_nph =
+//      Make3rdGradRadEDot_u(cell_c, V_c, face_areas,
+//                           rad_E_c_nph, grad_rad_E_nph[c],
+//                           U_nph[c], grad_U_nph[c]);
     double third_grad_rad_E_dot_u_nph =
-      Make3rdGradRadE(cell_c, V_c, face_areas,
-                      rad_E_c_nph, grad_rad_E_nph[c],
-                      U_nph[c], grad_U_nph[c]);
+      Make3rdGradRadEDot_u_Upwinded(sim_refs,
+                                    cell_c, V_c, face_areas,
+                                    rad_E_nph, grad_rad_E_nph,
+                                    U_nph, grad_U_nph);
 
     // sigma_a c (aT^4 - radE)
     double Sea_n = MakeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
 
-    double grad_dot_J_n = ComputeGradDotJ(grid, fv_ref, cell_c,
+    double grad_dot_J_n = ComputeGradDotJ(sim_refs,
+                                          cell_c,
                                           sigma_t_c_n, kappa_t_n,
                                           U_n, rad_E_n);
 
@@ -114,9 +121,13 @@ void chi_radhydro::SolverA_GDCN::
       const auto& face = cell_c.faces[f];
       const auto& x_f  = face.centroid;
       const auto  A_f  = face_areas[f] * face.normal;
+      const auto  x_cf = x_f - x_c;
+
+      const double D_c = -speed_of_light_cmpsh / (3 * sigma_t_c_np1);
+      const double k_c = D_c/x_cf.Norm();
 
       double sigma_t_cn_np1 = sigma_t_c_np1;
-      Vec3   x_cn          = x_c + 2*(x_f-x_c);
+      Vec3   x_cn           = x_c + 2*(x_f-x_c);
 
       if (not face.has_neighbor) //DEFAULT REFLECTING BC for radE
       {
@@ -132,13 +143,13 @@ void chi_radhydro::SolverA_GDCN::
 
         sigma_t_cn_np1 = rho_cn_np1 * kappa_t_nph[cn];
       }
+      const auto x_fcn = x_cn - x_f;
 
-      const double sigma_tf_np1 = (sigma_t_c_np1 + sigma_t_cn_np1) / 2.0;
-
-      const double Df_np1 = -speed_of_light_cmpsh / (3.0 * sigma_tf_np1);
+      const double D_cn = -speed_of_light_cmpsh / (3 * sigma_t_cn_np1);
+      const double k_cn = D_cn/x_fcn.Norm();
 
       const Vec3 x_ccn = x_cn - x_c;
-      const Vec3 kf_np1 = Df_np1 * x_ccn / x_ccn.NormSquare();
+      const Vec3 kf_np1 = (k_c * k_cn / (k_c + k_cn)) * x_ccn.Normalized();
 
       const double coeff_LHS = (theta1 / V_c) * A_f.Dot(kf_np1);
 
@@ -153,55 +164,6 @@ void chi_radhydro::SolverA_GDCN::
         A[c][cn] += coeff_LHS;
       }
     }//for f in connectivity
-
-//    for (size_t f=0; f<num_faces; ++f)
-//    {
-//      const auto& face = cell_c.faces[f];
-//      const auto& x_f  = face.centroid;
-//      const auto  A_f  = face_areas[f] * face.normal;
-//      const auto  x_cf = x_f - x_c;
-//
-//      const double D_c = -speed_of_light_cmpsh / (3 * sigma_t_c_np1);
-//      const double k_c = D_c/x_cf.Norm();
-//
-//      double sigma_t_cn_np1 = sigma_t_c_np1;
-//      Vec3   x_cn          = x_c + 2*(x_f-x_c);
-//
-//      if (not face.has_neighbor) //DEFAULT REFLECTING BC for radE
-//      {
-//        //Nothing to do for reflecting bc
-//      }
-//      else                       //NEIGHBOR CELL
-//      {
-//        const uint64_t cn = face.neighbor_id;
-//        const auto& cell_cn = grid.cells[cn];
-//        x_cn = cell_cn.centroid;
-//
-//        const double rho_cn_np1 = U_np1[cn][0];
-//
-//        sigma_t_cn_np1 = rho_cn_np1 * kappa_t_nph[cn];
-//      }
-//      const auto x_fcn = x_cn - x_f;
-//
-//      const double D_cn = -speed_of_light_cmpsh / (3 * sigma_t_cn_np1);
-//      const double k_cn = D_cn/x_fcn.Norm();
-//
-//      const Vec3 x_ccn = x_cn - x_c;
-//      const Vec3 kf_np1 = (k_c * k_cn / (k_c + k_cn)) * x_ccn.Normalized();
-//
-//      const double coeff_LHS = (theta1 / V_c) * A_f.Dot(kf_np1);
-//
-//      if (not face.has_neighbor) //DEFAULT REFLECTING
-//      {
-//        //J_f = 0 therefor no connectivity elements
-//      }
-//      else                       //NEIGHBOR CELL
-//      {
-//        A[c][c] += -coeff_LHS;
-//        const uint64_t cn = face.neighbor_id;
-//        A[c][cn] += coeff_LHS;
-//      }
-//    }//for f in connectivity
 
     //=========================================== Diagonal and rhs
     A[c][c] += tau + k1 + k4*k5;

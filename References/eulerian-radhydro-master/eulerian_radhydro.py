@@ -47,6 +47,7 @@ class EulerianRadHydro:
         self.T_final   = inp.T_final
         self.dt        = 0
         self.dt_list   = []
+        self.output_times = []
         
         
         
@@ -55,7 +56,7 @@ class EulerianRadHydro:
     #   Run the full Eulerian rad-hydro problem
     #########################################################################
     def run(self, print_freq=10, cycle_stop=None):
-        
+        print(len(self.output_times))
         # Compute first time step size
         self.computeTimeStep()
         
@@ -72,7 +73,21 @@ class EulerianRadHydro:
                 print("Time Step: %1.4e" %self.dt_list[-1])
                 print("Energy conservation check: %1.4e" %energy_diff)
                 print("==========\n")
-   
+
+            t = 0
+            dt = self.dt_list[-1]
+            # print("A",len(self.output_times))
+            for output_time in self.output_times:
+                t += 1
+                if (self.time - dt) < output_time and self.time >= output_time:
+                    savename = "Test3a_t" + "{:03d}".format(t) + ".png"
+                    self.fields.plotFields(["T", "Er"], 
+                                           ['b-o', 'r-o'], 
+                                           [-0.25,0.25],
+                                           [0.095,0.45],savename,
+                                           "time={:.4f} ".format(self.time)+ \
+                                            "e_balance={:+.4e} ".format(energy_diff[0]))
+            
             if cycle_stop != None:
                 if self.cycle_num >= cycle_stop:
                     break

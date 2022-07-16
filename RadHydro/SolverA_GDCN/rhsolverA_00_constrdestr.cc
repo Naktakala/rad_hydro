@@ -10,14 +10,14 @@ chi_radhydro::SolverA_GDCN::SolverA_GDCN(const std::string &name) :
                           std::string("MaterialKappaAFunction"));
   //======================================== Add scalar fields
   //Unknowns
-  scalar_fields["rho"  ] = {};
-  scalar_fields["u"    ] = {};
-  scalar_fields["v"    ] = {};
-  scalar_fields["w"    ] = {};
-  scalar_fields["p"    ] = {};
-  scalar_fields["radE" ] = {};
+  m_scalar_fields["rho"  ] = {};
+  m_scalar_fields["u"    ] = {};
+  m_scalar_fields["v"    ] = {};
+  m_scalar_fields["w"    ] = {};
+  m_scalar_fields["p"    ] = {};
+  m_scalar_fields["radE" ] = {};
 
   //Derived units
-  scalar_fields["e"    ] = {};
-  scalar_fields["temperature"] = {};
+  m_scalar_fields["e"    ] = {};
+  m_scalar_fields["temperature"] = {};
 }

@@ -55,7 +55,7 @@ int chiRadHydroSetBCSetting(lua_State *L)
 
   BCSetting setting = {bc_type_enum, bvalues};
 
-  rad_hydro_solver.bc_settings[boundary_id] = setting;
+  rad_hydro_solver.m_bc_settings[boundary_id] = setting;
 
   chi::log.Log() << "RadHydroSolver: BC set for id " << boundary_id
                  << " type " << boundary_type

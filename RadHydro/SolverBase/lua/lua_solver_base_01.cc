@@ -41,7 +41,7 @@ int chiRadHydroSolverSetScalarFieldWithLV(lua_State* L)
   const double      field_value = lua_tonumber(L, 4);
 
   //============================== Pass settings to solver
-  rad_hydro_solver.logvol_field_settings.emplace_back(
+  rad_hydro_solver.m_logvol_field_settings.emplace_back(
     logvol, field_name, field_value);
 
   return 0;

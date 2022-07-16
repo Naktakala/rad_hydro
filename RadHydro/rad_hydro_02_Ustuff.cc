@@ -30,7 +30,7 @@ IdealGasPressureFromCellU(const UVector &U, double gamma)
   const double e_c = E/rho_c - 0.5*u_c*u_c - 0.5*v_c*v_c - 0.5*w_c*w_c;
   const double p_c = (gamma-1.0)*rho_c*e_c;
 
-  return p_c;
+  return std::fabs(p_c);
 }
 
 //###################################################################

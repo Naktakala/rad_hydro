@@ -22,45 +22,46 @@ end
 --############################################### Setup mesh
 chiMeshHandlerCreate()
 
---mesh={}
---N1 = 20
---N2 = 100
---L=0.5
---L1 = (L/2)*(1-0.08)
---L2 = (L/2)*(0.08)
---dx1 = L1/N1
---dx2 = L2/N2
---
---print("L1dx1",L1,dx1)
---print("L2dx2",L2,dx2)
---xmin = 0.0
---i=1
---for k=0,N1 do
---    mesh[i] = xmin + k*dx1
---    i = i + 1
---end
---print("Last mesh point: ", i-1, mesh[i-1])
---for k=1,2*N2 do
---    mesh[i] = L1 + k*dx2
---    i = i + 1
---end
---print("Last mesh point: ", i-1, mesh[i-1])
---for k=1,N1 do
---    mesh[i] = L1 + 2*L2 + k*dx1
---    i = i + 1
---end
---print("Last mesh point: ", i-1, mesh[i-1])
---N = 2*N1 + 2*N2
 mesh={}
-N=500
-
+N1 = 20
+N2 = 400
 L=0.5
+L1 = (L/2)*(1-0.08*2)
+L2 = (L/2)*(0.08*2)
+dx1 = L1/N1
+dx2 = L2/N2
+
+print("L1dx1",L1,dx1)
+print("L2dx2",L2,dx2)
 xmin = 0.0
-dx = L/N
-for i=1,(N+1) do
-    k=i-1
-    mesh[i] = xmin + k*dx
+i=1
+for k=0,N1 do
+    mesh[i] = xmin + k*dx1
+    i = i + 1
 end
+print("Last mesh point: ", i-1, mesh[i-1])
+for k=1,2*N2 do
+    mesh[i] = L1 + k*dx2
+    i = i + 1
+end
+print("Last mesh point: ", i-1, mesh[i-1])
+for k=1,N1 do
+    mesh[i] = L1 + 2*L2 + k*dx1
+    i = i + 1
+end
+print("Last mesh point: ", i-1, mesh[i-1])
+N = 2*N1 + 2*N2
+
+--mesh={}
+--N=2000
+--
+--L=0.5
+--xmin = 0.0
+--dx = L/N
+--for i=1,(N+1) do
+--    k=i-1
+--    mesh[i] = xmin + k*dx
+--end
 chiMeshCreateUnpartitioned1DOrthoMesh(mesh)
 chiVolumeMesherExecute();
 --os.exit()
@@ -98,12 +99,12 @@ solver_name = "RadHydroSolverA"
 phys1 = chiCreateSolverA(solver_name);
 
 chiSolverSetBasicOption(phys1, "maximum_dt"    , 5e-2)
-chiSolverSetBasicOption(phys1, "CFL"           , 0.1)
-chiSolverSetBasicOption(phys1, "max_timesteps" , -1750)
-total_time = 10
+chiSolverSetBasicOption(phys1, "CFL"           , 0.3)
+chiSolverSetBasicOption(phys1, "max_timesteps" , -10)
+total_time = 2.0
 chiSolverSetBasicOption(phys1, "max_time"      , total_time)
 time_vals = ""
-Nt = 10
+Nt = 100
 dt = total_time/Nt
 for i=1,Nt do
     time_vals = time_vals..string.format("%.3g ", dt*i)
@@ -126,10 +127,10 @@ e0 = InternalEGiven_T_Cv(T0,Cv)
 cs0 = SoundSpeedGiven_e_gamma(e0, gamma)
 u0 = 3.0 * cs0
 
---rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
---        rho0*3, T0*2.0, u0*0.25)
 rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
         3.00185103, 3.66260705e-01, 1.26565579e-01)
+--rho1,T1,u1 = chiRadHydroMakePostShockConditionsHydroOnly(Cv, gamma, rho0, T0, u0,
+--        3.00185103, 3.66260705e-01, 1.26565579e-01)
 
 e1 = Cv*T1
 
@@ -137,6 +138,22 @@ radE1 = a_const * T1^4
 
 --u1 = u1 - 0.00016667 - 0.00004167 --400
 --u1 = u1 - 0.00050001 --100
+
+--[0]   rho  3.00187244e+00 u    1.26731956e-01 T    3.66258825e-01 e    5.30079064e-02 radE 2.46894802e-04 E    1.83229493e-01
+
+
+--rho1=3.00187622e+00
+--u1= 1.26730048e-01
+--T1=3.66262920e-01
+--e1=5.30084991e-02
+--radE1=2.46905844e-04
+
+--rho1=3.00185103e+00
+--u1= 1.26732249e-01
+--T1=3.66260705e-01
+--e1=1.83229115e-02
+--radE1=2.46899872e-06
+--radE1=4.11859125e-06
 
 print(string.format(" rho0  %8.8e",rho0 )..
       string.format(" u0    %8.8e",u0   )..

@@ -7,10 +7,8 @@
 //###################################################################
 /**Generic corrector step of the MHM method.*/
 void chi_radhydro::
-  MHM_HydroRadEPredictor(const chi_mesh::MeshContinuum& grid,
-                         chi_math::SpatialDiscretization_FV& fv,
-                         const double                        gamma,
-                         double tau,
+  MHM_HydroRadEPredictor(SimRefs&                              sim_refs,
+                         const double                          tau,
                          const std::vector<UVector>&           U_a,
                          const std::vector<GradUTensor>&       grad_U_a,
                          const std::vector<double>&            rad_E_a,
@@ -18,6 +16,10 @@ void chi_radhydro::
                          std::vector<UVector>&                 U_a_star,
                          std::vector<double>&                  rad_E_a_star)
 {
+  const auto&  grid  = sim_refs.grid;
+        auto&  fv    = sim_refs.fv;
+  const double gamma = sim_refs.gamma;
+
   for (const auto& cell : grid.local_cells)
   {
     const uint64_t c       = cell.local_id;
@@ -60,10 +62,7 @@ void chi_radhydro::
 /**Generic corrector method for the MHM method.*/
 void chi_radhydro::
   MHM_HydroRadECorrector(
-  const chi_mesh::MeshContinuum&        grid,
-  chi_math::SpatialDiscretization_FV&   fv,
-  const std::map<uint64_t, BCSetting>&  bc_setttings,
-  const double                          gamma,
+  SimRefs&                              sim_refs,
   double                                tau,
   const std::vector<UVector>&           U_old,
   const std::vector<UVector>&           U_int,
@@ -75,6 +74,15 @@ void chi_radhydro::
   std::vector<double>&                  rad_E_int_star
 )
 {
+  const auto&  grid        = sim_refs.grid;
+        auto&  fv          = sim_refs.fv;
+  const auto&  bc_settings = sim_refs.bc_settings;
+  const double gamma       = sim_refs.gamma;
+
+//  std::vector<std::vector<FVector>> cell_fluxes(grid.local_cells.size());
+//  for (const auto& cell : grid.local_cells)
+//    cell_fluxes[cell.local_id].resize(cell.faces.size());
+
   for (const auto& cell : grid.local_cells)
   {
     const uint64_t c       = cell.local_id;
@@ -82,14 +90,17 @@ void chi_radhydro::
     const double   V_c     = fv_view->volume;
     const Vec3&    x_cc    = cell.centroid;
 
-    const UVector& U_c_int     = U_int[c];
-    const double&  rad_E_c_int = rad_E_int[c];
+    const UVector& U_c_int       = U_int[c];
+    const double&  rad_E_c_int   = rad_E_int[c];
 
+    const auto& grad_U_c_int     = grad_U_int[c];
+    const auto& grad_rad_E_c_int = grad_rad_E_int[c];
+
+    FVector  F_net;
     UVector  U_c_b_star     = U_old[c];
     double   rad_E_c_b_star = rad_E_old[c];
 
     const size_t num_faces = cell.faces.size();
-    chi_radhydro::FVector F_net;
     for (size_t f=0; f<num_faces; ++f)
     {
       const auto&  face  = cell.faces[f];
@@ -98,19 +109,18 @@ void chi_radhydro::
       const Vec3&  n_f   = face.normal;
       const Vec3&  x_fc  = face.centroid;
 
-      const UVector& U_L     = UplusDXGradU(U_c_int, x_fc - x_cc, grad_U_int[c]);
+      const UVector& U_L       = UplusDXGradU(U_c_int, x_fc - x_cc, grad_U_c_int);
+      const double   rad_E_c_f = rad_E_c_int + (x_fc - x_cc).Dot(grad_rad_E_int[c]);
+      const Vec3     u_c_f     = VelocityFromCellU(U_L);
 
-      UVector  U_R     = U_L;
-
-      double rad_E_c_f  = rad_E_c_int + (x_fc - x_cc).Dot(grad_rad_E_int[c]);
-      Vec3   u_c_f      = VelocityFromCellU(U_L);
-      double rad_E_cn_f = rad_E_c_f;
-      Vec3   u_cn_f     = u_c_f;
+      UVector U_R;
+      double  rad_E_cn_f;
+      Vec3    u_cn_f;
 
       if (not face.has_neighbor)
       {
-        U_R        = MakeUFromBC(bc_setttings.at(bid), U_c_int);
-        rad_E_cn_f = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_f);
+        U_R        = MakeUFromBC(bc_settings.at(bid), U_c_int);
+        rad_E_cn_f = MakeRadEFromBC(bc_settings.at(bid), rad_E_c_f);
         u_cn_f     = VelocityFromCellU(U_R);
       }
       else
@@ -121,7 +131,7 @@ void chi_radhydro::
 
         U_R        = UplusDXGradU(U_int[cn], x_fc - x_cn, grad_U_int[cn]);
         rad_E_cn_f = rad_E_int[cn] + (x_fc - x_cn).Dot(grad_rad_E_int[cn]);
-        u_cn_f     = VelocityFromCellU(U_R);
+        u_cn_f     = VelocityFromCellU(U_int[cn]);
       }
 
       //Upwinding rad_Eu
@@ -136,25 +146,29 @@ void chi_radhydro::
         rad_Eu_upw = Vec3(0,0,0);
 //      Vec3 rad_Eu_upw = rad_E_c_f * u_c_f;
 
-//      if (c == 249 or c == 250)
-//      {
-//        chi::log.Log() << "U at face " << f << " "
-//                       << PrintU(U_L);
-//      }
-
-      const FVector F_hllc_f = HLLC_RiemannSolve(U_L, U_R,gamma, n_f);
+      const FVector F_hllc_f = HLLC_RiemannSolve(U_L, U_R, gamma, n_f);
 
       U_c_b_star     -= (1/tau) * (1/V_c) * A_f * F_hllc_f;
       rad_E_c_b_star -= (1/tau) * (1/V_c) * (4.0/3) * A_f * n_f.Dot(rad_Eu_upw);
       F_net += F_hllc_f;
+//      cell_fluxes[c][f] = F_hllc_f;
     }//for f
-//
-//    if (c == 249 or c == 250)
-//      chi::log.Log() << "Fnet: " << c << " " << PrintU(F_net);
 
     U_int_star[c] = U_c_b_star;
     rad_E_int_star[c] = rad_E_c_b_star;
   }//for cell
+
+  //Checking cell fluxes
+//  const uint64_t last_cell_id = grid.local_cells[grid.local_cells.size()-1].local_id;
+//  for (const auto& cell : grid.local_cells)
+//  {
+//    if (cell.local_id == last_cell_id) continue;
+//    const uint64_t c = cell.local_id;
+//
+//    const auto F_net = cell_fluxes[c][1] + cell_fluxes[c+1][0];
+//    if (F_net.Norm() > 1.0e-10)
+//      chi::log.Log() << "Fnet: " << c << " " << PrintU(F_net);
+//  }
 }
 
 //###################################################################
@@ -162,12 +176,9 @@ void chi_radhydro::
  * radiation momentum deposition.*/
 void chi_radhydro::
   DensityMomentumUpdateWithRadMom(
-    const chi_mesh::MeshContinuum&      grid,
-    chi_math::SpatialDiscretization_FV& fv,
-    const std::map<uint64_t, BCSetting>& bc_setttings,
-    const std::vector<double>&          kappa_t,
-    double Cv,
-    double tau,
+    SimRefs&                              sim_refs,
+    const std::vector<double>&            kappa_t,
+    double                                tau,
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
     const std::vector<double>&            rad_E_old,
@@ -177,9 +188,16 @@ void chi_radhydro::
     )
 {
   U_new = U_int;
-  for (const auto& cell : grid.local_cells)
+
+  const auto& Cv          = sim_refs.Cv;
+  const auto& bc_settings = sim_refs.bc_settings;
+  const auto& grid        = sim_refs.grid;
+        auto& fv          = sim_refs.fv;
+
+  for (const auto& cell : sim_refs.grid.local_cells)
   {
     const uint64_t c       = cell.local_id;
+    const int      mat_id  = cell.material_id;
     const auto&    fv_view = fv.MapFeView(c);
     const double   V_c     = fv_view->volume;
 
@@ -192,8 +210,6 @@ void chi_radhydro::
 
     if (std::fabs(kappa_t[c]) < 1.0e-10) continue;
 
-    const double D_c     = -speed_of_light_cmpsh / (3 * rho_c_old * kappa_t[c]);
-
     const size_t num_faces = cell.faces.size();
     for (size_t f=0; f<num_faces; ++f)
     {
@@ -202,39 +218,46 @@ void chi_radhydro::
       const Vec3     A_f  = fv_view->face_area[f] * face.normal;
       const Vec3     x_cf = face.centroid - cell.centroid;
 
-      const double k_c = D_c/x_cf.Norm();
+      Vec3    x_fcn = x_cf;
+      UVector U_cn_old;
+      double  rad_E_cn_old;
 
-      double k_cn         = k_c;
-
-      UVector U_cn_old     = U_c_old;
-      double  rho_cn_old   = rho_c_old;
-      double  rad_E_cn_old = rad_E_c_old;
-      double  T_cn_old     = T_c_old;
       if (not face.has_neighbor)
       {
-        U_cn_old     = MakeUFromBC(bc_setttings.at(bid), U_c_old);
-        rho_cn_old   = U_cn_old[RHO];
-        rad_E_cn_old = MakeRadEFromBC(bc_setttings.at(bid), rad_E_c_old);
-        T_cn_old     = IdealGasTemperatureFromCellU(U_cn_old, Cv);
+        U_cn_old     = MakeUFromBC(bc_settings.at(bid), U_c_old);
+        rad_E_cn_old = MakeRadEFromBC(bc_settings.at(bid), rad_E_c_old);
       }
       else
       {
         const uint64_t cn = face.neighbor_id;
         const auto& adj_cell = grid.cells[cn];
-        const Vec3   x_fcn = adj_cell.centroid - cell.faces[f].centroid;
+        x_fcn = adj_cell.centroid - cell.faces[f].centroid;
 
         U_cn_old     = U_old[cn];
-        rho_cn_old   = U_cn_old[RHO];
         rad_E_cn_old = rad_E_old[cn];
-        T_cn_old     = IdealGasTemperatureFromCellU(U_cn_old, Cv);
-
-        const double D_cn = -speed_of_light_cmpsh / (3 * rho_cn_old * kappa_t[cn]);
-
-        k_cn = D_cn/x_fcn.Norm();
       }
 
-      const double rad_E_f = (k_cn * rad_E_cn_old + k_c * rad_E_c_old) /
-                             (k_cn + k_c);
+      using cdouble = const double;
+
+      cdouble rho_cn_old   = U_cn_old[RHO];
+      cdouble T_cn_old     = IdealGasTemperatureFromCellU(U_cn_old, Cv);
+
+      cdouble T_f = pow(0.5*(pow(T_c_old,4.0) + pow(T_cn_old,4.0)),0.25);
+
+      cdouble kappa_s_f = ComputeKappaFromLua(T_f, mat_id, kappa_s_function);
+      cdouble kappa_a_f = ComputeKappaFromLua(T_f, mat_id, kappa_a_function);
+
+      cdouble kappa_t_f = kappa_a_f + kappa_s_f;
+
+      cdouble D_c  = 1.0 / (rho_c_old  * kappa_t_f);
+      cdouble D_cn = 1.0 / (rho_cn_old * kappa_t_f);
+
+      cdouble k_c  = D_c/x_cf.Norm();
+      cdouble k_cn = D_cn/x_fcn.Norm();
+
+      cdouble rad_E_f = (k_cn * rad_E_cn_old + k_c * rad_E_c_old) /
+                        (k_cn + k_c);
+
       U_c_new_01(1) -= (1 / tau) * (1 / V_c) * (1.0 / 3) * A_f.x * rad_E_f;
       U_c_new_01(2) -= (1 / tau) * (1 / V_c) * (1.0 / 3) * A_f.y * rad_E_f;
       U_c_new_01(3) -= (1 / tau) * (1 / V_c) * (1.0 / 3) * A_f.z * rad_E_f;

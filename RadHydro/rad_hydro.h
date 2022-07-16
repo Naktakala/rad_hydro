@@ -11,6 +11,8 @@
 
 #include <map>
 
+
+
 namespace chi_radhydro 
 {
   static const double boltzmann_constant_kb  = 1.380649e-23;   // Joule/Kelvin
@@ -36,9 +38,9 @@ namespace chi_radhydro
   enum UVectorEntries
   {
     RHO   = 0,
-    U     = 1,
-    V     = 2,
-    W     = 3,
+    RHO_U = 1,
+    RHO_V = 2,
+    RHO_W = 3,
     MAT_E = 4
   };
 
@@ -63,6 +65,17 @@ namespace chi_radhydro
   typedef std::vector<VecDbl> MatDbl;
   typedef std::pair<TMatrix, TMatrix> TMatrixPair;
 
+  struct SimRefs
+  {
+    const chi_mesh::MeshContinuum&       grid;
+    chi_math::SpatialDiscretization_FV&  fv;
+    const std::map<uint64_t, BCSetting>& bc_settings;
+    const double                         Cv;
+    const double                         gamma;
+    const std::string&                   kappa_s_function;
+    const std::string&                   kappa_a_function;
+  };
+
   //00_general
   double SoundSpeed(double gamma, double p, double rho);
 
@@ -71,30 +84,12 @@ namespace chi_radhydro
                                     const std::vector<double>& cell_char_length,
                                     double C_cfl);
 
-  void ComputeCellKappas(const chi_mesh::MeshContinuum& grid,
-                         double                         Cv,
-                         const std::vector<UVector>&    U,
-                         const std::string&             kappa_s_function,
-                         const std::string&             kappa_a_function,
-                         std::vector<double>&     kappa_a,
-                         std::vector<double>&     kappa_t);
-
   UVector MakeUFromBC(const BCSetting& bc_setting,
                       const UVector& U_default);
   double MakeRadEFromBC(const BCSetting& bc_setting,
                         double radE_default);
   double GetResetTimer(chi_objects::ChiTimer& timer);
 
-  double MakeEmAbsSource(double sigma_a,
-                         double T,
-                         double radE);
-  double Make3rdGradRadE(const chi_mesh::Cell& cell,
-                               double V_c,
-                         const std::vector<double>& face_areas,
-                               double radE,
-                         const Vec3& grad_radE,
-                         const UVector& U,
-                         const std::vector<UVector>& grad_U);
 
   //01_fieldsToFrom
   void FieldsToU(const std::vector<double>& rho,
@@ -143,16 +138,10 @@ namespace chi_radhydro
                 bool verbose=false);
 
   std::vector<GradUTensor>
-    ComputeUGradients(const std::vector<UVector>& U,
-                      const chi_mesh::MeshContinuum& grid,
-                      chi_math::SpatialDiscretization_FV& fv,
-                      const std::map<uint64_t, BCSetting>& bc_settings);
+    ComputeUGradients(const std::vector<UVector>& U, SimRefs& sim_refs);
 
   std::vector<Vec3>
-    ComputeRadEGradients(const std::vector<double>& radE,
-                         const chi_mesh::MeshContinuum& grid,
-                         chi_math::SpatialDiscretization_FV& fv,
-                         const std::map<uint64_t, BCSetting> &bc_settings);
+    ComputeRadEGradients(const std::vector<double>& radE, SimRefs& sim_refs);
 
   //05_Riemann
   UVector
@@ -165,11 +154,17 @@ namespace chi_radhydro
   //06_kappa
   double ComputeKappaFromLua(double T, int mat_id, const std::string& lua_fname);
 
+  void ComputeCellKappas(const chi_mesh::MeshContinuum& grid,
+                         double                         Cv,
+                         const std::vector<UVector>&    U,
+                         const std::string&             kappa_s_function,
+                         const std::string&             kappa_a_function,
+                         std::vector<double>&     kappa_a,
+                         std::vector<double>&     kappa_t);
+
   //07_MHM
   void MHM_HydroRadEPredictor(
-    const chi_mesh::MeshContinuum&        grid,
-    chi_math::SpatialDiscretization_FV&   fv,
-    double                                gamma,
+    SimRefs&                              sim_refs,
     double                                tau,
     const std::vector<UVector>&           U_a,
     const std::vector<GradUTensor>&       grad_U_a,
@@ -180,10 +175,7 @@ namespace chi_radhydro
     );
 
   void MHM_HydroRadECorrector(
-    const chi_mesh::MeshContinuum&        grid,
-    chi_math::SpatialDiscretization_FV&   fv,
-    const std::map<uint64_t, BCSetting>&  bc_setttings,
-    double                                gamma,
+    SimRefs&                              sim_refs,
     double                                tau,
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
@@ -196,12 +188,9 @@ namespace chi_radhydro
     );
 
   void DensityMomentumUpdateWithRadMom(
-    const chi_mesh::MeshContinuum&      grid,
-    chi_math::SpatialDiscretization_FV& fv,
-    const std::map<uint64_t, BCSetting>& bc_setttings,
-    const std::vector<double>&          kappa_t,
-    double Cv,
-    double tau,
+    SimRefs&                              sim_refs,
+    const std::vector<double>&            kappa_t,
+    double                                tau,
     const std::vector<UVector>&           U_old,
     const std::vector<UVector>&           U_int,
     const std::vector<double>&            rad_E_old,
@@ -211,14 +200,24 @@ namespace chi_radhydro
   );
 
   //08
-  std::vector<double> MakePostShockConditionsRH(double Cv,
-                                                double gamma,
-                                                double rho0,
-                                                double T0,
-                                                double u0,
-                                                double rho1_guess,
-                                                double T1_guess,
-                                                double u1_guess);
+  std::vector<double> MakePostShockConditionsRH(
+    double Cv,
+    double gamma,
+    double rho0,
+    double T0,
+    double u0,
+    double rho1_guess,
+    double T1_guess,
+    double u1_guess);
+  std::vector<double> MakePostShockConditionsHydroOnly(
+    double Cv,
+    double gamma,
+    double rho0,
+    double T0,
+    double u0,
+    double rho1_guess,
+    double T1_guess,
+    double u1_guess);
 }//namespace chi_radhydro 
 
 #endif //CHI_RADHYDRO_H

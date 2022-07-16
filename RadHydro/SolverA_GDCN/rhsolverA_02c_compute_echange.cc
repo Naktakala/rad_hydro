@@ -5,7 +5,7 @@
 namespace chi_radhydro
 {
 
-  SolverA_GDCN::SystemEnergy SolverA_GDCN::
+SolverA_GDCN::SystemEnergy SolverA_GDCN::
   ComputeSysEnergyChange(
                          const double dt,
                          const std::vector<UVector> &U,
@@ -19,10 +19,12 @@ namespace chi_radhydro
   double mat_adv = 0.0;
   double rad_adv = 0.0;
   //======================================== Determine current amount of energy
-  for (const auto& cell : grid->local_cells)
+  for (const auto& cell : m_grid->local_cells)
   {
+//    if (cell.centroid.z < ((1-0.08)*0.25) or
+//        cell.centroid.z > ((1+0.08)*0.25)) continue;
     const uint64_t c         = cell.local_id;
-    const auto&    fv_view_c = fv->MapFeView(c);
+    const auto&    fv_view_c = m_fv->MapFeView(c);
     const double   V_c       = fv_view_c->volume;
 
     Emat += V_c * U[c][MAT_E];
@@ -33,8 +35,8 @@ namespace chi_radhydro
   //                                         or leaving the system
   for (const uint64_t c : m_bndry_cells_local_ids)
   {
-    const auto& cell       = grid->local_cells[c];
-    const auto& fv_view_c  = fv->MapFeView(c);
+    const auto& cell       = m_grid->local_cells[c];
+    const auto& fv_view_c  = m_fv->MapFeView(c);
     const auto& face_areas = fv_view_c->face_area;
     const Vec3& x_cc = cell.centroid;
 

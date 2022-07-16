@@ -8,8 +8,7 @@ namespace chi_radhydro
 //###################################################################
 /**Constructor.*/
 RadHydroSolver::RadHydroSolver(const std::string &name) :
-  chi_physics::Solver(name),
-  ONE_DOF_PER_NODE({{chi_math::UnknownType::SCALAR,1}})
+  chi_physics::Solver(name)
 {
   basic_options.AddOption("maximum_dt"    , double(1.0e-8)           );
   basic_options.AddOption("CFL"           , double(0.9)              );
@@ -18,7 +17,7 @@ RadHydroSolver::RadHydroSolver(const std::string &name) :
   basic_options.AddOption("export_times"  , std::string("")          );
   basic_options.AddOption("output_prefix" , std::string("ZRawOutput"));
 
-  scalar_fields["cell_char_length"] = {};
+  m_scalar_fields["cell_char_length"] = {};
 }
 
 }//namespace chi_radhydro

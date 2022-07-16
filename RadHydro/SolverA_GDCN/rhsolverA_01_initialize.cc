@@ -8,14 +8,14 @@ void chi_radhydro::SolverA_GDCN::Initialize()
 {
   RadHydroSolver::Initialize();
 
-  const size_t num_nodes_local = grid->local_cells.size();
+  const size_t num_nodes_local = m_grid->local_cells.size();
 
   //======================================== Initialize material properties
   //gamma and Cv
   {
     size_t num_gammas_not_found = 0;
     size_t num_Cvs_not_found = 0;
-    for (const auto& cell : grid->local_cells)
+    for (const auto& cell : m_grid->local_cells)
     {
       const auto& material = chi::material_stack[cell.material_id];
 
@@ -80,7 +80,7 @@ void chi_radhydro::SolverA_GDCN::Initialize()
   }//gamma and Cv
 
   //======================================== Identify bndry cells
-  for (const auto& cell : grid->local_cells)
+  for (const auto& cell : m_grid->local_cells)
     for (const auto& face : cell.faces)
       if (not face.has_neighbor)
       {
@@ -93,7 +93,7 @@ void chi_radhydro::SolverA_GDCN::Initialize()
   bool e_specified = false;
   bool p_specified = false;
   bool T_specified = false;
-  for (const auto& field_setting : logvol_field_settings)
+  for (const auto& field_setting : m_logvol_field_settings)
   {
     const auto logvol      = std::get<0>(field_setting);
     const auto field_name  = std::get<1>(field_setting);
@@ -104,9 +104,9 @@ void chi_radhydro::SolverA_GDCN::Initialize()
     if (field_name == "temperature"  ) T_specified = true;
     if (field_name == "p")             p_specified = true;
 
-    auto& field_data = scalar_fields.at(field_name);
+    auto& field_data = m_scalar_fields.at(field_name);
 
-    for (const auto& cell : grid->local_cells)
+    for (const auto& cell : m_grid->local_cells)
       if (logvol->Inside(cell.centroid))
         field_data[cell.local_id] = field_value;
   }//for field_setting
@@ -127,10 +127,10 @@ void chi_radhydro::SolverA_GDCN::Initialize()
   //============================== set p if not specified
   if (not p_specified and T_specified)
   {
-    auto& p = scalar_fields.at("p");
+    auto& p = m_scalar_fields.at("p");
 
-    const auto& rho = scalar_fields.at("rho");
-    const auto& T = scalar_fields.at("temperature");
+    const auto& rho = m_scalar_fields.at("rho");
+    const auto& T = m_scalar_fields.at("temperature");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       p[c] = (m_gamma - 1)*rho[c]*m_Cv*T[c];
@@ -138,10 +138,10 @@ void chi_radhydro::SolverA_GDCN::Initialize()
 
   if (not p_specified and e_specified)
   {
-    auto& p = scalar_fields.at("p");
+    auto& p = m_scalar_fields.at("p");
 
-    const auto& rho = scalar_fields.at("rho");
-    const auto& e = scalar_fields.at("e");
+    const auto& rho = m_scalar_fields.at("rho");
+    const auto& e = m_scalar_fields.at("e");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       p[c] = (m_gamma - 1)*rho[c]*e[c];
@@ -150,9 +150,9 @@ void chi_radhydro::SolverA_GDCN::Initialize()
   //============================== set e if not specified
   if (not e_specified and T_specified)
   {
-    auto& e = scalar_fields.at("e");
+    auto& e = m_scalar_fields.at("e");
 
-    const auto& T = scalar_fields.at("temperature");
+    const auto& T = m_scalar_fields.at("temperature");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       e[c] = T[c]*m_Cv;
@@ -160,10 +160,10 @@ void chi_radhydro::SolverA_GDCN::Initialize()
 
   if (not e_specified and p_specified)
   {
-    auto& e = scalar_fields.at("e");
+    auto& e = m_scalar_fields.at("e");
 
-    const auto& p = scalar_fields.at("p");
-    const auto& rho = scalar_fields.at("rho");
+    const auto& p = m_scalar_fields.at("p");
+    const auto& rho = m_scalar_fields.at("rho");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       e[c] = p[c]/(rho[c]*(m_gamma-1.0));
@@ -172,9 +172,9 @@ void chi_radhydro::SolverA_GDCN::Initialize()
   //============================== set p if not specified
   if (not T_specified and e_specified)
   {
-    auto& temperature = scalar_fields.at("temperature");
+    auto& temperature = m_scalar_fields.at("temperature");
 
-    const auto& e  = scalar_fields.at("e");
+    const auto& e  = m_scalar_fields.at("e");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       temperature[c] = e[c] / m_Cv;
@@ -182,18 +182,18 @@ void chi_radhydro::SolverA_GDCN::Initialize()
 
   if (not T_specified and p_specified)
   {
-    auto& temperature = scalar_fields.at("temperature");
+    auto& temperature = m_scalar_fields.at("temperature");
 
-    const auto& p  = scalar_fields.at("p");
-    const auto& rho = scalar_fields.at("rho");
+    const auto& p  = m_scalar_fields.at("p");
+    const auto& rho = m_scalar_fields.at("rho");
 
     for (uint64_t c=0; c<num_nodes_local; ++c)
       temperature[c] = p[c]/(m_gamma-1)/rho[c]/m_Cv;
   }
 
   {
-    const auto& temperature = scalar_fields.at("temperature");
-    auto& radE = scalar_fields.at("radE");
+    const auto& temperature = m_scalar_fields.at("temperature");
+    auto& radE = m_scalar_fields.at("radE");
     for (uint64_t c=0; c<num_nodes_local; ++c)
       radE[c] = a*pow(temperature[c],4.0);
 //      radE[c] = 0.0;

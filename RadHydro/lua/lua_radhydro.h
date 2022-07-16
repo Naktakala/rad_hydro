@@ -7,6 +7,7 @@ namespace chi_radhydro::lua_utils
 {
 
 int chiRadHydroMakePostShockConditionsRH(lua_State* L);
+int chiRadHydroMakePostShockConditionsHydroOnly(lua_State* L);
 
 }//namespace chi_radhydro
 

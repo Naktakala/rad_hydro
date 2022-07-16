@@ -18,7 +18,7 @@ inp.limiter = 'double minmod'
 inp.geometry = 'slab'   # geometry type
 inp.rL = -0.25  # left boundary coordinate [cm]
 inp.rR =  0.25   # right boundary coordinate [cm]
-inp.N  = 500  # number of cells
+inp.N  = 1000  # number of cells
 
 # Material Parameters
 inp.C_v      = 0.14472799784454     # specific heat [jerks / (cm3 keV)]
@@ -32,7 +32,7 @@ inp.c        = 299.792              # speed of light [cm / sh]
 # Time Specifications
 inp.cfl         = 0.3  # cfl factor
 inp.T_start     = 0.0   # start time [sh]
-inp.T_final     = 5.0   # final time [sh]
+inp.T_final     = 1.0   # final time [sh]
 inp.relErFactor = 0.2 # Relative change in Er per time step
 inp.maxTimeStep = 5.0e-2
 
@@ -52,8 +52,17 @@ inp.bc_R_rad_type   = "reflective"
 ### RUN PROBLEM ###
 inp.checkInputs()
 rh = EulerianRadHydro(inp, DEBUG=False)
+time_vals = []
+Nt = 100
+dt = inp.T_final/Nt 
+for i in range(1,Nt+1):
+    time_vals.append(dt*i)
+
+rh.output_times = time_vals
+print(rh.output_times)
 rh.run(cycle_stop=None, print_freq=1)
 
 ### PLOTS ###
-rh.fields.plotFields(["T", "Er"], ['b-o', 'r-o'], [-0.02, 0.02])
+rh.fields.plotFields(["T", "Er"], ['b-o', 'r-o'], [-0.25,0.25])
 plt.legend(fontsize=12)
+plt.show()

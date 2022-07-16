@@ -97,7 +97,7 @@ chi_radhydro::FVector chi_radhydro::
   MakeFNoTransform(const UVector &U, double pressure)
 {
   const double rho   = U[UVectorEntries::RHO];
-  const double rho_u = U[UVectorEntries::U];
+  const double rho_u = U[UVectorEntries::RHO_U];
 
   const double u = rho_u/rho;
 

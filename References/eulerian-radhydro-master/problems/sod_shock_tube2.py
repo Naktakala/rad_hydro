@@ -18,7 +18,7 @@ inp.limiter = 'double minmod'
 inp.geometry = 'slab'   # geometry type
 inp.rL = -0.5  # left boundary coordinate [cm]
 inp.rR =  0.5   # right boundary coordinate [cm]
-inp.N  = 100  # number of cells
+inp.N  = 500  # number of cells
 
 # Material Parameters
 inp.C_v      = 1.0     # specific heat [jerks / (cm3 keV)]

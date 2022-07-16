@@ -22,15 +22,14 @@ protected:
   typedef chi_math::SpatialDiscretization_FV SDM_FV;
 
 protected:
-  std::shared_ptr<chi_mesh::MeshContinuum> grid;
-  chi_math::UnknownManager ONE_DOF_PER_NODE;
-  std::shared_ptr<SDM_FV>                  fv;
+  std::shared_ptr<chi_mesh::MeshContinuum> m_grid;
+  std::shared_ptr<SDM_FV>                  m_fv;
 
 public:
-  std::vector<LVFieldSetting>        logvol_field_settings;
-  std::map<std::string, ScalarField> scalar_fields;
+  std::vector<LVFieldSetting>              m_logvol_field_settings;
+  std::map<std::string, ScalarField>       m_scalar_fields;
 
-  std::map<uint64_t, BCSetting>           bc_settings;
+  std::map<uint64_t, BCSetting>            m_bc_settings;
 
 public:
   explicit RadHydroSolver(const std::string& name);
@@ -40,7 +39,8 @@ public:
   //02
   void Execute() override;
   //99
-  void PrintRawOutput(const std::string& file_name);
+  void PrintRawOutput(const std::string& file_name,
+                      const std::map<std::string,double>& scalar_properties);
   static VecDbl MakeOutputTimesFromStr(const std::string& output_times_str);
 
 };

@@ -141,13 +141,30 @@ class ReconstructData:
     def DoubleMinmod(self, slope, edge_slopes):
         for i in range(len(slope)):
             if np.sign(slope[i]) == np.sign(edge_slopes[i,0]) == np.sign(edge_slopes[i,1]):
-                a = np.abs(slope[i])
-                b = 2 * np.abs(edge_slopes[i,0])
-                c = 2 * np.abs(edge_slopes[i,1])
-                slope[i] = min(a, b, c)
+                if slope[i] > 0.0:
+                    a = np.abs(slope[i])
+                    b = 2 * np.abs(edge_slopes[i,0])
+                    c = 2 * np.abs(edge_slopes[i,1])
+                    slope[i] = min(a, b, c)
+                else:
+                    a = (slope[i])
+                    b = 2 * (edge_slopes[i,0])
+                    c = 2 * (edge_slopes[i,1])
+                    slope[i] = max(a, b, c)
             else:
                 slope[i] = 0.0
         return slope
+    
+    # def DoubleMinmod(self, slope, edge_slopes):
+    #     for i in range(len(slope)):
+    #         if np.sign(slope[i]) == np.sign(edge_slopes[i,0]) == np.sign(edge_slopes[i,1]):
+    #             a = np.abs(slope[i])
+    #             b = 2 * np.abs(edge_slopes[i,0])
+    #             c = 2 * np.abs(edge_slopes[i,1])
+    #             slope[i] = min(a, b, c)
+    #         else:
+    #             slope[i] = 0.0
+    #     return slope
     
     #########################################################################
     # Description:

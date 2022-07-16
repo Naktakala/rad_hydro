@@ -32,17 +32,15 @@ double chi_radhydro::MinMod(const std::vector<double> &ais,
 
   if (ais.empty()) return 0.0;
 
-  const auto same_sign = std::signbit(ais.front());
+  const auto sign_of_first_element = std::signbit(ais.front());
 
   for (double a_i : ais)
-    if (std::signbit(a_i) != same_sign) return 0.0;
+    if (std::signbit(a_i) != sign_of_first_element) return 0.0;
 
-  const bool all_negative = bool(same_sign);
+  const bool all_negative = bool(sign_of_first_element);
 
   if (not all_negative) return *std::min_element(ais.begin(), ais.end());
   else                  return *std::max_element(ais.begin(), ais.end());
-
-
 }
 
 //###################################################################
@@ -61,7 +59,7 @@ chi_radhydro::UVector chi_radhydro::MinModU(const std::vector<UVector> &vec_of_U
     std::vector<double> minmod_args(num_elements);
 
     for (size_t k=0; k<num_elements; ++k)
-      minmod_args[k] = vec_of_U[k][static_cast<int>(i)];
+      minmod_args[k] = (vec_of_U[k][static_cast<int>(i)]);
 
     minmod_val(static_cast<int>(i)) = MinMod(minmod_args,verbose);
   }
@@ -72,11 +70,12 @@ chi_radhydro::UVector chi_radhydro::MinModU(const std::vector<UVector> &vec_of_U
 //###################################################################
 /**Computes the gradient of U for the given field data.*/
 std::vector<GradUTensor> chi_radhydro::
-  ComputeUGradients(const std::vector<UVector> &U,
-                    const chi_mesh::MeshContinuum &grid,
-                    chi_math::SpatialDiscretization_FV &fv,
-                    const std::map<uint64_t, BCSetting> &bc_settings)
+  ComputeUGradients(const std::vector<UVector> &U, SimRefs& sim_refs)
 {
+  const auto& grid        = sim_refs.grid;
+        auto& fv          = sim_refs.fv;
+  const auto& bc_settings = sim_refs.bc_settings;
+
   const size_t num_nodes_local = U.size();
   std::vector<GradUTensor> grad_U(num_nodes_local);
   for (const auto& cell_c : grid.local_cells)
@@ -113,7 +112,7 @@ std::vector<GradUTensor> chi_radhydro::
         const double w_c  = (x_f - x_c).Norm()/d_c_cn;
         const double w_cn = (x_cn - x_f).Norm()/d_c_cn;
 
-        weighted_U = w_c*U[c] + w_cn*U[cn];
+        weighted_U = w_cn*U[c] + w_c*U[cn];
       }
 
       grad_U_c[0] += (1/V_c) * A_f.x * weighted_U; //dU_dx_c
@@ -137,6 +136,9 @@ std::vector<GradUTensor> chi_radhydro::
     GradUTensor& grad_U_c = grad_U[c];
 
     const size_t num_faces = cell.faces.size();
+    std::vector<UVector> neighbor_grads_x(num_faces);
+    std::vector<UVector> neighbor_grads_y(num_faces);
+    std::vector<UVector> neighbor_grads_z(num_faces);
     for (size_t f=0; f<num_faces; ++f)
     {
       const auto& face = cell.faces[f];
@@ -165,10 +167,17 @@ std::vector<GradUTensor> chi_radhydro::
       const auto dU_ds_y = (dU/dx.NormSquare())*dx.y;
       const auto dU_ds_z = (dU/dx.NormSquare())*dx.z;
 
-      grad_U_c[0] = MinModU({grad_U_c[0], alpha * dU_ds_x});
-      grad_U_c[1] = MinModU({grad_U_c[1], alpha * dU_ds_y});
-      grad_U_c[2] = MinModU({grad_U_c[2], alpha * dU_ds_z});
+      neighbor_grads_x[f] = alpha*dU_ds_x;
+      neighbor_grads_y[f] = alpha*dU_ds_y;
+      neighbor_grads_z[f] = alpha*dU_ds_z;
     }//for face
+    neighbor_grads_x.push_back(grad_U_c[0]);
+    neighbor_grads_y.push_back(grad_U_c[1]);
+    neighbor_grads_z.push_back(grad_U_c[2]);
+
+    grad_U_c[0] = MinModU(neighbor_grads_x);
+    grad_U_c[1] = MinModU(neighbor_grads_y);
+    grad_U_c[2] = MinModU(neighbor_grads_z);
   }//for cell
 
   return grad_U;
@@ -177,11 +186,12 @@ std::vector<GradUTensor> chi_radhydro::
 //###################################################################
 /**Computes the gradient of rad_E.*/
 std::vector<chi_mesh::Vector3> chi_radhydro::
-ComputeRadEGradients(const std::vector<double> &radE,
-                     const chi_mesh::MeshContinuum& grid,
-                     chi_math::SpatialDiscretization_FV& fv,
-                     const std::map<uint64_t, BCSetting> &bc_settings)
+ComputeRadEGradients(const std::vector<double> &radE, SimRefs& sim_refs)
 {
+  const auto& grid        = sim_refs.grid;
+  auto& fv          = sim_refs.fv;
+  const auto& bc_settings = sim_refs.bc_settings;
+
   const size_t num_nodes_local = radE.size();
   std::vector<Vec3> grad_rad_E(num_nodes_local);
   for (const auto& cell_c : grid.local_cells)
@@ -218,7 +228,7 @@ ComputeRadEGradients(const std::vector<double> &radE,
         const double w_c  = (x_f - x_c).Norm()/d_c_cn;
         const double w_cn = (x_cn - x_f).Norm()/d_c_cn;
 
-        weighted_rad_E = w_c * radE[c] + w_cn * radE[cn];
+        weighted_rad_E = w_cn * radE[c] + w_c * radE[cn];
       }
 
       grad_rad_E_c = (1/V_c) * A_f * weighted_rad_E;
@@ -240,6 +250,9 @@ ComputeRadEGradients(const std::vector<double> &radE,
     Vec3& grad_rad_E_c = grad_rad_E[c];
 
     const size_t num_faces = cell.faces.size();
+    std::vector<double> neighbor_grads_x(num_faces);
+    std::vector<double> neighbor_grads_y(num_faces);
+    std::vector<double> neighbor_grads_z(num_faces);
     for (size_t f=0; f<num_faces; ++f)
     {
       const auto& face = cell.faces[f];
@@ -268,10 +281,17 @@ ComputeRadEGradients(const std::vector<double> &radE,
       const auto dE_ds_y = (dE/dx.NormSquare())*dx.y;
       const auto dE_ds_z = (dE/dx.NormSquare())*dx.z;
 
-      grad_rad_E_c.x = MinMod({grad_rad_E_c[0], alpha * dE_ds_x});
-      grad_rad_E_c.y = MinMod({grad_rad_E_c[1], alpha * dE_ds_y});
-      grad_rad_E_c.z = MinMod({grad_rad_E_c[2], alpha * dE_ds_z});
+      neighbor_grads_x[f] = alpha*dE_ds_x;
+      neighbor_grads_y[f] = alpha*dE_ds_y;
+      neighbor_grads_z[f] = alpha*dE_ds_z;
     }//for face
+    neighbor_grads_x.push_back(grad_rad_E_c[0]);
+    neighbor_grads_y.push_back(grad_rad_E_c[1]);
+    neighbor_grads_z.push_back(grad_rad_E_c[2]);
+
+    grad_rad_E_c.x = MinMod(neighbor_grads_x);
+    grad_rad_E_c.y = MinMod(neighbor_grads_y);
+    grad_rad_E_c.z = MinMod(neighbor_grads_z);
   }//for cell
 
   return grad_rad_E;

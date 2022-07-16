@@ -1,6 +1,13 @@
 #include "rad_hydro.h"
 
-#include "ChiMesh/MeshContinuum/chi_meshcontinuum.h"
+//###################################################################
+/**Very convenient to get and reset a timer.*/
+double chi_radhydro::GetResetTimer(chi_objects::ChiTimer &timer)
+{
+  double time = timer.GetTime();
+  timer.Reset();
+  return time;
+}
 
 //###################################################################
 /**Computes the source speed for an ideal gas.*/
@@ -10,6 +17,9 @@ SoundSpeed(double gamma, double p, double rho)
   return sqrt(gamma*p/rho);
 }
 
+//###################################################################
+/**Computes the courant limited timestep size for the given
+ * hydrodynamic state U.*/
 double chi_radhydro::
   ComputeCourantLimitDelta_t(const std::vector<UVector> &vecU,
                              const double gamma,
@@ -39,30 +49,8 @@ double chi_radhydro::
   return delta_t_hydro;
 }
 
-void chi_radhydro::
-  ComputeCellKappas(const chi_mesh::MeshContinuum &grid,
-                    const double               Cv,
-                    const std::vector<UVector> &U,
-                    const std::string &kappa_s_function,
-                    const std::string &kappa_a_function,
-                    std::vector<double> &kappa_a,
-                    std::vector<double> &kappa_t)
-{
-  for (const auto& cell : grid.local_cells)
-  {
-    const uint64_t c = cell.local_id;
-    const int mat_id = cell.material_id;
-
-    const double T_c = IdealGasTemperatureFromCellU(U[c], Cv);
-
-    const double kappa_s_c = ComputeKappaFromLua(T_c, mat_id, kappa_s_function);
-    const double kappa_a_c = ComputeKappaFromLua(T_c, mat_id, kappa_a_function);
-
-    kappa_a[c] = kappa_a_c;
-    kappa_t[c] = kappa_s_c + kappa_a_c;
-  }//for cell
-}
-
+//###################################################################
+/**Makes a Uvector from a boundary condition.*/
 chi_radhydro::UVector chi_radhydro::MakeUFromBC(const BCSetting& bc_setting,
                                                 const UVector& U_default)
 {
@@ -88,57 +76,12 @@ chi_radhydro::UVector chi_radhydro::MakeUFromBC(const BCSetting& bc_setting,
   return U;
 }
 
+//###################################################################
+/**Makes radiation energy from a boundary condition.*/
 double chi_radhydro::MakeRadEFromBC(const BCSetting& bc_setting,
                                     const double radE_default)
 {
   if (bc_setting.type == BCType::TRANSMISSIVE) return radE_default;
 
   return bc_setting.values[6];
-}
-
-double chi_radhydro::GetResetTimer(chi_objects::ChiTimer &timer)
-{
-  double time = timer.GetTime();
-  timer.Reset();
-  return time;
-}
-
-/**Computes Emission-absorption source.
- * Sea = sigma_a c (aT^4 - radE)*/
-double chi_radhydro::MakeEmAbsSource(const double sigma_a,
-                                     const double T,
-                                     const double radE)
-{
-  return sigma_a * speed_of_light_cmpsh *
-         (a * pow(T,4.0) - radE);
-}
-
-double chi_radhydro::Make3rdGradRadE(const chi_mesh::Cell &cell,
-                                     double V_c,
-                                     const std::vector<double> &face_areas,
-                                     double radE,
-                                     const Vec3 &grad_radE,
-                                     const UVector &U,
-                                     const std::vector<UVector> &grad_U)
-{
-  double third_grad_rad_E_dot_u = 0.0;
-  const auto& x_c = cell.centroid;
-
-//  const Vec3    u_f     = VelocityFromCellU(U);
-
-  size_t f = 0;
-  for (const auto& face : cell.faces)
-  {
-    const auto& x_f  = face.centroid;
-    const auto  x_fc = x_f - x_c;
-    const Vec3 A_f = face_areas[f] * face.normal;
-
-    const double  rad_E_f = radE + (x_f - x_c).Dot(grad_radE);
-    const UVector U_f     = UplusDXGradU(U, x_fc, grad_U);
-    const Vec3    u_f     = VelocityFromCellU(U_f);
-
-    third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
-    ++f;
-  }//for f
-  return third_grad_rad_E_dot_u;
 }

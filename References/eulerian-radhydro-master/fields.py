@@ -387,7 +387,7 @@ class Fields:
     # Description:
     #   This function plots the desired field variable specified.
     #########################################################################
-    def plotFields(self, variables, styles=[], xlims=[]):
+    def plotFields(self, variables, styles=[], xlims=[], ylims=[],savename="",title=""):
         fig = plt.figure()
         plt.rc("text", usetex=True)
         for i, var in enumerate(variables):
@@ -418,8 +418,13 @@ class Fields:
             plt.xlim([self.geo.rL, self.geo.rR])
         else:
             plt.xlim(xlims)
+        if ylims != []:
+            plt.ylim(ylims)
         plt.grid()
         plt.legend(fontsize=10)
-        plt.show()
+        plt.title(title)
+        if savename != "":
+            plt.savefig(savename)
+        # plt.show()
         
         

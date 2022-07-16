@@ -19,7 +19,7 @@ end
 chiMeshHandlerCreate()
 
 mesh={}
-N=500
+N=100
 L=1.0
 xmin = 0.0
 dx = L/N
@@ -65,6 +65,7 @@ chiSolverSetBasicOption(phys1, "maximum_dt"   , 1.0e-2)
 chiSolverSetBasicOption(phys1, "CFL"          , 0.3)
 chiSolverSetBasicOption(phys1, "max_timesteps", 2000)
 chiSolverSetBasicOption(phys1, "max_time"     , 0.2)
+chiSolverSetBasicOption(phys1, "export_times"  , "0.1")
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
