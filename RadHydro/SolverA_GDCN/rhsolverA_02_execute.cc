@@ -27,11 +27,13 @@ void chi_radhydro::SolverA_GDCN::Execute()
   std::vector<UVector>  U_n(num_local_nodes);
   std::vector<UVector>  U_n_star(num_local_nodes);
   std::vector<UVector>  U_nph(num_local_nodes);
+  std::vector<UVector>  U_nph_star(num_local_nodes);
   std::vector<UVector>  U_np1(num_local_nodes);
 
   VecDbl                rad_E_n(num_local_nodes);
   VecDbl                rad_E_n_star(num_local_nodes);
   VecDbl                rad_E_nph(num_local_nodes);
+  VecDbl                rad_E_nph_star(num_local_nodes);
   VecDbl                rad_E_np1(num_local_nodes);
 
   VecDbl                kappa_a_n(num_local_nodes, 0.0);
@@ -137,7 +139,7 @@ void chi_radhydro::SolverA_GDCN::Execute()
                    m_Cv, m_gamma,
                    m_kappa_s_function, m_kappa_a_function};
 
-  //######################################## Start iterations
+  //####################################################### Start iterations
   chi_objects::ChiTimer timer;
   std::unordered_map<std::string, double> timing_info;
 
@@ -184,63 +186,46 @@ void chi_radhydro::SolverA_GDCN::Execute()
 
     timing_info["compute_kappa_n"] += GetResetTimer(timer);
 
-    //================================= Predictor
-    Predictor(sim_refs,
-              kappa_a_n, kappa_t_n,
-              dt,
-              U_n, grad_U_n, U_nph,
-              rad_E_n, grad_rad_E_n, rad_E_nph);
+    //################################################ Predictor
 
-//    //=================================== Advection of U and rad_E
-//    MHM_HydroRadEPredictor(    //Defined in chi_radhydro
-//      sim_refs,                //Stuff
-//      /*tau=*/1/(0.5*dt),      //tau input
-//      U_n, grad_U_n,           //Hydro inputs
-//      rad_E_n, grad_rad_E_n,   //RadE inputs
-//      U_n_star, rad_E_n_star   //Outputs
-//    );
-//
-//    //=================================== Update density and momentum to nph
-//    DensityMomentumUpdateWithRadMom(            //Defined in chi_radhydro
-//      sim_refs,                                 //Stuff
-//      kappa_t_n,                                //Kappa_t for interpolation
-//      /*tau=*/1/(0.5*dt),                       //tau input
-//      U_n, U_n_star,                            //Hydro inputs
-//      rad_E_n,                                  //RadE input
-//      U_nph                                     //Output
-//    );
-//
-//    //=================================== Internal energy and radiation energy
-//    {
-//      std::vector<double> k5,k6;
-//      MatDbl A;
-//      VecDbl b;
-//
-//      AssembleGeneralEnergySystem(
-//        sim_refs,
-//        kappa_a_n, kappa_t_n,
-//        kappa_a_n, kappa_t_n,                               //Stuff
-//        /*tau=*/1/(0.5*dt), /*theta1=*/1.0, /*theta2=*/0.0, //tau, theta input
-//        U_n, U_n, U_n_star, U_nph, grad_U_n,                //Hydro inputs
-//        rad_E_n, rad_E_n, rad_E_n_star, grad_rad_E_n,       //RadE inputs
-//        k5, k6, A, b);                                      //Outputs
-//
-//      rad_E_nph = chi_math::TDMA(A,b);
-//
-//      //============================ Back sub for internal energy
-//      for (const auto& cell_c : m_grid->local_cells)
-//      {
-//        const uint64_t c     = cell_c.local_id;
-//        double rho_c_nph     = U_nph[c][RHO];
-//        Vec3   u_c_nph       = VelocityFromCellU(U_nph[c]);
-//        double u_abs_sqr_nph = u_c_nph.NormSquare();
-//        double e_c_nph       = k5[c]*rad_E_nph[c] + k6[c];
-//
-//        double& E_c_nph = U_nph[c](MAT_E);
-//
-//        E_c_nph = rho_c_nph*(0.5 * u_abs_sqr_nph + e_c_nph);
-//      }//for cell c
-//    }//scope internal e and rad_E
+    //=================================== Advection of U and rad_E
+    MHM_HydroRadEPredictor(            //Defined in chi_radhydro
+      sim_refs,                        //Stuff
+      /*tau=*/1/(0.5*dt),              //tau input
+      U_n, grad_U_n,                   //Hydro inputs
+      rad_E_n, grad_rad_E_n,           //RadE inputs
+      U_n_star, rad_E_n_star           //Outputs
+    );
+
+    //=================================== Update density and momentum to nph
+    DensityMomentumUpdateWithRadMom(   //Defined in chi_radhydro
+      sim_refs,                        //Stuff
+      kappa_t_n,                       //Kappa_t for interpolation
+      /*tau=*/1/(0.5*dt),              //tau input
+      U_n, U_n_star,                   //Hydro inputs
+      rad_E_n,                         //RadE input
+      U_nph                            //Output
+    );
+
+    //=================================== Internal energy and radiation energy
+    {
+      MatDbl A;
+      VecDbl b;
+
+      AssembleGeneralEnergySystem(                    //Defined part of rhsolverA
+        sim_refs,
+        kappa_a_n, kappa_t_n,                         //Stuff
+        kappa_a_n, kappa_t_n,
+        /*tau=*/1/(0.5*dt),                           //tau input
+        /*theta1=*/1.0, /*theta2=*/0.0,               //theta input
+        U_n, U_n, U_n_star, U_nph, grad_U_n,          //Hydro inputs
+        rad_E_n, rad_E_n, rad_E_n_star, grad_rad_E_n, //RadE inputs
+        A, b);                                        //Outputs
+
+      rad_E_nph = chi_math::TDMA(A,b);
+
+      InverseAlgebraFor_E(sim_refs, rad_E_nph, U_nph);
+    }//scope internal e and rad_E
 
     timing_info["predictor"] += GetResetTimer(timer);
 
@@ -258,13 +243,47 @@ void chi_radhydro::SolverA_GDCN::Execute()
 
     timing_info["compute_kappa_nph"] += GetResetTimer(timer);
 
-    //================================= Corrector
-    CorrectorHydroAndMom(sim_refs,
-                         kappa_a_n, kappa_t_n,
-                         kappa_a_nph, kappa_t_nph,
-                         dt,
-                         U_n, U_nph, grad_U_nph, U_np1,
-                         rad_E_n, rad_E_nph, grad_rad_E_nph, rad_E_np1);
+    //################################################ Corrector
+
+    //=================================== Advection of U and rad_E
+    //Applies a Riemann solver
+    MHM_HydroRadECorrector(                 //Defined in chi_radhydro
+      sim_refs,                             //Stuff
+      /*tau=*/1/dt,                         //tau input
+      U_n, U_nph, grad_U_nph,               //Hydro inputs
+      rad_E_n, rad_E_nph, grad_rad_E_nph,   //RadE inputs
+      U_nph_star, rad_E_nph_star            //Outputs
+    );
+
+    //=================================== Update density and momentum to np1
+    DensityMomentumUpdateWithRadMom(        //Defined in chi_radhydro
+      sim_refs,                             //Stuff
+      kappa_t_nph,                          //Kappa for interpolation
+      /*tau=*/1/dt,                         //tau input
+      U_nph, U_nph_star,                    //Hydro inputs
+      rad_E_nph,                            //RadE input
+      U_np1                                 //Output
+    );
+
+    //=================================== Internal energy and radiation energy
+    {
+      MatDbl A;
+      VecDbl b;
+
+      AssembleGeneralEnergySystem(                          //Defined part of rhsolverA
+        sim_refs,
+        kappa_a_n  , kappa_t_n,                             //Stuff
+        kappa_a_nph, kappa_t_nph,
+        /*tau=*/1/dt,                                       //tau input
+        /*theta1=*/0.5, /*theta2=*/0.5,                     //theta input
+        U_n, U_nph, U_nph_star, U_np1, grad_U_nph,          //Hydro inputs
+        rad_E_n, rad_E_nph, rad_E_nph_star, grad_rad_E_nph, //RadE inputs
+        A, b);                                              //Outputs
+
+      rad_E_np1 = chi_math::TDMA(A,b);
+
+      InverseAlgebraFor_E(sim_refs, rad_E_np1, U_np1);
+    }//scope internal e and rad_E
 
     timing_info["corrector"] += GetResetTimer(timer);
 

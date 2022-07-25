@@ -23,8 +23,6 @@ void chi_radhydro::SolverA_GDCN::
   const std::vector<double>&      rad_E_nph,
   const std::vector<double>&      rad_E_nphstar,
   const std::vector<Vec3>&        grad_rad_E_nph,
-  std::vector<double>&            k5_vec,
-  std::vector<double>&            k6_vec,
   MatDbl &A, VecDbl &b)
 {
   const auto&  grid = sim_refs.grid;
@@ -35,8 +33,9 @@ void chi_radhydro::SolverA_GDCN::
   A.assign(N,VecDbl(N,0.0));
   b.assign(N, 0.0);
 
-  k5_vec.assign(N, 0.0);
-  k6_vec.assign(N, 0.0);
+  sim_refs.e_recon_coeff_k5.assign(N, 0.0);
+  sim_refs.e_recon_coeff_k6.assign(N, 0.0);
+
 
   for (const auto& cell_c : grid.local_cells)
   {
@@ -73,7 +72,8 @@ void chi_radhydro::SolverA_GDCN::
     if (std::fabs(sigma_t_c_np1) < 1.0e-6)
     {
       A[c][c] = 1.0; b[c] = rad_E_c_nphstar;
-      k5_vec[c] = 0.0; k6_vec[c] = e_c_nphstar;
+      sim_refs.e_recon_coeff_k5[c] = 0.0;
+      sim_refs.e_recon_coeff_k6[c] = e_c_nphstar;
       continue;
     }
 
@@ -107,8 +107,8 @@ void chi_radhydro::SolverA_GDCN::
       (k3 - tau * 0.5 * rho_c_np1 * u_c_np1.NormSquare() + tau * E_c_nphstar) /
       (tau * rho_c_np1 - k4);
 
-    k5_vec[c] = k5;
-    k6_vec[c] = k6;
+    sim_refs.e_recon_coeff_k5[c] = k5;
+    sim_refs.e_recon_coeff_k6[c] = k6;
 
     //=========================================== Assemble connectivity
     for (size_t f=0; f<num_faces; ++f)

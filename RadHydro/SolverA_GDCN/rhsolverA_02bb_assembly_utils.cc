@@ -216,3 +216,29 @@ double chi_radhydro::SolverA_GDCN::
 
   return third_grad_rad_E_dot_u_nph;
 }
+
+
+//###################################################################
+/**Performs the inverse algebra, contained in the whitepaper, to
+ * get the value of internal energy.*/
+void chi_radhydro::SolverA_GDCN::
+  InverseAlgebraFor_E(SimRefs&                   sim_refs,
+                      const std::vector<double>& rad_E,
+                      std::vector<UVector>&      U)
+{
+  for (const auto& cell_c : sim_refs.grid.local_cells)
+  {
+    const uint64_t c     = cell_c.local_id;
+    const double k5_c = sim_refs.e_recon_coeff_k5[c];
+    const double k6_c = sim_refs.e_recon_coeff_k6[c];
+
+    double rho_c_np1     = U[c][RHO];
+    Vec3   u_c_np1       = VelocityFromCellU(U[c]);
+    double u_abs_sqr_np1 = u_c_np1.NormSquare();
+    double e_c_np1       = k5_c*rad_E[c] + k6_c;
+
+    double& E_c_np1 = U[c](MAT_E);
+
+    E_c_np1 = rho_c_np1*(0.5 * u_abs_sqr_np1 + e_c_np1);
+  }//for cell c
+}
