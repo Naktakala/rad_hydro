@@ -154,10 +154,11 @@ void chi_radhydro::SolverA_GDCN::
 
     //=========================================== Diagonal and rhs
     A[c][c] += tau + k1;
-    b[c]    += -k3 - k4*k6 + tau*rad_E_c_nphstar - theta2*grad_dot_J_n;
+    A[c][c+N] += k4;
+    b[c]    += -k3 + tau*rad_E_c_nphstar - theta2*grad_dot_J_n;
 
-    A[c+N][c+N] = 1.0;
-    A[c+N][c]   = k5;
-    b[c+N]      = k6;
+    A[c+N][c+N] += 1.0;
+    A[c+N][c]   -= k5;
+    b[c+N]      += k6;
   }//for cell
 }

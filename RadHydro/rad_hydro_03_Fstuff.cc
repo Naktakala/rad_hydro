@@ -131,18 +131,6 @@ MakeF(const UVector& U, double pressure, const Vec3& n_f/*=Vec3(0,0,1)*/)
   return Tinv * (u*U_t + pressure*D);
 }
 
-chi_radhydro::FVector chi_radhydro::
-  Fswap_w_and_u(const FVector &F)
-{
-  return FVector ({F[0], F[3], F[2], F[1], F[4]});
-}
-
-chi_radhydro::UVector chi_radhydro::
-Uswap_w_and_u(const UVector &U)
-{
-  return FVector ({U[0], U[3], U[2], U[1], U[4]});
-}
-
 //###################################################################
 /**Makes a flux vector, F, from a U vector.*/
 chi_radhydro::FVector chi_radhydro::

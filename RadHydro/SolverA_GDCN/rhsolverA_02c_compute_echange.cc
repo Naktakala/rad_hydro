@@ -21,8 +21,6 @@ SolverA_GDCN::SystemEnergy SolverA_GDCN::
   //======================================== Determine current amount of energy
   for (const auto& cell : m_grid->local_cells)
   {
-//    if (cell.centroid.z < ((1-0.08)*0.25) or
-//        cell.centroid.z > ((1+0.08)*0.25)) continue;
     const uint64_t c         = cell.local_id;
     const auto&    fv_view_c = m_fv->MapFeView(c);
     const double   V_c       = fv_view_c->volume;
@@ -54,7 +52,7 @@ SolverA_GDCN::SystemEnergy SolverA_GDCN::
       if (not grad_rad_E.empty()) grad_rad_E_c = grad_rad_E[c];
 
       const auto U_f     = UplusDXGradU(U[c], x_fc - x_cc, grad_U_c);
-      const auto rad_E_f = rad_E[c];// + (x_fc - x_cc).Dot(grad_rad_E_c);
+      const auto rad_E_f = rad_E[c] + (x_fc - x_cc).Dot(grad_rad_E_c);
       const Vec3   u_f   = chi_radhydro::VelocityFromCellU(U_f);
       const double p_f   = IdealGasPressureFromCellU(U_f, m_gamma);
       const double E_f   = U_f[MAT_E];

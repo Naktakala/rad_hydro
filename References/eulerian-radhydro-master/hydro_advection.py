@@ -109,17 +109,17 @@ class HydroAdvection:
         #     sys.exit()
 
         # Check for negativities
-        if predictor:
-            if any([irho < 0 for irho in rho]):
-                print("Negative mass density encountered in predictor step.\n")
-                sys.exit(1)
-            elif any([ie < 0 for ie in e]):
-                print("Negative internal energy density encountered in predictor step.\n")
-                sys.exit(1)
-        if not predictor:
-            if any([irho < 0 for irho in rho]):
-                print("Negative mass density encountered in corrector step.\n")
-                sys.exit(1)
-            elif any([ie < 0 for ie in e]):
-                print("Negative internal energy density encountered in corrector step.\n")
-                sys.exit(1)
+        # if predictor:
+        #     if any([irho < 0 for irho in rho]):
+        #         print("Negative mass density encountered in predictor step.\n")
+        #         sys.exit(1)
+        #     elif any([ie < 0 for ie in e]):
+        #         print("Negative internal energy density encountered in predictor step.\n")
+        #         sys.exit(1)
+        # if not predictor:
+        #     if any([irho < 0 for irho in rho]):
+        #         print("Negative mass density encountered in corrector step.\n")
+        #         sys.exit(1)
+        #     elif any([ie < 0 for ie in e]):
+        #         print("Negative internal energy density encountered in corrector step.\n")
+        #         sys.exit(1)

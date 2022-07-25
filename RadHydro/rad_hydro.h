@@ -74,6 +74,8 @@ namespace chi_radhydro
     const double                         gamma;
     const std::string&                   kappa_s_function;
     const std::string&                   kappa_a_function;
+    std::vector<double>                  e_recon_coeff_k5;
+    std::vector<double>                  e_recon_coeff_k6;
   };
 
   //00_general
@@ -120,12 +122,10 @@ namespace chi_radhydro
 
   //03_Fstuff
   MatDbl MakeRotationMatrix(const Vec3 &axis, double theta);
-  chi_math::MatrixNXxNX<5,double> MakeTransformationMatrix(const Vec3 &n);
+  TMatrix MakeTransformationMatrix(const Vec3 &n);
   TMatrixPair MakeTandTinv(const Vec3& n);
   FVector MakeF(const UVector& U, double pressure, const Vec3& n_f=Vec3(0,0,1));
   FVector MakeFNoTransform(const UVector& U, double pressure);
-  FVector Fswap_w_and_u(const FVector &F);
-  UVector Uswap_w_and_u(const UVector &U);
   FVector MakeFWithRadE(const UVector& U, double pressure,
                         double radE, const Vec3& n_f=Vec3(0,0,1));
 

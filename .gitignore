@@ -43,3 +43,6 @@ Makefile
 #video files
 *.avi
 *.mp4
+
+ZRawOutput.png
+ZRawOutput.txt

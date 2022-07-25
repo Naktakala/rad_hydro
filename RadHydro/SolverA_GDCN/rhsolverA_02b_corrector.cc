@@ -4,29 +4,27 @@
 #include "ChiMath/chi_math_banded_solvers.h"
 
 void chi_radhydro::SolverA_GDCN::
-  Corrector(SimRefs& sim_refs,
-            const std::vector<double>&      kappa_a_n,
-            const std::vector<double>&      kappa_t_n,
-            const std::vector<double>&      kappa_a_nph,
-            const std::vector<double>&      kappa_t_nph,
-            double                          dt,
+  CorrectorHydroAndMom(SimRefs& sim_refs,
+                       const std::vector<double>&      kappa_a_n,
+                       const std::vector<double>&      kappa_t_n,
+                       const std::vector<double>&      kappa_a_nph,
+                       const std::vector<double>&      kappa_t_nph,
+                       double                          dt,
 
-            const std::vector<UVector>      &U_n,
-            const std::vector<UVector>      &U_nph,
-            const std::vector<GradUTensor>  &grad_U_nph,
-            std::vector<UVector>            &U_np1,
+                       const std::vector<UVector>      &U_n,
+                       const std::vector<UVector>      &U_nph,
+                       const std::vector<GradUTensor>  &grad_U_nph,
+                       std::vector<UVector>            &U_np1,
 
-            const std::vector<double>       &rad_E_n,
-            const std::vector<double>       &rad_E_nph,
-            const std::vector<Vec3>         &grad_rad_E_nph,
-            std::vector<double>             &rad_E_np1)
+                       const std::vector<double>       &rad_E_n,
+                       const std::vector<double>       &rad_E_nph,
+                       const std::vector<Vec3>         &grad_rad_E_nph,
+                       std::vector<double>             &rad_E_np1)
 {
   chi::log.Log0Verbose1() << "Executing corrector";
 
   std::vector<UVector> U_nph_star = U_n;
   std::vector<double>  rad_E_nph_star = rad_E_n;
-
-  const size_t num_local_nodes = rad_E_n.size();
 
   //####################################################### CORRECTOR
   const double   tau     = 1/dt;
@@ -54,8 +52,8 @@ void chi_radhydro::SolverA_GDCN::
   //=================================== Internal energy and radiation energy
   {
     std::vector<double> k5,k6;
-    MatDbl A(num_local_nodes, VecDbl(num_local_nodes,0.0));
-    VecDbl b(num_local_nodes, 0.0);
+    MatDbl A;
+    VecDbl b;
 
     AssembleGeneralEnergySystem(
       sim_refs,
@@ -81,9 +79,7 @@ void chi_radhydro::SolverA_GDCN::
 
       E_c_np1 = rho_c_np1*(0.5 * u_abs_sqr_np1 + e_c_np1);
     }//for cell c
-  }
-
-
+  }//scope internal e and rad_E
 
   chi::log.Log0Verbose1() << "Done executing corrector";
 }

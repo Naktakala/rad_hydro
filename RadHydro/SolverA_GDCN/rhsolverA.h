@@ -16,6 +16,9 @@ protected:
   std::string m_kappa_a_function;
 
   std::vector<uint64_t> m_bndry_cells_local_ids;
+
+  FVector m_material_advection;
+  double m_radiation_advection;
 public:
   //00
   explicit SolverA_GDCN(const std::string& name);
@@ -37,21 +40,21 @@ public:
                  std::vector<double>&                  rad_E_nph);
 
   //02b
-  void Corrector(SimRefs& sim_refs,
-                 const std::vector<double>&      kappa_a_n,
-                 const std::vector<double>&      kappa_t_n,
-                 const std::vector<double>&      kappa_a_nph,
-                 const std::vector<double>&      kappa_t_nph,
-                 double dt,
-                 const std::vector<UVector>&     U_n,
-                 const std::vector<UVector>&     U_nph,
-                 const std::vector<GradUTensor>& grad_U_nph,
-                 std::vector<UVector>&           U_np1,
+  void CorrectorHydroAndMom(SimRefs& sim_refs,
+                            const std::vector<double>&      kappa_a_n,
+                            const std::vector<double>&      kappa_t_n,
+                            const std::vector<double>&      kappa_a_nph,
+                            const std::vector<double>&      kappa_t_nph,
+                            double dt,
+                            const std::vector<UVector>&     U_n,
+                            const std::vector<UVector>&     U_nph,
+                            const std::vector<GradUTensor>& grad_U_nph,
+                            std::vector<UVector>&           U_np1,
 
-                 const std::vector<double>&            rad_E_n,
-                 const std::vector<double>&            rad_E_nph,
-                 const std::vector<chi_mesh::Vector3>& grad_rad_E_nph,
-                 std::vector<double>&                  rad_E_np1);
+                            const std::vector<double>&            rad_E_n,
+                            const std::vector<double>&            rad_E_nph,
+                            const std::vector<chi_mesh::Vector3>& grad_rad_E_nph,
+                            std::vector<double>&                  rad_E_np1);
 
   static void AssembleGeneralEnergySystem(
     SimRefs&                        sim_refs,
@@ -102,14 +105,6 @@ public:
                                 const std::vector<double>&     kappa_t_n,
                                 const std::vector<UVector>&    U_n,
                                 const std::vector<double>&     rad_E_n);
-
-  static double Make3rdGradRadEDot_u(const chi_mesh::Cell& cell,
-                              double V_c,
-                              const std::vector<double>& face_areas,
-                              double radE,
-                              const Vec3& grad_radE,
-                              const UVector& U,
-                              const std::vector<UVector>& grad_U);
 
   static double MakeEmAbsSource(double sigma_a,
                          double T,

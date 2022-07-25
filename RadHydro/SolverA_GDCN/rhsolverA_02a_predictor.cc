@@ -21,8 +21,6 @@ Predictor(SimRefs& sim_refs,
   std::vector<UVector> U_n_star = U_n;
   std::vector<double>  rad_E_n_star = rad_E_n;
 
-  const size_t num_local_nodes = rad_E_n.size();
-
   //####################################################### PREDICTOR
   const double tau = 1/(0.5*dt);
 
@@ -48,8 +46,8 @@ Predictor(SimRefs& sim_refs,
   //=================================== Internal energy and radiation energy
   {
     std::vector<double> k5,k6;
-    MatDbl A(num_local_nodes, VecDbl(num_local_nodes,0.0));
-    VecDbl b(num_local_nodes, 0.0);
+    MatDbl A;
+    VecDbl b;
 
     AssembleGeneralEnergySystem(
       sim_refs,

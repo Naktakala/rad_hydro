@@ -1,18 +1,36 @@
 #include "rhsolverA.h"
 
+#include "ChiMath/chi_math_banded_solvers.h"
+
 #include "ChiTimer/chi_timer.h"
 
 void chi_radhydro::SolverA_GDCN::Execute()
 {
   chi::log.Log0() << "\nExecuting " << this->TextName() << " solver\n\n";
 
+  //======================================== Get options
+  const auto num_timesteps     = basic_options("max_timesteps").IntegerValue();
+  const auto delta_t_max       = basic_options("maximum_dt"   ).FloatValue();
+  const auto CFL               = basic_options("CFL"          ).FloatValue();
+  const auto max_time          = basic_options("max_time"     ).FloatValue();
+  const auto output_times_str  = basic_options("export_times" ).StringValue();
+
+  std::vector<double> output_times = MakeOutputTimesFromStr(output_times_str);
+
+  const auto& CCL   = m_scalar_fields.at("cell_char_length");
+
+  m_kappa_s_function = basic_options("kappa_s_function").StringValue();
+  m_kappa_a_function = basic_options("kappa_a_function").StringValue();
+
   //======================================== Allocate work data
   const size_t num_local_nodes = m_grid->local_cells.size();
   std::vector<UVector>  U_n(num_local_nodes);
+  std::vector<UVector>  U_n_star(num_local_nodes);
   std::vector<UVector>  U_nph(num_local_nodes);
   std::vector<UVector>  U_np1(num_local_nodes);
 
   VecDbl                rad_E_n(num_local_nodes);
+  VecDbl                rad_E_n_star(num_local_nodes);
   VecDbl                rad_E_nph(num_local_nodes);
   VecDbl                rad_E_np1(num_local_nodes);
 
@@ -94,23 +112,7 @@ void chi_radhydro::SolverA_GDCN::Execute()
     ostr << PrintVal(" E1    %8.8e", U_n[N - 1][MAT_E]);
 
     chi::log.Log() << ostr.str();
-
   }
-//  return;
-
-  //======================================== Get options
-  const auto num_timesteps     = basic_options("max_timesteps").IntegerValue();
-  const auto delta_t_max       = basic_options("maximum_dt"   ).FloatValue();
-  const auto CFL               = basic_options("CFL"          ).FloatValue();
-  const auto max_time          = basic_options("max_time"     ).FloatValue();
-  const auto output_times_str  = basic_options("export_times" ).StringValue();
-
-  std::vector<double> output_times = MakeOutputTimesFromStr(output_times_str);
-
-  const auto& CCL   = m_scalar_fields.at("cell_char_length");
-
-  m_kappa_s_function = basic_options("kappa_s_function").StringValue();
-  m_kappa_a_function = basic_options("kappa_a_function").StringValue();
 
   //======================================== Init shock location tracker
   double shock_ref_speed = 0.0;
@@ -126,8 +128,7 @@ void chi_radhydro::SolverA_GDCN::Execute()
   SystemEnergy new_system_energy = ComputeSysEnergyChange(0.0, U_n, rad_E_n,
                                                           {}, {},
                                                           m_bc_settings);
-  SystemEnergy old_system_energy = new_system_energy;
-  const double initial_total_E = new_system_energy.Emat+new_system_energy.Erad;
+  SystemEnergy old_system_energy;
 
   //======================================== Pickup references
   SimRefs sim_refs{*m_grid,
@@ -154,11 +155,6 @@ void chi_radhydro::SolverA_GDCN::Execute()
 
     //================================= Print iteration info
     {
-      const double u_l = VelocityFromCellU(U_n[0]).Norm();
-      const double u_r = VelocityFromCellU(U_n.back()).Norm();
-      const double p_l = IdealGasPressureFromCellU(U_n[0],m_gamma);
-      const double p_r = IdealGasPressureFromCellU(U_n.back(),m_gamma);
-
       using namespace std;
       chi::log.Log() << "Timestep " << setw(7) << n
                      << " with dt=" << setw(7)
@@ -171,18 +167,12 @@ void chi_radhydro::SolverA_GDCN::Execute()
         << " matE_adv: " << setw(12)
         << scientific << setprecision(8) << new_system_energy.me_adv
         << " radE_adv: " << setw(12)
-        << scientific << setprecision(8) << new_system_energy.re_adv
-        << " u_L: " << setw(12)
-        << scientific << setprecision(16) << (U_n[0][MAT_E] + rad_E_n[0] + p_l)*u_l
-        << " u_R: " << setw(12)
-        << scientific << setprecision(16) << (U_n.back()[MAT_E] + rad_E_n.back() + p_r)*u_r;
-
+        << scientific << setprecision(8) << new_system_energy.re_adv;
     }
-
     old_system_energy = new_system_energy;
 
     //================================= Compute gradients at n
-    // With slope limiters
+    //                                  With slope limiters
     const auto grad_U_n     = ComputeUGradients(U_n, sim_refs);
     const auto grad_rad_E_n = ComputeRadEGradients(rad_E_n, sim_refs);
     timing_info["gradient_n"] += GetResetTimer(timer);
@@ -201,6 +191,57 @@ void chi_radhydro::SolverA_GDCN::Execute()
               U_n, grad_U_n, U_nph,
               rad_E_n, grad_rad_E_n, rad_E_nph);
 
+//    //=================================== Advection of U and rad_E
+//    MHM_HydroRadEPredictor(    //Defined in chi_radhydro
+//      sim_refs,                //Stuff
+//      /*tau=*/1/(0.5*dt),      //tau input
+//      U_n, grad_U_n,           //Hydro inputs
+//      rad_E_n, grad_rad_E_n,   //RadE inputs
+//      U_n_star, rad_E_n_star   //Outputs
+//    );
+//
+//    //=================================== Update density and momentum to nph
+//    DensityMomentumUpdateWithRadMom(            //Defined in chi_radhydro
+//      sim_refs,                                 //Stuff
+//      kappa_t_n,                                //Kappa_t for interpolation
+//      /*tau=*/1/(0.5*dt),                       //tau input
+//      U_n, U_n_star,                            //Hydro inputs
+//      rad_E_n,                                  //RadE input
+//      U_nph                                     //Output
+//    );
+//
+//    //=================================== Internal energy and radiation energy
+//    {
+//      std::vector<double> k5,k6;
+//      MatDbl A;
+//      VecDbl b;
+//
+//      AssembleGeneralEnergySystem(
+//        sim_refs,
+//        kappa_a_n, kappa_t_n,
+//        kappa_a_n, kappa_t_n,                               //Stuff
+//        /*tau=*/1/(0.5*dt), /*theta1=*/1.0, /*theta2=*/0.0, //tau, theta input
+//        U_n, U_n, U_n_star, U_nph, grad_U_n,                //Hydro inputs
+//        rad_E_n, rad_E_n, rad_E_n_star, grad_rad_E_n,       //RadE inputs
+//        k5, k6, A, b);                                      //Outputs
+//
+//      rad_E_nph = chi_math::TDMA(A,b);
+//
+//      //============================ Back sub for internal energy
+//      for (const auto& cell_c : m_grid->local_cells)
+//      {
+//        const uint64_t c     = cell_c.local_id;
+//        double rho_c_nph     = U_nph[c][RHO];
+//        Vec3   u_c_nph       = VelocityFromCellU(U_nph[c]);
+//        double u_abs_sqr_nph = u_c_nph.NormSquare();
+//        double e_c_nph       = k5[c]*rad_E_nph[c] + k6[c];
+//
+//        double& E_c_nph = U_nph[c](MAT_E);
+//
+//        E_c_nph = rho_c_nph*(0.5 * u_abs_sqr_nph + e_c_nph);
+//      }//for cell c
+//    }//scope internal e and rad_E
+
     timing_info["predictor"] += GetResetTimer(timer);
 
     //================================= Compute gradients at nph
@@ -218,12 +259,12 @@ void chi_radhydro::SolverA_GDCN::Execute()
     timing_info["compute_kappa_nph"] += GetResetTimer(timer);
 
     //================================= Corrector
-    Corrector(sim_refs,
-              kappa_a_n, kappa_t_n,
-              kappa_a_nph, kappa_t_nph,
-              dt,
-              U_n, U_nph, grad_U_nph, U_np1,
-              rad_E_n, rad_E_nph, grad_rad_E_nph, rad_E_np1);
+    CorrectorHydroAndMom(sim_refs,
+                         kappa_a_n, kappa_t_n,
+                         kappa_a_nph, kappa_t_nph,
+                         dt,
+                         U_n, U_nph, grad_U_nph, U_np1,
+                         rad_E_n, rad_E_nph, grad_rad_E_nph, rad_E_np1);
 
     timing_info["corrector"] += GetResetTimer(timer);
 

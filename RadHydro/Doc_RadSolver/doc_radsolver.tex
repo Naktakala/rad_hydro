@@ -22,18 +22,7 @@
 \usepackage{listings}
 
 \usepackage{color}
-\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
-\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
-\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
 
-\definecolor{ColorLevel1}{rgb}{0.000,0.125,0.875}
-\definecolor{ColorLevel2}{rgb}{0.000,0.375,0.625}
-\definecolor{ColorLevel3}{rgb}{0.000,0.625,0.375}
-\definecolor{ColorLevel4}{rgb}{0.000,0.875,0.125}
-\definecolor{ColorLevel5}{rgb}{0.125,0.875,0.000}
-\definecolor{ColorLevel6}{rgb}{0.375,0.625,0.000}
-\definecolor{ColorLevel7}{rgb}{0.625,0.375,0.000}
-\definecolor{ColorLevel8}{rgb}{0.875,0.125,0.000}
 
 \usepackage{multicol}
 
@@ -42,6 +31,9 @@
 \usepackage{fancyhdr}
 %\usepackage[colorlinks=true,linkcolor=blue,urlcolor=black,bookmarksopen=true,bookmarks]{hyperref}
 \usepackage{bookmark}
+\hypersetup{%
+	pdfborder = {0 0 0}
+}
 
 \usepackage{multicol}
 \setlength{\columnseprule}{1pt}
@@ -777,6 +769,8 @@ Only two terms require special consideration here. They are: the divergence of t
 \frac{1}{V_c} \int_{V_c} \bnabla \dotp \RadJ \ dV &= \frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f \\
 \frac{1}{V_c} \int_{V_c} \frac{1}{3} \bnabla \RadE \dotp \velocity \ dV &= \frac{1}{V_c} \sum_f \frac{1}{3} \AreaVec_f \dotp (\RadE \velocity)_f.
 \eeqn 
+
+\subsubsection{The diffusion term}
 Considering the $\RadJ$-term first, we apply Gauss' divergence theorem to get
 \beqn 
 \bnabla \dotp \RadJ \mapsto \frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f.
@@ -787,23 +781,58 @@ For $(\RadJ)_f$ we have
 \eeqn 
 Now define
 \beqn
-\sigma_{tf} &= \half \sigma_{t,c} + \half \sigma_{t,cn} \\
-D_f &= - \frac{c}{3\sigma_{tf}}
+D_f &= - \frac{c}{3\sigma_{tf}}.
 \eeqn 
-To get
+To find $D_f$ we seek the equivalence:
+\beqn
+D_f \frac{\RadE_{cn} - \RadE_c}{|| \position_{cn} - \position_{c} ||} 
+=
+D_c \frac{\RadE_{f} - \RadE_c}{|| \position_{f} - \position_{c} ||} 
+=
+D_{cn} \frac{\RadE_{cn} - \RadE_f}{|| \position_{cn} - \position_{f} ||} 
+\eeqn
+Now let us define
 \beqn 
-(\RadJ)_f = D_f \bigr( \RadE_{cn} - \RadE_{c} \bigr) \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c} ||^2}
+k_c &= \frac{D_c}{|| \position_{f} - \position_{c} ||} \\
+k_{cn} &= \frac{D_{cn}}{|| \position_{cn} - \position_{f} ||} \\
 \eeqn 
-Define
+Now
+\beqn
+k_c (\RadE_f - \RadE_c) &= k_{cn} (\RadE_{cn} - \RadE_f) \\
+ (k_c +k_{cn}) \RadE_f &= k_{cn} \RadE_{cn} + k_c \RadE_{c} \\
+ \therefore
+ \RadE_f &= \frac{k_{cn} \RadE_{cn} + k_c \RadE_{c}}{k_c + k_{cn}}
+\eeqn
+Now we choose any of the right-two terms in the three way equality and plug the expression for $\RadE_f$,
 \beqn 
-\mathbf{k}_f = D_f \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c} ||^2}
+&\quad k_c (\RadE_f - \RadE_c) \\
+&= k_c \biggr(
+\frac{k_{cn} \RadE_{cn} + k_c \RadE_{c}}{k_c + k_{cn}} - \RadE_c
+\biggr) \\
+&= k_c \biggr(
+\frac{k_{cn} \RadE_{cn} + k_c \RadE_{c} - k_c\RadE_c -k_{cn} \RadE_c}{k_c + k_{cn}}
+\biggr) \\
+\therefore 
+D_f \frac{\RadE_{cn} - \RadE_c}{|| \position_{cn} - \position_{c} ||} 
+&= \frac{k_c k_{cn}}{k_c + k_{cn}} \bigr(\RadE_{cn} - \RadE_c \bigr)\\
+\therefore
+D_f &= \frac{k_c k_{cn}}{k_c + k_{cn}}  || \position_{cn} - \position_{c} ||
 \eeqn 
-from which we get
+From the earlier expression for $(\RadF_0)_f$, we can write
 \beqn 
-(\RadJ)_f = \mathbf{k}_f \bigr( \RadE_{cn} - \RadE_{c} \bigr)
+(\RadJ)_f = D_f \bigr( \RadE_{cn} - \RadE_c \bigr) \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c}||^2}
 \eeqn 
-\newline
-\newline
+for which we can define
+\beqn 
+\mathbf{k}_f = D_f  \frac{\position_{cn} - \position_{c}}{|| \position_{cn} - \position_{c}||^2}
+\eeqn 
+such that we finally arrive at
+\beqn 
+(\RadJ)_f = \mathbf{k}_f \bigr( \RadE_{cn} - \RadE_c \bigr).
+\eeqn 
+
+
+\subsubsection{The kinetic energy term}
 For the kinetic energy source terms, we similarly have
 \beqn 
 \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^n
@@ -1312,6 +1341,189 @@ To following remapping(s) then applies to the predictor:
 \eeq
 \end{multicols}
  
+
+\newpage 
+\section{Mixed finite element}
+We now derive a general mixed finite element approach for 
+\begin{subequations} \label{eq:mfem_primary}
+\beqn 
+\bnabla \dotp \RadJ(\position) &= 1, \quad \position \in \mathcal{D} 
+\eeqn 
+\beqn 
+\RadJ(\position) = 0, \quad \position \in \partial \mathcal{D}
+\eeqn 
+\end{subequations}
+where 
+\beqn \label{eq:mfem_f0}
+\RadJ(\position) = D(\position) \bnabla \RadE(\position).
+\eeqn 
+\subsection{Auxiliary notation and variables for $\RadJ$}
+First we discretize $\RadJ$ on $N_{n}$ number of nodes per cell $c$, using continuous basis functions $b_j(\position)$ such that
+\beqn 
+\RadJ (\position) \approx  \sum_{j=1}^{N_n} (\RadJ)_j b_j(\position),
+\eeqn 
+whilst keeping the cell-centered representation for $\RadE$.
+Next we discretize eq. \eqref{eq:mfem_f0} by applying a weight function $b_i(\position)$ and integrating over the volume of the cell $c$,
+\beqn 
+\int_{V_c} b_i \RadJ dV &= \int_{V_c} b_i D \bnabla \RadE dV \\
+\sum_j \biggr[ \int_{V_c} b_i b_j dV \biggr] (\RadJ)_j &= \int_{V_c} b_i D \bnabla \RadE dV.
+\eeqn 
+The integral coefficients on the left-hand side are generally known as the $ij$ coefficients in the standard finite element mass-matrix, which we shall use in a moment to define a general scheme. The right hand side of the equation requires some treatment. We introduce the values $\RadE_{c,j}$ at the cell surface to remedy the discontinuities in the cell-centered $\RadE$ and to define auxiliary unknowns for developing the $\RadJ$ in finite element form. With these new variables declared, we next apply integration by parts to the right-hand side,
+\beqn
+\int_{V_c} b_i D \bnabla \RadE dV
+= \int_{V_c} D \bnabla (b_i \RadE) dV - \int_{V_c} D\RadE \bnabla b_i dV.
+\eeqn 
+Next we apply Gauss's divergence theorem on the first term on the right-hand side,
+\beqn 
+\int_{V_c} b_i D \bnabla \RadE dV
+= \sum_f \int_{S_f} D \mathbf{n}_f  b_i \RadE dA - \int_{V_c} D\RadE \bnabla b_i dV,
+\eeqn 
+after which we insert $\RadE_{c,j}$ in the first term on the right, since they are designated unknowns, on the surface of the cell, and $\RadE_c$ from the right most term, since $\RadE_c$ is cell-constant within the cell-domain, the $D$ coefficient is also dependent only on $\RadE_c$ and therefore constant within cell $c$, hence denoted as $D_c$,
+\beqn
+\int_V b_i D \bnabla \RadE dV
+= \sum_f  \sum_j \biggr[ D_c \mathbf{n}_f \int_{S_f}  b_i b_j dA \biggr] \RadE_{c,j} 
+- \biggr[ D_c \int_V  \bnabla b_i dV \biggr] \RadE_c.
+\eeqn 
+Putting the developed right- and left-hand sides back together we then get,
+\beqn 
+\sum_j \biggr[ \int_V b_i b_j dV \biggr] (\RadJ)_j = 
+\sum_f \sum_j \biggr[ D_c \mathbf{n}_f  \int_{S_f}  b_i b_jdA \biggr]\RadE_{c,j}
+- \biggr[ D_c \int_V \bnabla b_i dV \biggr] \RadE_c.
+\eeqn 
+ This equation can be written in more succinct form as
+ \beqn 
+ \bar{M}_c \bar{\mathbf{F}}_c = \bar{C}_c \boldsymbol{\RadE}_c
+ \eeqn 
+ where the structure still needs to be defined (which follows). $\bar{M}_c$ is a square block-matrix with block-dimension $N_n{\times}N_n$, $\bar{\mathbf{F}}_c$ is a block-vector with block-dimension $N_n{\times}1$, $\bar{C}_c$ is a rectangular block-matrix with block-dimension $N_n{\times}(N_f+1)$. The vector $\boldsymbol{\RadE}_c$ is simply the cell-centered and surface unknowns for cell $c$, i.e., $\boldsymbol{\RadE}_c = [\RadE_c, \RadE_{n=0}, \dots, \RadE_{n=N_n{-1}}]^T$.
+ 
+ The dimension of the inner blocks of $\bar{M}_c$, $\bar{\mathbf{F}}_c$ and $\bar{C}_c$, depend on the number of dimensions, $N_d$, in the problem. For further reference we shall denote dimensions with $d$ but it generally refers to $d\in[0,1,2] \mapsto [x,y,z]$ and vice-versa. 
+ 
+ The block entries of $\bar{M}$ are small diagonal matrices,
+ \beqn 
+(\bar{M})_{ij} = \text{diag}(M_{ij}, \dots,  M_{ij})^{N_d{\times}N_d}
+ \eeqn 
+ where $M_{ij}$ are the elements of the standard finite element mass-matrix for cell $c$, i.e.,
+ \beqn 
+ M_{ij} = \int_V b_i b_j dV.
+ \eeqn 
+The block entries of $\bar{\mathbf{F}}$ are
+\beqn 
+(\bar{\mathbf{F}})_i = 
+\begin{bmatrix}
+	(\RadJ)_{i,x} \\ 	(\RadJ)_{i,y} \\ 	(\RadJ)_{i,z}
+\end{bmatrix}^{N_d{\times}1}
+\eeqn 
+obviously only up to $y$ for 2D and only up to $x$ for 1D.
+The entries of $\bar{C}$ are formed as follows. First the structure of $\bar{C}$ is such that
+\beqn 
+\text{block-row }i\text{ of }
+\bar{C} =
+\text{columns}
+\begin{pmatrix}
+	\mathbf{C}_{i}^c & \mathbf{C}_{i,j=0}^s & \dots & \mathbf{C}_{i,j=N_n{-1}}^s
+\end{pmatrix}^{N_d{\times}(N_n + 1)}.
+\eeqn 
+We then define the vectors
+\beqn 
+\mathbf{G}_i &= \int_V \bnabla b_i dV \\
+M_{ij}^f &= \int_{S_f}  b_i b_j dA
+\eeqn 
+Then, 
+\beqn 
+\mathbf{C}_{i}^c =\begin{bmatrix}
+D_c(\mathbf{G}_i)_x \\
+D_c(\mathbf{G}_i)_y \\
+D_c(\mathbf{G}_i)_z \\
+\end{bmatrix}^{N_d{\times}1}
+\eeqn 
+and 
+\beqn 
+	\renewcommand*{\arraystretch}{1.5}
+\mathbf{C}_{ij}^s = \begin{bmatrix}
+
+\sum_f D_c n_{f,x} M_{ij}^f \\
+\sum_f D_c n_{f,y} M_{ij}^f \\
+\sum_f D_c n_{f,z} M_{ij}^f
+\end{bmatrix}^{N_d{\times}1}
+\eeqn 
+
+With these definitions in-hand we can see that the true dimensions of $\bar{M}$ is $N_d N_n {\times} N_d N_n$, that of $\bar{\mathbf{F}}$ is $N_d N_n {\times}1$, and the true dimensions of $\bar{C}$ is $N_d N_n {\times} (N_n+1)$. 
+
+Finally, we repeat here that the vector $\boldsymbol{\RadE}$ is
+\beqn 
+\boldsymbol{\RadE}_c = 
+\begin{bmatrix}
+	\RadE_c \\
+	\RadE_{n=0} \\
+	\vdots \\
+	\RadE_{n=N_n-1}
+\end{bmatrix}^{(N_n+1){\times}1}.
+\eeqn 
+
+To get an expression for all of the nodal $\RadJ$'s we take the system form of the equation and we invert $\bar{M}$ to get, in coefficient form, expressions for nodal $\RadJ$'s,
+\beqn 
+\mathbf{F}_c =
+\begin{bmatrix}
+	(\RadJ)_0 \\ \vdots \\ (\RadJ)_{N_n{-1}}
+\end{bmatrix}
+ = \bar{M}_c^{-1} \bar{C}_c \boldsymbol{\RadE}
+ = C_c^* \boldsymbol{\RadE}_c,
+\eeqn 
+where $C_c^* = \bar{M}_c^{-1} \bar{C}_c$. 
+
+With this expression-form of the individual nodal $\RadJ$'s we need to modify the primary equation, eq. \eqref{eq:mfem_primary}. Additionally, since we introduced additional variables in the form of the face-baced $\RadE_f$'s,  we need to define additional equations to close the system. For the primary equations we will simply plug in the expressions for $\RadJ$, which is detailed in the next subsection. For additional equations we will use the interface between cells to enforce continuity of $\RadJ$ at the face, for each cell of the face.
+
+\subsection{Using the auxiliary notation in the primary equation}
+Using this coefficient-form in the primary equations is done by first integrating eq. \eqref{eq:mfem_primary} over the volume of cell $c$, assuming the coefficient matrix $\bar{M}^{-1} \bar{C}$ has been developed for cell $c$, after which we apply Gauss's divergence theorem,
+\beqn 
+\int_{V_c} \bnabla \dotp \RadJ dV &= V_c \\
+\int_{S_c} \mathbf{n} \dotp \RadJ dA &= V_c \\
+\sum_f \biggr[ \mathbf{n}_f \dotp \int_{S_f} \RadJ dA \biggr] &= V_c.
+\eeqn 
+We now expand $\RadJ$,
+\beqn 
+\sum_j \sum_f \biggr[ \mathbf{n}_f \dotp (\RadJ)_j \int_{S_f} b_j dA \biggr] &= V_c,
+\eeqn 
+define
+\beqn 
+S_{i,f} = \int_{S_f} b_i dA
+\eeqn 
+\beqn
+\sum_j \sum_f \biggr[ 
+n_{f,x} S_{j,f} (\RadJ)_{j,x} +
+n_{f,y} S_{j,f} (\RadJ)_{j,y} +
+n_{f,z} S_{j,f} (\RadJ)_{j,z}
+\biggr] &= V_c,
+\eeqn 
+or
+\beqn
+\sum_j \sum_f \sum_d \biggr[ 
+n_{f,d} S_{j,f} (\RadJ)_{j,d}
+\biggr] &= V_c,
+\eeqn 
+where $d$ denotes dimension such that $d\in[0,1,2] \mapsto [x,y,z]$, the indices $(j,d)$ of $(\RadJ)_{j,d}$ maps to a row in $C^*$, i.e., 
+\beqn 
+(j,d) \mapsto k \ : \ k=N_d j + d,
+\eeqn 
+from which we get
+\beqn
+\sum_j \sum_f \sum_d \biggr[ 
+n_{f,d} S_{j,f} C_{(j,d)\mapsto \text{ row } k}^* \dotp \boldsymbol{\RadE}_c
+\biggr] &= V_c,
+\eeqn 
+If the indices of $\RadE_c$ are then mapped to global system indexes for the corresponding $\RadE_c$ and collection of $\RadE_f$'s then the system can be constructed.
+
+
+\subsection{Auxiliary equations}
+For each face we now require that $(\RadJ)_c = (\RadJ)_{cn}$ at each node, where $c$ and $cn$ are the cell indices on either side of the face. Before we can do this we need to establish the convention of face ownership. For this we assign a cell ownership of a face based on the indices of the cells sharing the face. Suppose a face is shared by cell $c$ and $cn$; cell $c$ owns that face if $c < cn$. Now for each node $j$ part of the owned face we require that
+\beqn 
+(\RadJ)_{c,j} &= (\RadJ)_{cn,j^*} \\
+(\RadJ)_{c,j} - (\RadJ)_{cn,j^*}  &= 0\\
+\eeqn \\
+where $(\RadJ)_{c,j}$ is the flux at the $j$-th node of cell $c$ and node $j$ is on the shared face. $(\RadJ)_{cn,j^*}$ is the flux at the $j^*$-th node of cell $cn$, and where $j^*$ maps to the same system index as $j$.
+
+
+
 
 
 

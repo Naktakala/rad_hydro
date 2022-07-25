@@ -136,39 +136,6 @@ ComputeGradDotJ(SimRefs&                       sim_refs,
 //###################################################################
 /**This does what you think it does.*/
 double chi_radhydro::SolverA_GDCN::
-  Make3rdGradRadEDot_u(const chi_mesh::Cell &cell,
-                       double V_c,
-                       const std::vector<double> &face_areas,
-                       double radE,
-                       const Vec3 &grad_radE,
-                       const UVector &U,
-                       const std::vector<UVector> &grad_U)
-{
-  double third_grad_rad_E_dot_u = 0.0;
-  const auto& x_c = cell.centroid;
-
-//  const Vec3    u_f     = VelocityFromCellU(U);
-
-  size_t f = 0;
-  for (const auto& face : cell.faces)
-  {
-    const auto& x_f  = face.centroid;
-    const auto  x_fc = x_f - x_c;
-    const Vec3 A_f = face_areas[f] * face.normal;
-
-    const double  rad_E_f = radE + (x_f - x_c).Dot(grad_radE);
-    const UVector U_f     = UplusDXGradU(U, x_fc, grad_U);
-    const Vec3    u_f     = VelocityFromCellU(U_f);
-
-    third_grad_rad_E_dot_u += (1/V_c)*(1.0/3) * A_f.Dot(rad_E_f * u_f);
-    ++f;
-  }//for f
-  return third_grad_rad_E_dot_u;
-}
-
-//###################################################################
-/**This does what you think it does.*/
-double chi_radhydro::SolverA_GDCN::
   Make3rdGradRadEDot_u(SimRefs&                        sim_refs,
                        const chi_mesh::Cell&           cell,
                        double                          V_c,

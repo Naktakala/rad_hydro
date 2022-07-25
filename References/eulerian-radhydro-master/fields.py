@@ -375,8 +375,8 @@ class Fields:
               "total_mat_adv  ",total_mat_adv ,"\n",
               "total_rad_adv  ",total_rad_adv ,"\n",
               "total_rad_leak ",total_rad_leak,"\n",
-              "mat_adv        ",mat_adv       ,"\n",
-              "rad_adv        ",rad_adv       ,"\n",
+              "mat_adv   {:1.16e}     ".format(mat_adv[0])       ,"\n",
+              "rad_adv   {:1.16e}     ".format(rad_adv[0])       ,"\n",
               "rad_leakage    ",rad_leakage   ,"\n",
               )
         

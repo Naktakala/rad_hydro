@@ -79,10 +79,6 @@ void chi_radhydro::
   const auto&  bc_settings = sim_refs.bc_settings;
   const double gamma       = sim_refs.gamma;
 
-//  std::vector<std::vector<FVector>> cell_fluxes(grid.local_cells.size());
-//  for (const auto& cell : grid.local_cells)
-//    cell_fluxes[cell.local_id].resize(cell.faces.size());
-
   for (const auto& cell : grid.local_cells)
   {
     const uint64_t c       = cell.local_id;
@@ -96,7 +92,6 @@ void chi_radhydro::
     const auto& grad_U_c_int     = grad_U_int[c];
     const auto& grad_rad_E_c_int = grad_rad_E_int[c];
 
-    FVector  F_net;
     UVector  U_c_b_star     = U_old[c];
     double   rad_E_c_b_star = rad_E_old[c];
 
@@ -144,31 +139,16 @@ void chi_radhydro::
         rad_Eu_upw = rad_E_c_f * u_c_f + rad_E_cn_f * u_cn_f;
       else
         rad_Eu_upw = Vec3(0,0,0);
-//      Vec3 rad_Eu_upw = rad_E_c_f * u_c_f;
 
       const FVector F_hllc_f = HLLC_RiemannSolve(U_L, U_R, gamma, n_f);
 
       U_c_b_star     -= (1/tau) * (1/V_c) * A_f * F_hllc_f;
       rad_E_c_b_star -= (1/tau) * (1/V_c) * (4.0/3) * A_f * n_f.Dot(rad_Eu_upw);
-      F_net += F_hllc_f;
-//      cell_fluxes[c][f] = F_hllc_f;
     }//for f
 
     U_int_star[c] = U_c_b_star;
     rad_E_int_star[c] = rad_E_c_b_star;
   }//for cell
-
-  //Checking cell fluxes
-//  const uint64_t last_cell_id = grid.local_cells[grid.local_cells.size()-1].local_id;
-//  for (const auto& cell : grid.local_cells)
-//  {
-//    if (cell.local_id == last_cell_id) continue;
-//    const uint64_t c = cell.local_id;
-//
-//    const auto F_net = cell_fluxes[c][1] + cell_fluxes[c+1][0];
-//    if (F_net.Norm() > 1.0e-10)
-//      chi::log.Log() << "Fnet: " << c << " " << PrintU(F_net);
-//  }
 }
 
 //###################################################################
@@ -250,8 +230,8 @@ void chi_radhydro::
 
       cdouble kappa_t_f = kappa_a_f + kappa_s_f;
 
-      cdouble D_c  = 1.0 / (rho_c_old  * kappa_t_f);
-      cdouble D_cn = 1.0 / (rho_cn_old * kappa_t_f);
+      cdouble D_c  = - speed_of_light_cmpsh / (3.0*(rho_c_old  * kappa_t_f));
+      cdouble D_cn = - speed_of_light_cmpsh / (3.0*(rho_cn_old * kappa_t_f));
 
       cdouble k_c  = D_c/x_cf.Norm();
       cdouble k_cn = D_cn/x_fcn.Norm();

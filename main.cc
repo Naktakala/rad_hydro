@@ -27,6 +27,9 @@ int main(int argc, char* argv[])
   chi::console.RegisterFunction(
     "chiRadHydroMakePostShockConditionsHydroOnly",
     chi_radhydro::lua_utils::chiRadHydroMakePostShockConditionsHydroOnly);
+  chi::console.RegisterFunction(
+    "chiRadHydroTestMFEM",
+    chi_radhydro::lua_utils::chiRadHydroTestMFEM);
 
   chi::RunBatch(argc,argv);
 
