@@ -46,3 +46,7 @@ Makefile
 
 ZRawOutput.png
 ZRawOutput.txt
+
+/*_t*.txt
+/*_t*.png
+/*.gif

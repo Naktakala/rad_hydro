@@ -110,7 +110,7 @@ for i=1,Nt do
     time_vals = time_vals..string.format("%.3g ", dt*i)
 end
 chiSolverSetBasicOption(phys1, "export_times"  , time_vals)
-chiSolverSetBasicOption(phys1, "output_prefix" , "Test3a_")
+chiSolverSetBasicOption(phys1, "output_prefix" , "XTest3a_")
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)

@@ -1,5 +1,4 @@
 import os
-import subprocess
 
 all_files = os.listdir()
 
