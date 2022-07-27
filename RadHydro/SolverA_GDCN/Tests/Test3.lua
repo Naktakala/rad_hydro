@@ -110,7 +110,7 @@ for i=1,Nt do
     time_vals = time_vals..string.format("%.3g ", dt*i)
 end
 chiSolverSetBasicOption(phys1, "export_times"  , time_vals)
-chiSolverSetBasicOption(phys1, "output_prefix" , "XTest2_")
+chiSolverSetBasicOption(phys1, "output_prefix" , "XTest3_")
 
 --vol_R = chiLogicalVolumeCreate(RPP,-10,10,-10,10,0,L/2)
 --vol_L = chiLogicalVolumeCreate(RPP,-10,10,-10,10,L/2,L)
@@ -125,7 +125,7 @@ radE0 = a_const * T0^4
 e0 = InternalEGiven_T_Cv(T0,Cv)
 
 cs0 = SoundSpeedGiven_e_gamma(e0, gamma)
-u0 = 1.2 * cs0
+u0 = 3.0 * cs0
 
 rho1,T1,u1 = chiRadHydroMakePostShockConditionsRH(Cv, gamma, rho0, T0, u0,
         3.00185103, 3.66260705e-01, 1.26565579e-01)

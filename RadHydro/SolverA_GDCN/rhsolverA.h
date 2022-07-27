@@ -9,16 +9,14 @@ namespace chi_radhydro
 class SolverA_GDCN : public RadHydroSolver
 {
 protected:
-  double m_gamma;
-  double m_Cv;
+  double m_gamma=1.0;
+  double m_Cv=1.0;
 
   std::string m_kappa_s_function;
   std::string m_kappa_a_function;
 
   std::vector<uint64_t> m_bndry_cells_local_ids;
 
-  FVector m_material_advection;
-  double m_radiation_advection;
 public:
   //00
   explicit SolverA_GDCN(const std::string& name);

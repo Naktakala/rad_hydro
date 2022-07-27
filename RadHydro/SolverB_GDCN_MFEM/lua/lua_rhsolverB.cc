@@ -1,26 +1,26 @@
-#include "../rhsolverA.h"
+#include "../rhsolverB.h"
 
 #include "ChiLua/chi_lua.h"
 
 #include "chi_runtime.h"
 #include "chi_log.h"
 
-namespace chi_radhydro::solverA_lua_utils
+namespace chi_radhydro::solverB_lua_utils
 {
 
-int chiCreateSolverA(lua_State *L)
+int chiCreateSolverB(lua_State *L)
 {
   const std::string fname = __FUNCTION__;
   const int num_args = lua_gettop(L);
 
-  std::string solver_name = "SolverA";
+  std::string solver_name = "SolverB";
   if (num_args == 1)
   {
     LuaCheckStringValue(fname, L, 1);
     solver_name = lua_tostring(L, 1);
   }
 
-  auto solver = std::make_shared<SolverA_GDCN>(solver_name);
+  auto solver = std::make_shared<SolverB_GDCN_MFEM>(solver_name);
 
   chi::solver_stack.push_back(solver);
   size_t handle = chi::solver_stack.size() - 1;
@@ -31,4 +31,4 @@ int chiCreateSolverA(lua_State *L)
   return 1;
 }
 
-}//namespace chi_radhydro::solverA_lua_utils
+}//namespace chi_radhydro::solverB_lua_utils

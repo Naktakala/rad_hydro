@@ -19,7 +19,7 @@ end
 chiMeshHandlerCreate()
 
 mesh={}
-N=1000
+N=100
 L=1.0
 xmin = 0.0
 dx = L/N

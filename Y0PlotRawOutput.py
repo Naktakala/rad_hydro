@@ -77,11 +77,11 @@ for prop in attribs:
         title_string += "{:s}={:+.4e}".format(prop, attribs[prop]) + " "
 plt.legend()
 plt.title(title_string)
-# plt.xlim([-0.02+0.25, 0.02+0.25])
-plt.xlim([0,0.5])
-plt.ylim([0.095,0.45])
+plt.xlim([-0.02+0.25, 0.02+0.25])
+# plt.xlim([0,0.5])
+# plt.ylim([0.095,0.45])
+plt.ylim([0.095,0.125])
 plt.grid()
-# plt.ylim([0.095,0.125])
 plt.savefig("ZRawOutput.png")
 
 print("Done")

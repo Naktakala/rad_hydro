@@ -12,6 +12,14 @@ namespace chi_math
                            std::vector<double>& B,
                            std::vector<double>& C,
                            std::vector<double>& D);
+
+  std::vector<double> BandedSolver(const MatDbl& A, const VecDbl& b,
+                                   int num_bands_above_diag,
+                                   int num_bands_below_diag);
+
+  void BandedSolver(std::vector<VecDbl>& bands,
+                    int num_bands_above_diag,
+                    int num_bands_below_diag);
 }
 
 

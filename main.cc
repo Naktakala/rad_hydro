@@ -7,6 +7,7 @@
 #include "RadHydro/HydroSolver/lua/compinfflow_lua.h"
 #include "RadHydro/SolverBase/lua/lua_solver_base.h"
 #include "RadHydro/SolverA_GDCN/lua/lua_rhsolverA.h"
+#include "RadHydro/SolverB_GDCN_MFEM/lua/lua_rhsolverB.h"
 
 int main(int argc, char* argv[])
 {
@@ -20,6 +21,8 @@ int main(int argc, char* argv[])
 
   chi::console.RegisterFunction(
     "chiCreateSolverA", chi_radhydro::solverA_lua_utils::chiCreateSolverA);
+  chi::console.RegisterFunction(
+    "chiCreateSolverB", chi_radhydro::solverB_lua_utils::chiCreateSolverB);
 
   chi::console.RegisterFunction(
     "chiRadHydroMakePostShockConditionsRH",

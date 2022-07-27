@@ -95,8 +95,8 @@ function MaterialKappaAFunction(T, mat_id)
 end
 
 --############################################### Setup Physics
-solver_name = "RadHydroSolverA"
-phys1 = chiCreateSolverA(solver_name);
+solver_name = "RadHydroSolverB"
+phys1 = chiCreateSolverB(solver_name);
 
 chiSolverSetBasicOption(phys1, "maximum_dt"    , 5e-2)
 chiSolverSetBasicOption(phys1, "CFL"           , 0.3)
