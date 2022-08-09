@@ -73,6 +73,7 @@
 \newcommand{\RadE}{\mathcal{E}}
 \newcommand{\RadF}{\boldsymbol{\mathcal{F}}}
 \newcommand{\RadP}{\boldsymbol{\mathcal{P}}}
+\newcommand{\VEFf}{\{ f \}}
 \newcommand{\HydroF}{\mathcal{F}^H}
 \newcommand{\HydroU}{\mathbf{U}}
 \newcommand{\HydroRhoRhoU}{\begin{bmatrix}
@@ -392,7 +393,8 @@ Obtained by integrating Eq. \eqref{eq:grey_radiative_transfer} over energy and a
 \frac{\partial \RadE(\position, t)}{\partial t} 
 +\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
 + \bigr( \sigma_a  - \sigma_s\bigr)
-\RadF \dotp  \frac{\mathbf{u}}{c}
+\RadF \dotp  \frac{\mathbf{u}}{c} \\
+&= \sigma_a c(aT^4 - \RadE_0) - \sigma_t \RadF \dotp \frac{\velocity}{c} 
 \eeqn 
 \newline
 \newline 
@@ -401,7 +403,16 @@ Obtained by first multiplying Eq. \eqref{eq:grey_radiative_transfer} by $\frac{1
 \beqn \label{eq:radiation_momentum_equation}
 \frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= - \frac{\sigma_t}{c} \RadF  
 + \bigr( \sigma_s c\RadE + \sigma_a acT^4 \bigr) \frac{\mathbf{u}}{c^2} 
-+\sigma_t \RadP \dotp \frac{\mathbf{u}}{c}
++\sigma_t \RadP \dotp \frac{\mathbf{u}}{c} \\
+&=  - \frac{\sigma_t}{c} \RadF + \bigr((\sigma_a +\sigma_s -\sigma_a)\RadE + \sigma_a a  T^4\bigr)\frac{\velocity}{c} + \sigma_t \RadP \dotp \frac{\mathbf{u}}{c} \\
+&= \frac{1}{c}\biggr[  
+- \sigma_t \RadF + \bigr((\sigma_t -\sigma_a)\RadE + \sigma_a a  T^4\bigr)\velocity + \sigma_t \RadP \dotp \velocity 
+\biggr]\\
+&= -\frac{1}{c}\biggr[  
+ \sigma_t \RadF - \bigr((\sigma_t -\sigma_a)\RadE + \sigma_a a  T^4\bigr)\velocity -\sigma_t \RadP \dotp \velocity 
+\biggr]\\
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= -\frac{\sigma_t}{c}
+\RadF_0 +  \sigma_a c\bigr(a  T^4 - \RadE \bigr)\frac{\velocity  }{c^2}
 \eeqn 
 
 \subsection{Grey Diffusion Approximation}
@@ -1509,234 +1520,226 @@ from which we get
 \beqn
 \sum_j \sum_f \sum_d \biggr[ 
 n_{f,d} S_{j,f} C_{(j,d)\mapsto \text{ row } k}^* \dotp \boldsymbol{\RadE}_c
-\biggr] &= V_c,
+\biggr] &= V_c, \quad \quad \forall c,
 \eeqn 
 If the indices of $\RadE_c$ are then mapped to global system indexes for the corresponding $\RadE_c$ and collection of $\RadE_f$'s then the system can be constructed.
 
 
 \subsection{Auxiliary equations}
-For each face we now require that $(\RadJ)_c = (\RadJ)_{cn}$ at each node, where $c$ and $cn$ are the cell indices on either side of the face. Before we can do this we need to establish the convention of face ownership. For this we assign a cell ownership of a face based on the indices of the cells sharing the face. Suppose a face is shared by cell $c$ and $cn$; cell $c$ owns that face if $c < cn$. Now for each node $j$ part of the owned face we require that
+For each face-node we now require continuity of flux. This can generally be expressed as
 \beqn 
-(\RadJ)_{c,j} &= (\RadJ)_{cn,j^*} \\
-(\RadJ)_{c,j} - (\RadJ)_{cn,j^*}  &= 0\\
-\eeqn \\
-where $(\RadJ)_{c,j}$ is the flux at the $j$-th node of cell $c$ and node $j$ is on the shared face. $(\RadJ)_{cn,j^*}$ is the flux at the $j^*$-th node of cell $cn$, and where $j^*$ maps to the same system index as $j$.
+\sum_c \sum_f \int_{S_f} \mathbf{n}_f \dotp (\RadF_0)_j dA = 0
+\eeqn 
+from which we get
+\beqn 
+\sum_c \sum_f \sum_d  \biggr[ n_{f,d} S_{j,f} C_{(j,d)\mapsto \text{ row } k}^* \dotp \boldsymbol{\RadE}_c \biggr] = 0,
+\quad \quad \forall j.
+\eeqn 
 
 
+\newpage 
+\section{The Variable Eddington Factor (VEF) method}
+We first repeat eqs. \eqref{eq:radiation_energy_equation} and \eqref{eq:radiation_momentum_equation},
 
-
-
-
-\newpage
-\section{Temporal scheme B - Phase A: Implicit Euler Predictor, Crank-Nicolson Corrector, Phase B: Implicit Euler Predictor, Weighted $
-\theta$'s Corrector}
+%\beqn \label{eq:radiation_energy_equation2}
+%\frac{\partial \RadE(\position, t)}{\partial t} 
+%+\bnabla \dotp \RadF(\position, t) &=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+%+ \bigr( \sigma_a  - \sigma_s\bigr)
+%\RadF \dotp  \frac{\mathbf{u}}{c}
+%\eeqn 
+%
+%\beqn \label{eq:radiation_momentum_equation2}
+%\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= - \frac{\sigma_t}{c} \RadF  
+%+ \bigr( \sigma_s c\RadE + \sigma_a acT^4 \bigr) \frac{\mathbf{u}}{c^2} 
+%+\sigma_t \RadP \dotp \frac{\mathbf{u}}{c}.
+%\eeqn 
 \begin{subequations}
-	\beqn 
-	\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
-	\begin{bmatrix}
-		0 \\
-		-\mathbf{S}_{rp} \\
-		-S_{re} 
-	\end{bmatrix}
-	\eeqn 
-	\beqn 
-	\frac{\partial \RadE}{\partial t} 
-	+\bnabla \dotp \RadJ  + \frac{4}{3} \bnabla \dotp \bigr( \RadE \mathbf{u}  \bigr)
-	&=  S_{re}.
-	\eeqn
+\beqn 
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4
+-\frac{\sigma_t}{4\pi}  \RadF_0 \dotp \frac{\mathbf{u}}{c} 
++ \frac{\sigma_t}{\pi} \RadE \ \Omegabf \dotp \velocity
+\eeqn 
+\beqn 
+\partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
+\eeqn 
+\beqn 
+\partialderiv{(\rho\velocity)}{t} + \bnabla \dotp \{ \rho \velocity \otimes \velocity\}  + \bnabla p 
+= \frac{\sigma_t}{c} \RadF_0,
+\eeqn 
+\beqn 
+\partialderiv{E}{t} + \bnabla \dotp [(E + p)\velocity] 
+= \sigma_a c (\RadE - a T^4)  + \frac{\sigma_t}{c} \RadF_0 \dotp \velocity
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+- \frac{\sigma_t}{c} \RadF_0  \dotp \velocity.
+\eeqn
+\beqn 
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity + \RadP \dotp \velocity \bigr)
+\eeqn 
 \end{subequations}
+\newline
+\newline
+where the radiation moment equation has been obtained by dropping the energy exchange terms,
+\beq
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \RadP &= -\frac{\sigma_t}{c}
+\RadF_0 +  \cancelto{0}{\sigma_a c\bigr(a  T^4 - \RadE \bigr)\frac{\velocity  }{c^2}} \\
+&=-\frac{\sigma_t}{c} \biggr[ \RadF -\RadE\velocity - \RadP \dotp \velocity \biggr] \\
+&=-\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity + \RadP \dotp \velocity \bigr).
+\eeq 
+Now, recall the definition of the radiation pressure tensor, $\RadP$,
+\beqn
+\RadP(\position, \nu, t) = \frac{1}{c}\int_{4\pi} \Omegabf \otimes \Omegabf \ I(\position, \Omegabf, \nu, t) d\Omegabf.
+\eeqn 
+If we expand the tensor-product we get
+\beqn 
+\RadP = \frac{1}{c} \int_{4\pi} 
+\begin{bmatrix}
+\Omegabf_x \Omegabf_x & \Omegabf_x \Omegabf_y & \Omegabf_x \Omegabf_z\\
+\Omegabf_y \Omegabf_x & \Omegabf_y \Omegabf_y & \Omegabf_y \Omegabf_z\\
+\Omegabf_z \Omegabf_x & \Omegabf_z \Omegabf_y & \Omegabf_z \Omegabf_z\\
+\end{bmatrix}
+I(\Omegabf) \ d\Omegabf.
+\eeqn 
+The VEF-method involves the approximation
+\beqn 
+\RadP &\approx  \{ f \} \frac{1}{c} \int_{4\pi} I(\Omegabf) d\Omegabf \\
+\therefore
+\RadP &= \{ f \} \ \RadE
+\eeqn 
+where $\{ f \}$ is the variable Eddington factor computed as an angular-intensity weighted-average such that the entries of the tensor are given by
+\beqn \label{eq:Eddington_tensor}
+\{ f \} \ : \
+f_{ij} = \frac
+{\dfrac{1}{c}\displaystyle\int_{4\pi} \Omegabf_i \Omegabf_j I(\Omegabf) d\Omegabf }
+{\dfrac{1}{c}\displaystyle\int_{4\pi} I(\Omegabf) d\Omegabf}
+\quad \quad i,j\in[x,y,z].
+\eeqn 
 
-
-
-\subsection{Predictor phase A}
-$\tau = \dfrac{1}{\quarter \Delta t}$
+\newpage 
+\noindent
+Now, rewriting our set of equations we get
 \begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n}) = \mathbf{0}
-	\eeqn 
-	
-	\beqn 
-	\tau \begin{pmatrix}
-	\HydroRhoRhoU^{n+\quarter} - \HydroRhoRhoU^{n*} 
-    \end{pmatrix} =  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (E^{n+\quarter} - E^{n*}) = 
-	-\theta_1 S_{ea}^{n+\quarter}
-	- \theta_2 S_{ea}^n
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\quarter} - \RadE^{n*}) 
-	+  \theta_1 \bnabla \dotp \RadJ^{n+\quarter} 
-	+ \theta_2 \bnabla \dotp \RadJ^{n}= 
-	\theta_1 S_{ea}^{n+\quarter}
-	+ \theta_2 S_{ea}^n
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n}
-	\eeqn
-For $S_{ea}$ and $\RadJ$ both at $n+\quarter$:
-	\beqn 
-	\sigma^{n+\quarter} &= \rho^{n+\quarter}\kappa(T^n)
-	\eeqn 
-	
-	\beqn 
-	T^{4,n+\quarter} = T^{4,n*} + \frac{4T^{3,n*}}{C_v} (e^{n+\quarter}-e^{n*})
-	\eeqn 
-	
+\beqn 
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4
+-\frac{\sigma_t}{4\pi}  \RadF_0 \dotp \frac{\mathbf{u}}{c} 
++ \frac{\sigma_t}{\pi} \RadE \ \Omegabf \dotp \velocity
+\eeqn 
+\beqn 
+\partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
+\eeqn 
+\beqn 
+\partialderiv{(\rho\velocity)}{t} + \bnabla \dotp \{ \rho \velocity \otimes \velocity\}  + \bnabla p 
+= \frac{\sigma_t}{c} \RadF_0,
+\eeqn 
+\beqn 
+\partialderiv{E}{t} + \bnabla \dotp [(E + p)\velocity] 
+= \sigma_a c (\RadE - a T^4)  + \frac{\sigma_t}{c} \RadF_0 \dotp \velocity
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+- \frac{\sigma_t}{c} \RadF_0  \dotp \velocity.
+\eeqn
+\beqn 
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \VEFf \RadE &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr)
+\eeqn 
 \end{subequations}
+\newline
+\newline
+Next we apply a time integration scheme to the radiation momentum equation 
+\beqn 
+\frac{\tau}{c^2} (\RadF^{n+1} - \RadF^{n}) + 
+\sum_t \theta_t \biggr[ \bnabla \dotp \VEFf \RadE + \frac{\sigma_t}{c}\RadF \biggr]^t
+&=\sum_t \theta_t   \biggr[ \frac{\sigma_t}{c} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr) \biggr]^t,
+\eeqn 
+\beqn 
+\RadF^{n+1} - \RadF^{n} + 
+\sum_t \frac{\theta_t c^2}{\tau} \biggr[ \bnabla \dotp \VEFf \RadE + \frac{\sigma_t}{c}\RadF \biggr]^t
+&=\sum_t \theta_t  \biggr[ \frac{\sigma_t c}{\tau} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr) \biggr]^t,
+\eeqn 
+\beqn 
+\RadF^{n+1} - \RadF^{n} + 
+\sum_t \biggr[ \mathbf{a}_1^t \RadE^t + a_2^t \RadF^t \biggr]
+&= \sum_t \biggr( \{\mathbf{a}_3\}^t  + \{\mathbf{a}_4\}^t \biggr) \dotp (\RadE\velocity)^t
+\eeqn 
+\beqn 
+(1 + a_2^{n+1}) \RadF^{n+1}
+=
+- \mathbf{a}_1^{n+1} \RadE^{n+1} 
++(1+a_2^n)\RadF^n -  \mathbf{a}_1^n \RadE^n 
++\sum_t \biggr( \{\mathbf{a}_3\}^t  + \{\mathbf{a}_4\}^t \biggr) \dotp (\RadE\velocity)^t
+\eeqn
+\beqn 
+\RadF^{n+1}
+=
+- \mathbf{a}_5^{n+1} \RadE^{n+1} 
++(1+a_6^n)\RadF^n -  \mathbf{a}_5^n \RadE^n 
++\sum_t \biggr( \{\mathbf{a}_7\}^t  + \{\mathbf{a}_8\}^t \biggr) \dotp (\RadE\velocity)^t
+\eeqn
+Define
+\beqn
+\RadF_1^{n+1} =  - \mathbf{a}_5^{n+1} \RadE^{n+1} 
++(1+a_6^n)\RadF^n -  \mathbf{a}_5^n \RadE^n 
+\eeqn
+\beqn 
+\RadF_2^{n+1} =\sum_t \biggr( \{\mathbf{a}_7\}^t  + \{\mathbf{a}_8\}^t \biggr) \dotp (\RadE\velocity)^t
+\eeqn 
+therefore
+\beqn 
+\RadF^{n+1}
+=
+\RadF_1^{n+1}
++\RadF_2^{n+1}
+\eeqn
 
-%\newpage
-\subsection{Corrector phase A}
-$\tau = \dfrac{1}{\half \Delta t}$
-\begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n+\quarter*} - \HydroU^{n}) + \bnabla \dotp \HydroF(\HydroU^{n+\quarter}) = \mathbf{0}
-	\eeqn 
-	
-	\beqn 
-	\tau \begin{pmatrix}
-		\HydroRhoRhoU^{n+\half} - \HydroRhoRhoU^{n+\quarter*}
-    \end{pmatrix} =  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n+\quarter}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\quarter*} - \RadE^{n}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\quarter} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (E^{n+\half} - E^{n+\quarter*}) = 
-	-\theta_1 S_{ea}^{n+\half}
-	- \theta_2 S_{ea}^{n}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\quarter}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half} - \RadE^{n+\quarter*}) 
-	+ \theta_1 \bnabla \dotp  \RadJ^{n+\half} 
-	+ \theta_2 \bnabla \dotp \RadJ^{n} = 
-	\theta_1 S_{ea}^{n+\half}
-	+\theta_2 S_{re}^{n}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\quarter}
-	\eeqn
-For $S_{ea}$ and $\RadJ$ both at $n+\half$:
-	\beqn 
-	\sigma^{n+\half} &= \rho^{n+\half}\kappa(T^{n+\quarter})
-	\eeqn 
-	
-	\beqn 
-	T^{4,n+\half} = T^{4,n+\quarter*} + \frac{4T^{3,n+\quarter*}}{C_v} (e^{n+\half}-e^{n+\quarter*})
-	\eeqn 
-	
-	
-\end{subequations}
+Now if we do operator splitting on the radiation energy equation we get
+\beqn 
+\tau (\RadE^{n+\half*} - \RadE^n)
++\bnabla \dotp \RadF_2^{n+\half}
+&= 0
+\eeqn
+\beqn 
+\tau (\RadE^{n+1} - \RadE^{n+\half*})
++\sum_t \theta_t \biggr[ \bnabla \dotp \RadF_1 \biggr]^t
+&=  \sum_t \theta_t \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^t
+- \biggr(\frac{\sigma_t}{c} \RadF_0  \dotp \velocity \biggr)^{n+\half}
+\eeqn
+therefore, with a Crank-Nicolson scheme, 
+\beqn 
+\tau (\RadE^{n+\half*} - \RadE^n)
++\bnabla \dotp \biggr[ 
+\biggr( \{\mathbf{a}_7\}^{n+\half}  + \{\mathbf{a}_8\}^{n+\half} \biggr) \dotp (\RadE\velocity)^{n+\half} 
+\biggr]
+&= 0
+\eeqn
+\beqn 
+\tau (\RadE^{n+1} - \RadE^{n+\half*})
++\theta_1   \bnabla \dotp \RadF_1^{n+1}
++\theta_2 \bnabla \dotp \RadF_1^n
+&=  \theta_1 \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^{n+1} + \theta_2 \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^n
+- \biggr(\frac{\sigma_t}{c} \RadF_0  \dotp \velocity \biggr)^{n+\half}
+\eeqn
+\newline
+\newline
+Now for the MFEM spatial discretization. Similar to before, we apply the MFEM discretization only to $\RadF_1$
 
-\subsection{Predictor phase B}
-$\tau = \dfrac{1}{\quarter \Delta t}$
-\begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n+\half*} - \HydroU^{n+\half}) + \bnabla \dotp \HydroF(\HydroU^{n+\half}) = \mathbf{0}
-	\eeqn 
-		
-	\beqn 
-	\tau \begin{pmatrix}
-		\HydroRhoRhoU^{n+\triquarter} - \HydroRhoRhoU^{n+\half*}
-	\end{pmatrix}=  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\half*} - \RadE^{n+\half}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\half} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (E^{n+\triquarter} - E^{n+\half*}) = 
-	-\theta_1 S_{ea}^{n+\triquarter}
-	- \theta_2 S_{ea}^{n+\half}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\triquarter} - \RadE^{n+\half*}) 
-	+  \theta_1 \bnabla \dotp \RadJ^{n+\triquarter} 
-	+ \theta_2 \bnabla \dotp \RadJ^{n+\half}= 
-	\theta_1 S_{ea}^{n+\triquarter}
-	+ \theta_2 S_{ea}^{n+\half}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\half}
-	\eeqn
-For $S_{ea}$ and $\RadJ$ both at $n+\triquarter$:
-	\beqn 
-	\sigma^{n+\triquarter} &= \rho^{n+\triquarter}\kappa(T^{n+\half})
-	\eeqn 
-	
-	\beqn 
-	T^{4,n+\triquarter} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+\triquarter}-e^{n+\half*})
-	\eeqn 
-	
-\end{subequations}
 
-\subsection{Corrector phase B}
-$\tau = \dfrac{1}{\half \Delta t}$
-\begin{subequations}
-	\beqn 
-	\tau (\HydroU^{n+\triquarter*} - \HydroU^{n+\half}) + \bnabla \dotp \HydroF(\HydroU^{n+\triquarter}) = \mathbf{0}
-	\eeqn 
-	
-	\beqn 
-	\tau \begin{pmatrix}
-		\HydroRhoRhoU^{n+1} - \HydroRhoRhoU^{n+\triquarter*}
-    \end{pmatrix} =  \begin{bmatrix}
-		0 \\
-		-\frac{1}{3} \bnabla \RadE
-	\end{bmatrix}^{n+\triquarter}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+\triquarter*} - \RadE^{n+\half}) + \biggr(\frac{4}{3} \bnabla \dotp \bigr(\RadE \velocity)\biggr)^{n+\triquarter} = 0
-	\eeqn 
-	
-	\beqn 
-	\tau (E^{n+1} - E^{n+\triquarter*}) = 
-	-\theta_1 S_{ea}^{n+1}
-	- \theta_2 S_{ea}^{n+\half}
-	- \theta_3 S_{ea}^{n}
-	- \biggr(\frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\triquarter}
-	\eeqn 
-	
-	\beqn 
-	\tau (\RadE^{n+1} - \RadE^{n+\triquarter*}) 
-	+ \theta_1 \bnabla \dotp  \RadJ^{n+1} 
-	+ \theta_2 \bnabla \dotp \RadJ^{n+\half} 
-	+ \theta_3 \bnabla \dotp \RadJ^{n}= 
-	\theta_1 S_{ea}^{n+1}
-	+\theta_2 S_{re}^{n+\half}
-	+ \theta_3 S_{ea}^{n}
-	+ \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^{n+\triquarter}
-	\eeqn
-For $S_{ea}$ and $\RadJ$ both at $n+1$:
-	\beqn 
-	\sigma^{n+1} &= \rho^{n+1}\kappa(T^{n+\triquarter})
-	\eeqn 
-	
-	\beqn 
-	T^{4,n+1} = T^{4,n+\triquarter*} + \frac{4T^{3,n+\triquarter*}}{C_v} (e^{n+1}-e^{n+\triquarter*})
-	\eeqn 
-	
-	
-\end{subequations}
+
+
+
+
 
 
 \newpage

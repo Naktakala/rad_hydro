@@ -24,28 +24,6 @@ public:
   //02
   void Execute() override;
   //02ba
-  static void AssembleMFEMEnergySystem(
-    SimRefs&                        sim_refs,
-    SDM_PWLC&                       pwl,
-    std::vector<MatDbl>&            list_of_Cc_star,
-    const std::vector<double>&      kappa_a_n,
-    const std::vector<double>&      kappa_t_n,
-    const std::vector<double>&      kappa_a_nph,
-    const std::vector<double>&      kappa_t_nph,
-    double                          tau,
-    double                          theta1,
-    double                          theta2,
-    const std::vector<UVector>&     U_n,
-    const std::vector<UVector>&     U_nph,
-    const std::vector<UVector>&     U_nphstar,
-    const std::vector<UVector>&     U_np1,
-    const std::vector<GradUTensor>& grad_U_nph,
-    const std::vector<double>&      rad_E_n,
-    const std::vector<double>&      rad_E_nph,
-    const std::vector<double>&      rad_E_nphstar,
-    const std::vector<Vec3>&        grad_rad_E_nph,
-    MatDbl &A, VecDbl &b);
-
   static void AssySolveMFEMEnergyExchange(
     SimRefs&                        sim_refs,
     SDM_PWLC&                       pwl,

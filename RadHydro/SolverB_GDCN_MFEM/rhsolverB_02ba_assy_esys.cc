@@ -5,8 +5,10 @@
 #include "ChiMath/SpatialDiscretization/FiniteVolume/fv.h"
 #include "ChiMath/SpatialDiscretization/FiniteElement/PiecewiseLinear/pwlc.h"
 
+#include "ChiMath/chi_math_banded_solvers.h"
+
 void chi_radhydro::SolverB_GDCN_MFEM::
-  AssembleMFEMEnergySystem(
+  AssySolveMFEMEnergyExchange(
   SimRefs&                        sim_refs,
   SDM_PWLC&                       pwl,
   std::vector<MatDbl>&            list_of_Cc_star,
@@ -20,13 +22,13 @@ void chi_radhydro::SolverB_GDCN_MFEM::
   const std::vector<UVector>&     U_n,
   const std::vector<UVector>&     U_nph,
   const std::vector<UVector>&     U_nphstar,
-  const std::vector<UVector>&     U_np1,
   const std::vector<GradUTensor>& grad_U_nph,
   const std::vector<double>&      rad_E_n,
   const std::vector<double>&      rad_E_nph,
   const std::vector<double>&      rad_E_nphstar,
   const std::vector<Vec3>&        grad_rad_E_nph,
-  MatDbl &A, VecDbl &b)
+  std::vector<UVector>&           U_np1,
+  std::vector<double>&            rad_E_np1)
 {
   //============================================= Define lambda's
   auto PrintSystem = [](const MatDbl& mat, const VecDbl& rhs={},
@@ -56,6 +58,8 @@ void chi_radhydro::SolverB_GDCN_MFEM::
   const size_t Ns    = rad_E_n.size();
   const size_t Ncfem = Ns - Nc;
 
+  MatDbl A;
+  VecDbl b;
   A.assign(Ns, VecDbl(Ns, 0.0));
   b.assign(Ns, 0.0);
 
@@ -79,7 +83,7 @@ void chi_radhydro::SolverB_GDCN_MFEM::
     const auto&    fem_data = pwl.GetUnitIntegrals(cell_c);
     const size_t   Nn       = fem_data.NumNodes();
 
-    const auto& S_surf = fem_data.GetIntS_shapeI();
+    const auto&    S_surf   = fem_data.GetIntS_shapeI();
 
     //=========================================== Get cell physics-info
     const double   rho_c_n     = U_n[c][RHO];
@@ -120,11 +124,6 @@ void chi_radhydro::SolverB_GDCN_MFEM::
     // sigma_a c (aT^4 - radE)
     double Sea_n = MakeEmAbsSource(sigma_a_c_n, T_c_n, rad_E_c_n);
 
-//    double grad_dot_J_n = ComputeGradDotJ(sim_refs,
-//                                          cell_c,
-//                                          sigma_t_c_n, kappa_t_n,
-//                                          U_n, rad_E_n);
-
     //=========================================== Compute constants
     const double k1 = theta1 * sigma_a_c_np1 * speed_of_light_cmpsh;
     const double k2 = 4 * pow(T_c_nphstar, 3) / Cv;
@@ -144,10 +143,26 @@ void chi_radhydro::SolverB_GDCN_MFEM::
     sim_refs.e_recon_coeff_k6[c] = k6;
 
     //====================================== Nodal map the columns of Cc_stars
+    //TODO: Begin : Find generalization of mapping
     std::vector<int64_t> Cc_star_col_map(Nn + 1, 0);
-    Cc_star_col_map[0] = fv.MapDOFLocal(cell_c, 0);
+
+    Cc_star_col_map[0] = static_cast<int64_t>(2*c+1);
     for (size_t n=0; n<Nn; ++n)
-      Cc_star_col_map[n + 1] = pwl.MapDOFLocal(cell_c, n) + static_cast<int64_t>(Nc);
+      if (n==0)
+        Cc_star_col_map[n + 1] = Cc_star_col_map[0]-1;
+      else
+        Cc_star_col_map[n + 1] = Cc_star_col_map[0]+1;
+
+    std::vector<int64_t> Cc_star_col_map4knowns(Nn + 1, 0);
+
+    Cc_star_col_map4knowns[0] = static_cast<int64_t>(c);
+    for (size_t n=0; n<Nn; ++n)
+    {
+      const int64_t nmap = pwl.MapDOFLocal(cell_c, n) + static_cast<int64_t>(Nc);
+      Cc_star_col_map4knowns[n + 1] = nmap;
+    }
+
+    //TODO: End : Find generalization of mapping
 
     //=========================================== Assemble connectivity
     const double D_c_n   = -speed_of_light_cmpsh / (3 * sigma_t_c_n);
@@ -163,7 +178,8 @@ void chi_radhydro::SolverB_GDCN_MFEM::
       const size_t Nfn  = face.vertex_ids.size();
 
       //=============================== Assemble primary equation portion
-      const auto& col_map = Cc_star_col_map;
+      const auto& col_map       = Cc_star_col_map;
+      const auto& known_col_map = Cc_star_col_map4knowns;
       for (size_t fj=0; fj<Nfn; ++fj)
       {
         const size_t  j    = fem_data.FaceDofMapping(f, fj);
@@ -171,10 +187,11 @@ void chi_radhydro::SolverB_GDCN_MFEM::
         for (size_t d = 0; d < Nd; ++d)
           for (size_t n = 0; n < (Nn + 1); ++n)
           {
-            A[c][col_map[n]] +=
+            A[col_map[0]][col_map[n]] +=
               nf[d] * Sf[j] * (theta1*D_c_np1/V_c) * Cc_star[j * Nd + d][n];
             grad_dot_J_n +=
-              nf[d] * Sf[j] * (D_c_n/V_c) * Cc_star[j * Nd + d][n] * rad_E_n[col_map[n]];
+              nf[d] * Sf[j] * (D_c_n/V_c) * Cc_star[j * Nd + d][n] *
+              rad_E_n[known_col_map[n]];
           }
       }
 
@@ -182,37 +199,39 @@ void chi_radhydro::SolverB_GDCN_MFEM::
       for (size_t fj=0; fj<Nfn; ++fj)
       {
         const size_t  j    = fem_data.FaceDofMapping(f, fj);
-        const int64_t jmap = pwl.MapDOFLocal(cell_c, j) + static_cast<int64_t>(Nc);
 
         for (size_t d=0; d<Nd; ++d)
           for (size_t n=0; n<(Nn+1); ++n)
-            A[jmap][col_map[n]] -=
+            A[col_map[j+1]][col_map[n]] -=
               nf[d] * Sf[j] * (theta1*D_c_np1/V_c) * Cc_star[j * Nd + d][n];
 
       }//for fj
     }//for f
 
     //=========================================== Diagonal and rhs
-    A[c][c] += tau + k1 + k4*k5;
-    b[c]    += -k3 - k4*k6 + tau*rad_E_c_nphstar - theta2*grad_dot_J_n;
+    const auto& col_map = Cc_star_col_map;
+
+    A[col_map[0]][col_map[0]] += tau + k1 + k4*k5;
+    b[col_map[0]]             += -k3 - k4*k6 + tau*rad_E_c_nphstar
+                                 - theta2*grad_dot_J_n;
   }//for cell
 
-//  PrintSystem(A,b);
-//
-  //Check symmetry
-//  for (size_t i=0; i<Ns; ++i)
-//    for (size_t j=0; j<Ns; ++j)
-//      if (std::fabs(A[i][j]-A[j][i]) > 1.0e-8)
-//      {
-//        chi::log.Log() << "Symmetry check failed." << A[i][j]/A[j][i];
-//        printf("%.4e\n", std::fabs(A[i][j]-A[j][i]));
-//        exit(0);
-//      }
+  //============================================= Solve system and reconstruct
+  auto x = chi_math::BandedSolver(A,b,2,2);
 
-//  for (size_t i=0; i<Ncfem; ++i)
-//  {
-//    const size_t imap = i + Nc;
-//    A[imap][imap] = 1.0;
-//    b[imap] = 0.0;
-//  }
+  for (const auto& cell : grid.local_cells)
+  {
+    const uint64_t c = cell.local_id;
+    rad_E_np1[c] = x[2*c+1];
+
+    for (int j=0; j<cell.vertex_ids.size(); ++j)
+    {
+      const int64_t jmap = pwl.MapDOFLocal(cell, j) + static_cast<int64_t>(Nc);
+
+      if (j==0) rad_E_np1[jmap] = x[2*c];
+      else      rad_E_np1[jmap] = x[2*c+2];
+    }
+  }//for cell
+
+  InverseAlgebraFor_E(sim_refs, rad_E_np1, U_np1);
 }
