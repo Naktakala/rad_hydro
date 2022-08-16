@@ -40,7 +40,10 @@
 
 \numberwithin{equation}{section} 
 
-\setcounter{tocdepth}{4}
+
+\setcounter{tocdepth}{5}  
+\setcounter{secnumdepth}{5}
+
 
 %============================= Put document title here
 \newcommand{\DOCTITLE}{Radiative heat transfer solver with fluid motion}  
@@ -188,6 +191,7 @@ Work is work for some, but for some it is play.
 
 \tableofcontents
 
+\newpage
 \section{Definitions}
 \subsection{Independent variables}
 We refer to the following independent variables:
@@ -306,7 +310,7 @@ where $S$ is any other sources/sinks of radiation intensity.
 where $S$ is any other sources/sinks of radiation intensity. 
 
 \subsection{Radiative transfer with material motion corrections}
-Applying relativistic corrections for a material in motion, we can derive 
+Applying relativistic corrections for a material in motion, we can derive (e.g., see NUEN 627 lecture 4) the laboratory-frame transport equation
 \beqn 
 \frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} &=
 -\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
@@ -329,6 +333,7 @@ E' = E \dfrac{1-\Omegabf \dotp \dfrac{\mathbf{u}}{c}}{1-\Omegabf' \dotp \dfrac{\
 \eeqn 
 
 \subsection{Radiative transfer with material velocity dependencies expanded to $\mathcal{O}(v/c)$}
+Very ugly derivations in NUEN 627 lecture 5 to get to,
 \beqn 
 &\frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} 
 +\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
@@ -343,10 +348,23 @@ E' = E \dfrac{1-\Omegabf \dotp \dfrac{\mathbf{u}}{c}}{1-\Omegabf' \dotp \dfrac{\
 2\phi - E \frac{\partial \phi}{\partial E}
 \biggr)
 +2\sigma_a B(E,T)
-- B(E,T) \frac{\partial \sigma_a}{\partial E}
+- B(E,T) E \frac{\partial \sigma_a}{\partial E}
 -\sigma_a E \frac{\partial B(E,T)}{\partial E}
 \biggr] \Omegabf \dotp \frac{\mathbf{u}}{c} \\
 &-\frac{\sigma_s}{4\pi} \biggr( \RadF - E \frac{\partial \RadF}{\partial E} \biggr) \dotp \frac{\mathbf{u}}{c}
+\eeqn 
+\newline
+\newline
+\textbf{Voodoo magic Grey Radiation Transport equation:}\newline
+Somehow, determined by integrating over energy
+\beqn 
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4
+-\frac{\sigma_t}{4\pi}  \RadF_0 \dotp \frac{\mathbf{u}}{c} 
++ \frac{\sigma_t}{\pi} \RadE \ \Omegabf \dotp \velocity
 \eeqn 
 \newline
 \newline
@@ -368,6 +386,7 @@ Obtained by first multiplying by $\frac{1}{c} \Omegabf$, then integrating over a
 &+\int_0^\infty \bigr( \sigma_s \phi + \sigma_a 4\pi B(E,T) \bigr) \frac{\mathbf{u}}{c^2}dE \\
 &+\int_0^\infty \biggr( \sigma_a + E \partialderiv{\sigma_a}{E} + \sigma_s\biggr) \RadP \dotp \frac{\mathbf{u}}{c} dE
 \eeqn 
+
 
 
 
@@ -551,7 +570,8 @@ q &= - \biggr(\sigma_a c (a T^4 - \RadE) - \sigma_t \RadF_0 \dotp \frac{\mathbf{
 \eeqn 
 
 \newpage
-\subsection{The set of Radiation Hydrodynamics Grey Diffusion Equations}
+\section{Solver A - Radiation Hydrodynamics Grey Diffusion}
+The set of Radiation Hydrodynamics Grey Diffusion Equations are
 \begin{subequations}
 \beqn 
 \partialderiv{\rho}{t} + \bnabla \dotp (\rho \velocity) = 0
@@ -593,7 +613,7 @@ T = \frac{1}{C_v} e
 
 
 
-\section{Definitions}
+\subsection{Definitions}
 First we define the following terms
 \begin{subequations}
 \begin{itemize}
@@ -649,10 +669,10 @@ Next, we use these terms to define a more condensed version of the RHGD equation
 \eeqn
 
 \newpage
-\section{Finite Volume Spatial Discretization}
+\subsection{Finite Volume Spatial Discretization}
 To apply a finite volume spatial discretization we integrate our time-discretized equations over the volume, $V_c$, of cell $c$, and afterwards divide by $V_c$. This leaves all the terms containing $\tau$ unchanged. In this process we develop the following terms:
 
-\subsection{Hydrodynamic and Radiation-energy advection}
+\subsubsection{Hydrodynamic and Radiation-energy advection}
 \label{section:fv_hydro_and_radE_advection}
 \beqn 
 \frac{1}{V_c} \int_{V_c} 
@@ -733,7 +753,7 @@ where
 \eeqn
 
 \newpage
-\subsection{Density and momentum updates} 
+\subsubsection{Density and momentum updates} 
 \label{section:fv_density_momentum_update}
 We apply the same process as before:
 \beqn 
@@ -773,7 +793,7 @@ We do the same for both,
 
 
 
-\subsection{Energy equations}
+\subsubsection{Energy equations}
 \label{section:fv_energy_equations}
 Only two terms require special consideration here. They are: the divergence of the co-moving frame radiation energy flux, and the kinetic energy terms source terms,
 \beqn 
@@ -781,7 +801,7 @@ Only two terms require special consideration here. They are: the divergence of t
 \frac{1}{V_c} \int_{V_c} \frac{1}{3} \bnabla \RadE \dotp \velocity \ dV &= \frac{1}{V_c} \sum_f \frac{1}{3} \AreaVec_f \dotp (\RadE \velocity)_f.
 \eeqn 
 
-\subsubsection{The diffusion term}
+\paragraph{The diffusion term} \mbox{}\\
 Considering the $\RadJ$-term first, we apply Gauss' divergence theorem to get
 \beqn 
 \bnabla \dotp \RadJ \mapsto \frac{1}{V_c} \sum_f \AreaVec_f \dotp (\RadJ)_f.
@@ -843,7 +863,7 @@ such that we finally arrive at
 \eeqn 
 
 
-\subsubsection{The kinetic energy term}
+\paragraph{The kinetic energy term} \mbox{} \\
 For the kinetic energy source terms, we similarly have
 \beqn 
 \biggr( \frac{1}{3} \bnabla \RadE \dotp \velocity \biggr)^n
@@ -853,7 +873,7 @@ For the kinetic energy source terms, we similarly have
 where we use the reconstructed values as in the Hydrodynamic and radiation-energy advection portion.
 
 \newpage
-\section{Temporal scheme A - Implicit Euler Predictor, Crank-Nicolson Corrector}
+\subsection{Temporal scheme - Implicit Euler Predictor, Crank-Nicolson Corrector}
 \begin{subequations}
 \beqn 
 \partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
@@ -872,7 +892,7 @@ where we use the reconstructed values as in the Hydrodynamic and radiation-energ
 
 
 
-\subsection{Predictor phase}
+\subsubsection{Predictor phase}
 $\tau = \dfrac{1}{\half \Delta t}$
 \begin{subequations}
 	\beqn 
@@ -920,7 +940,7 @@ For $S_{ea}$ and $\RadJ$ both at $n+\half$:
 \end{subequations}
 
 %\newpage
-\subsection{Corrector phase}
+\subsubsection{Corrector phase}
 $\tau = \dfrac{1}{\Delta t}$
 \begin{subequations}
 	\beqn 
@@ -975,7 +995,7 @@ For $S_{ea}$ and $\RadJ$ both at $n+1$:
 
 
 \newpage
-\subsection{General energy equations, Predictor and Corrector phase, with $\theta$ factors}
+\subsubsection{General energy equations, Predictor and Corrector phase, with $\theta$ factors}
 Time integration scheme A uses \textbf{implicit Euler} for the predictor phase and \textbf{Crank-Nicolson} in the corrector phase. Both these schemes can be represented wit a general $\theta$-scheme where we define:
 \beqn
 \theta_1 &\in [0,1] \\
@@ -1307,7 +1327,7 @@ This system is SPD and in one dimension forms a tridiagonal system.
 
 
 \newpage
-\subsection{Using the energy related algebra for both the predictor and the corrector}
+\subsubsection{Using the energy related algebra for both the predictor and the corrector}
 To perform the energy related algebra for the corrector step we need the following inputs:
 \beq
 &\kappa_a^n &&\text{For }\sigma_a^n \text{ in }S_{ea}^n \\
@@ -1354,7 +1374,7 @@ To following remapping(s) then applies to the predictor:
  
 
 \newpage 
-\section{Mixed finite element}
+\section{Solver B - Radiation Hydrodynamics Grey Diffusion - Mixed finite element}
 We now derive a general mixed finite element approach for 
 \begin{subequations} \label{eq:mfem_primary}
 \beqn 
@@ -1389,7 +1409,7 @@ Next we apply Gauss's divergence theorem on the first term on the right-hand sid
 \int_{V_c} b_i D \bnabla \RadE dV
 = \sum_f \int_{S_f} D \mathbf{n}_f  b_i \RadE dA - \int_{V_c} D\RadE \bnabla b_i dV,
 \eeqn 
-after which we insert $\RadE_{c,j}$ in the first term on the right, since they are designated unknowns, on the surface of the cell, and $\RadE_c$ from the right most term, since $\RadE_c$ is cell-constant within the cell-domain, the $D$ coefficient is also dependent only on $\RadE_c$ and therefore constant within cell $c$, hence denoted as $D_c$,
+after which we insert $\RadE_{c,j}$ in the first term on the right, since they are designated unknowns on the surface of the cell, and $\RadE_c$ into the right most term. Since $\RadE_c$ is cell-constant within the cell-domain, the $D$ coefficient is also dependent only on $\RadE_c$ and therefore constant within cell $c$, hence denoted as $D_c$,
 \beqn
 \int_V b_i D \bnabla \RadE dV
 = \sum_f  \sum_j \biggr[ D_c \mathbf{n}_f \int_{S_f}  b_i b_j dA \biggr] \RadE_{c,j} 
@@ -1538,7 +1558,7 @@ from which we get
 
 
 \newpage 
-\section{The Variable Eddington Factor (VEF) method}
+\section{Solver C - Radiation Hydrodynamics Grey Radiation with the Variable Eddington Factor (VEF) method}
 We first repeat eqs. \eqref{eq:radiation_energy_equation} and \eqref{eq:radiation_momentum_equation},
 
 %\beqn \label{eq:radiation_energy_equation2}
@@ -1653,87 +1673,273 @@ Now, rewriting our set of equations we get
 - \frac{\sigma_t}{c} \RadF_0  \dotp \velocity.
 \eeqn
 \beqn 
-\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp \VEFf \RadE &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr)
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp (\VEFf \RadE) &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)
+\eeqn 
+with
+\beqn 
+\RadF_0 = \RadF - (\RadE \velocity+\VEFf \RadE \dotp \velocity)
 \eeqn 
 \end{subequations}
-\newline
-\newline
-Next we apply a time integration scheme to the radiation momentum equation 
-\beqn 
-\frac{\tau}{c^2} (\RadF^{n+1} - \RadF^{n}) + 
-\sum_t \theta_t \biggr[ \bnabla \dotp \VEFf \RadE + \frac{\sigma_t}{c}\RadF \biggr]^t
-&=\sum_t \theta_t   \biggr[ \frac{\sigma_t}{c} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr) \biggr]^t,
-\eeqn 
-\beqn 
-\RadF^{n+1} - \RadF^{n} + 
-\sum_t \frac{\theta_t c^2}{\tau} \biggr[ \bnabla \dotp \VEFf \RadE + \frac{\sigma_t}{c}\RadF \biggr]^t
-&=\sum_t \theta_t  \biggr[ \frac{\sigma_t c}{\tau} \bigr( \RadE \velocity + \VEFf \RadE \dotp \velocity \bigr) \biggr]^t,
-\eeqn 
-\beqn 
-\RadF^{n+1} - \RadF^{n} + 
-\sum_t \biggr[ \mathbf{a}_1^t \RadE^t + a_2^t \RadF^t \biggr]
-&= \sum_t \biggr( \{\mathbf{a}_3\}^t  + \{\mathbf{a}_4\}^t \biggr) \dotp (\RadE\velocity)^t
-\eeqn 
-\beqn 
-(1 + a_2^{n+1}) \RadF^{n+1}
-=
-- \mathbf{a}_1^{n+1} \RadE^{n+1} 
-+(1+a_2^n)\RadF^n -  \mathbf{a}_1^n \RadE^n 
-+\sum_t \biggr( \{\mathbf{a}_3\}^t  + \{\mathbf{a}_4\}^t \biggr) \dotp (\RadE\velocity)^t
-\eeqn
-\beqn 
-\RadF^{n+1}
-=
-- \mathbf{a}_5^{n+1} \RadE^{n+1} 
-+(1+a_6^n)\RadF^n -  \mathbf{a}_5^n \RadE^n 
-+\sum_t \biggr( \{\mathbf{a}_7\}^t  + \{\mathbf{a}_8\}^t \biggr) \dotp (\RadE\velocity)^t
-\eeqn
-Define
-\beqn
-\RadF_1^{n+1} =  - \mathbf{a}_5^{n+1} \RadE^{n+1} 
-+(1+a_6^n)\RadF^n -  \mathbf{a}_5^n \RadE^n 
-\eeqn
-\beqn 
-\RadF_2^{n+1} =\sum_t \biggr( \{\mathbf{a}_7\}^t  + \{\mathbf{a}_8\}^t \biggr) \dotp (\RadE\velocity)^t
-\eeqn 
-therefore
-\beqn 
-\RadF^{n+1}
-=
-\RadF_1^{n+1}
-+\RadF_2^{n+1}
-\eeqn
 
-Now if we do operator splitting on the radiation energy equation we get
+\subsection{Definitions}
+We can cast the above equations into the following form
+\begin{subequations}
 \beqn 
-\tau (\RadE^{n+\half*} - \RadE^n)
-+\bnabla \dotp \RadF_2^{n+\half}
-&= 0
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4
+-\frac{\sigma_t}{4\pi}  \RadF_0 \dotp \frac{\mathbf{u}}{c} 
++ \frac{\sigma_t}{\pi} \RadE \ \Omegabf \dotp \velocity
+\eeqn 
+\beqn 
+\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+\begin{bmatrix}
+	0 \\ -\mathbf{S}_{rp} \\  -S_{re}
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+- \frac{\sigma_t}{c} \RadF_0  \dotp \velocity.
 \eeqn
 \beqn 
-\tau (\RadE^{n+1} - \RadE^{n+\half*})
-+\sum_t \theta_t \biggr[ \bnabla \dotp \RadF_1 \biggr]^t
-&=  \sum_t \theta_t \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^t
-- \biggr(\frac{\sigma_t}{c} \RadF_0  \dotp \velocity \biggr)^{n+\half}
-\eeqn
-therefore, with a Crank-Nicolson scheme, 
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp (\VEFf \RadE) &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)
+\eeqn 
+where
 \beqn 
-\tau (\RadE^{n+\half*} - \RadE^n)
-+\bnabla \dotp \biggr[ 
-\biggr( \{\mathbf{a}_7\}^{n+\half}  + \{\mathbf{a}_8\}^{n+\half} \biggr) \dotp (\RadE\velocity)^{n+\half} 
-\biggr]
-&= 0
-\eeqn
+\mathbf{S}_{rp} = -\frac{\sigma_t}{c} \RadF_0
+\eeqn 
 \beqn 
-\tau (\RadE^{n+1} - \RadE^{n+\half*})
-+\theta_1   \bnabla \dotp \RadF_1^{n+1}
-+\theta_2 \bnabla \dotp \RadF_1^n
-&=  \theta_1 \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^{n+1} + \theta_2 \biggr[ \sigma_a c \bigr( aT^4 - \RadE \bigr) \biggr]^n
-- \biggr(\frac{\sigma_t}{c} \RadF_0  \dotp \velocity \biggr)^{n+\half}
-\eeqn
+S_{ea} =\sigma_a c ( a T^4 - \RadE)
+\eeqn 
+\beqn 
+S_{re} =S_{ea} - \frac{\sigma_t}{c} \RadF_0\dotp \velocity
+\eeqn 
+\end{subequations}
+
+\vspace{1cm}
+\subsection{Mixed Finite Element Method}
+We now turn our attention to just the radiation momentum equation,
+ \beqn 
+ \frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp (\VEFf \RadE) &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr).
+ \eeqn 
+ We assume that all the unknowns in this equation have a linear FE representation on a cell, except $\RadE$ and $\velocity$. 
+ 
+ \subsubsection{The radiation-flux at $n$}
+ One of the first items we will need in any temporal discretization is the old $\RadF^n$. In order to get value of $\RadF^n$, when starting the iterations, we simply use the radiation-momentum equation with no time derivative to get
+ \beqn
+ \RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n, \quad \quad \text{if }n=0.
+ \eeqn
+ This equation, however, still requires a suitable spatial discretization. Applying a linear FEM first requires multiplying by a trial function, then integrating over volume
+ \beqn 
+ \int_V b_i \biggr[
+  \RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n
+ \biggr]
+ dV
+ \eeqn
+Let us now consider the terms one-by-one. First are the $\RadF$ terms. Since $\RadF \approx \sum_j \RadF_j b_j (\position)$ we get
+\beqn
+\int_V b_i \RadF dV = \sum_j \RadF_j \int_V b_i  b_j  dV
+\eeqn 
+Second are the divergence terms. First we rewrite
+\beqn 
+\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
+&=
+\int_S \mathbf{n} \dotp (b_i \VEFf \RadE) dA
+-
+\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
+&=
+\sum_f \int_{S_f} \mathbf{n}_f \dotp (b_i \VEFf \RadE) dA
+-
+\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
+&=
+\sum_j \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_j \int_{S_f}b_i b_j dA
+-
+\sum_j (\VEFf \RadE)_j \dotp \int_V b_j \bnabla b_i dV \\
+\text{1D} \quad \quad 
+\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
+&=
+\sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f \int_{S_f} b_i dA
+-
+(\VEFf \RadE)_c \dotp \int_V \bnabla b_i dV
+\eeqn 
+Last are the advection terms. If the velocity and radiation-energy are only considered to be cell-constant then we have
+\beqn 
+\int_V b_i   \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr) dV
+=
+ \bigr( \RadE \velocity +\VEFf\RadE \dotp \velocity \bigr)_c \int_V b_i dV
+\eeqn 
+\newline 
+\newline
+Putting all this together, we get
+\beqn
+ \sum_j \RadF_j^n \int_V b_i  b_j  dV
+ =
+ -\frac{c}{\sigma_t^n}  
+ \biggr[
+ \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f^n \int_{S_f} b_i dA
+ -
+ (\VEFf \RadE)_c^n \dotp \int_V \bnabla b_i dV
+ \biggr]
+ +
+  \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^n \int_V b_i dV
+\eeqn 
+which can be written as
+\beqn
+\bar{M}_c \bar{\mathbf{F}}_c^n = -\frac{c}{\sigma_t} \bar{C}_c (\mathbf{f} \boldsymbol{\RadE})_c^n
+\eeqn 
+
+
+
+\vspace{2cm}
+\subsubsection{The radiation-flux at $n+1$}
+We now seek a similar expression for the radiation-flux at timestep $n+1$. Our first discretization is a temporal theta-scheme discretization where we lag the advection terms,
+ \beqn 
+ &\frac{1}{c^2 \tau} (\RadF^{n+1} - \RadF^{n}) 
+ + \theta_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
+ + \theta_2 \bnabla \dotp (\VEFf \RadE)^n 
+ \\
+ &= 
+ -\frac{\theta_1}{c} \sigma_t^{n+1} \RadF^{n+1}
+ -\frac{\theta_2}{c} \sigma_t^{n} \RadF^n
+ + \frac{\sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
+ \eeqn 
+we then multiply by $c^2 \tau$ 
+ \beqn 
+&\RadF^{n+1} - \RadF^{n}
++ \theta_1 c^2 \tau \bnabla \dotp (\VEFf \RadE)^{n+1} 
++ \theta_2 c^2 \tau \bnabla \dotp (\VEFf \RadE)^n 
+\\
+&= 
+-\frac{\theta_1 c^2 \tau }{c} \sigma_t^{n+1} \RadF^{n+1}
+-\frac{\theta_2 c^2 \tau }{c} \sigma_t^{n} \RadF^n
++ \frac{c^2 \tau \sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
+\eeqn 
+Next we define,
+\beqn 
+a_1 &= \theta_1 c^2 \tau \\
+a_2 &= \theta_2 c^2 \tau \\
+a_3 &= c \tau \sigma_t^{n+\half}
+\eeqn 
+to get,
+ \beqn 
+&\RadF^{n+1} - \RadF^{n}
++ a_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
++ a_2 \tau \bnabla \dotp (\VEFf \RadE)^n 
+\\
+&= 
+-\frac{a_1}{c} \sigma_t^{n+1} \RadF^{n+1}
+-\frac{a_2}{c} \sigma_t^{n} \RadF^n
++ a_3 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
+\eeqn 
+which we can rearrange as
+\beqn 
+\bigr(1+\frac{a_1}{c}\sigma_t^{n+1}\bigr)\RadF^{n+1} + a_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
+= \bigr(1-\frac{a_2}{c} \sigma_t^n \bigr) \RadF^n
+-a_2 \tau \bnabla \dotp (\VEFf \RadE)^n 
++ a_3 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
+\eeqn 
+Next we define
+\beqn
+a_4 &= \frac{a_1}{1+\frac{a_1}{c}\sigma_t^{n+1}} \\
+a_5 &= \frac{1-\frac{a_2}{c}\sigma_t^n}{1+\frac{a_1}{c}\sigma_t^{n+1}}\\
+a_6 &= \frac{a_2}{1+\frac{a_1}{c}\sigma_t^{n+1}} \\
+a_7 &= \frac{a_3}{1+\frac{a_1}{c}\sigma_t^{n+1}} \\
+\eeqn 
+to get
+\beqn 
+\RadF^{n+1} + a_4 \bnabla \dotp (\VEFf \RadE)^{n+1} 
+= a_5 \RadF^n
+-a_6 \tau \bnabla \dotp (\VEFf \RadE)^n 
++ a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
+\eeqn 
+\beqn
+\RadF^{n+1} + a_4 \bnabla (f \RadE)^{n+1} 
+= a_5 \RadF^n
+-a_6 \tau \bnabla (f \RadE)^n 
++ a_7 \bigr( 1 + f^{n+\half} \bigr)(\RadE \velocity)^{n+\half}.
+\eeqn 
 \newline
 \newline
-Now for the MFEM spatial discretization. Similar to before, we apply the MFEM discretization only to $\RadF_1$
+Now we apply our spatial discretization scheme by multiplying by trial functions, defined as the basis functions on each cell, then integrating over volume
+\beqn 
+\int_V  b_i(\position)
+\biggr[
+ \RadF^{n+1} + a_4 \bnabla \dotp (\VEFf \RadE)^{n+1} 
+= a_5 \RadF^n
+-a_6 \tau \bnabla \dotp (\VEFf \RadE)^n 
++ a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
+\biggr] dV.
+\eeqn 
+Let us now consider the terms one-by-one. First are the $\RadF$ terms. Since $\RadF \approx \sum_j \RadF_j b_j (\position)$ we get
+\beqn
+\int_V b_i \RadF dV = \sum_j \RadF_j \int_V b_i  b_j  dV
+\eeqn 
+Second are the divergence terms. First we rewrite
+\beqn 
+\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
+&=
+\int_S \mathbf{n} \dotp (b_i \VEFf \RadE) dA
+-
+\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
+&=
+\sum_f \int_{S_f} \mathbf{n}_f \dotp (b_i \VEFf \RadE) dA
+-
+\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
+&=
+\sum_j \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_j \int_{S_f}b_i b_j dA
+-
+\sum_j (\VEFf \RadE)_j \dotp \int_V b_j \bnabla b_i dV \\
+\text{1D} \quad \quad 
+\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
+&=
+\sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f \int_{S_f} b_i dA
+-
+(\VEFf \RadE)_c \dotp \int_V \bnabla b_i dV
+\eeqn 
+Last are the advection terms. If the velocity and radiation-energy are only considered to be cell-constant then we have
+\beqn 
+\int_V b_i  a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr) dV
+=
+a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c \int_V b_i dV
+\eeqn 
+\newline
+\newline 
+The resulting small system of equations can be written as
+\beqn 
+\bar{M}_c \bar{\mathbf{F}}_c^{n+1} = -a_4 \bar{C}_c \boldsymbol{\RadE}_c^{n+1} 
++
+a_5 \bar{M}_c  \bar{\mathbf{F}}_c^{n}   - a_6 \bar{C}_c \boldsymbol{\RadE}_c^{n} 
++ a_7 \mathbf{N}_c \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^{n+\half} ,
+\eeqn 
+where 
+\beqn 
+\boldsymbol{\RadE}_c = 
+\begin{bmatrix}
+	\RadE_c \\
+	\RadE_{n=0} \\
+	\vdots \\
+	\RadE_{n=N_n-1}
+\end{bmatrix}^{(N_n+1){\times}1},
+\eeqn 
+\beqn 
+\mathbf{F}_c =
+\begin{bmatrix}
+	\RadF \\ \vdots \\ \RadF_{N_n{-1}}
+\end{bmatrix}
+\eeqn
+\newline
+\newline 
+Next we can multiply with $\bar{M}_c^{-1}$ to get
+\beqn 
+\bar{\mathbf{F}}_c^{n+1} = -\bar{C}_c^* \boldsymbol{\RadE}_c^{n+1} 
++
+a_5 \bar{\mathbf{F}}_c^{n} - a_6 \bar{C}_c^* \boldsymbol{\RadE}_c^{n} 
++ a_7 \bar{M}_c^{-1} \mathbf{N}_c \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^{n+\half} .
+\eeqn 
 
 
 
