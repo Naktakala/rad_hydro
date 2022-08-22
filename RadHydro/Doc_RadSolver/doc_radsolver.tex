@@ -1423,7 +1423,7 @@ Putting the developed right- and left-hand sides back together we then get,
 \eeqn 
  This equation can be written in more succinct form as
  \beqn 
- \bar{M}_c \bar{\mathbf{F}}_c = \bar{C}_c \boldsymbol{\RadE}_c
+ \bar{M}_c \bar{\mathbf{F}}_c = D_c \bar{C}_c \boldsymbol{\RadE}_c
  \eeqn 
  where the structure still needs to be defined (which follows). $\bar{M}_c$ is a square block-matrix with block-dimension $N_n{\times}N_n$, $\bar{\mathbf{F}}_c$ is a block-vector with block-dimension $N_n{\times}1$, $\bar{C}_c$ is a rectangular block-matrix with block-dimension $N_n{\times}(N_f+1)$. The vector $\boldsymbol{\RadE}_c$ is simply the cell-centered and surface unknowns for cell $c$, i.e., $\boldsymbol{\RadE}_c = [\RadE_c, \RadE_{n=0}, \dots, \RadE_{n=N_n{-1}}]^T$.
  
@@ -1445,10 +1445,10 @@ The block entries of $\bar{\mathbf{F}}$ are
 \end{bmatrix}^{N_d{\times}1}
 \eeqn 
 obviously only up to $y$ for 2D and only up to $x$ for 1D.
-The entries of $\bar{C}$ are formed as follows. First the structure of $\bar{C}$ is such that
+The entries of $\bar{C}_c$ are formed as follows. First the structure of $\bar{C}_c$ is such that
 \beqn 
 \text{block-row }i\text{ of }
-\bar{C} =
+\bar{C}_c =
 \text{columns}
 \begin{pmatrix}
 	\mathbf{C}_{i}^c & \mathbf{C}_{i,j=0}^s & \dots & \mathbf{C}_{i,j=N_n{-1}}^s
@@ -1462,9 +1462,9 @@ M_{ij}^f &= \int_{S_f}  b_i b_j dA
 Then, 
 \beqn 
 \mathbf{C}_{i}^c =\begin{bmatrix}
-D_c(\mathbf{G}_i)_x \\
-D_c(\mathbf{G}_i)_y \\
-D_c(\mathbf{G}_i)_z \\
+-(\mathbf{G}_i)_x \\
+-(\mathbf{G}_i)_y \\
+-(\mathbf{G}_i)_z \\
 \end{bmatrix}^{N_d{\times}1}
 \eeqn 
 and 
@@ -1472,15 +1472,15 @@ and
 	\renewcommand*{\arraystretch}{1.5}
 \mathbf{C}_{ij}^s = \begin{bmatrix}
 
-\sum_f D_c n_{f,x} M_{ij}^f \\
-\sum_f D_c n_{f,y} M_{ij}^f \\
-\sum_f D_c n_{f,z} M_{ij}^f
+\sum_f n_{f,x} M_{ij}^f \\
+\sum_f n_{f,y} M_{ij}^f \\
+\sum_f n_{f,z} M_{ij}^f
 \end{bmatrix}^{N_d{\times}1}
 \eeqn 
 
 With these definitions in-hand we can see that the true dimensions of $\bar{M}$ is $N_d N_n {\times} N_d N_n$, that of $\bar{\mathbf{F}}$ is $N_d N_n {\times}1$, and the true dimensions of $\bar{C}$ is $N_d N_n {\times} (N_n+1)$. 
 
-Finally, we repeat here that the vector $\boldsymbol{\RadE}$ is
+Finally, we have the vector $\boldsymbol{\RadE}$ as
 \beqn 
 \boldsymbol{\RadE}_c = 
 \begin{bmatrix}
@@ -1507,13 +1507,13 @@ With this expression-form of the individual nodal $\RadJ$'s we need to modify th
 \subsection{Using the auxiliary notation in the primary equation}
 Using this coefficient-form in the primary equations is done by first integrating eq. \eqref{eq:mfem_primary} over the volume of cell $c$, assuming the coefficient matrix $\bar{M}^{-1} \bar{C}$ has been developed for cell $c$, after which we apply Gauss's divergence theorem,
 \beqn 
-\int_{V_c} \bnabla \dotp \RadJ dV &= V_c \\
-\int_{S_c} \mathbf{n} \dotp \RadJ dA &= V_c \\
-\sum_f \biggr[ \mathbf{n}_f \dotp \int_{S_f} \RadJ dA \biggr] &= V_c.
+\int_{V_c} \bnabla \dotp \RadJ dV &= V_c ( \bnabla \dotp \RadJ) \\
+\int_{S_c} \mathbf{n} \dotp \RadJ dA &= V_c  ( \bnabla \dotp \RadJ)\\
+\sum_f \biggr[ \mathbf{n}_f \dotp \int_{S_f} \RadJ dA \biggr] &= V_c ( \bnabla \dotp \RadJ).
 \eeqn 
 We now expand $\RadJ$,
 \beqn 
-\sum_j \sum_f \biggr[ \mathbf{n}_f \dotp (\RadJ)_j \int_{S_f} b_j dA \biggr] &= V_c,
+\sum_j \sum_f \biggr[ \mathbf{n}_f \dotp (\RadJ)_j \int_{S_f} b_j dA \biggr] &= V_c ( \bnabla \dotp \RadJ),
 \eeqn 
 define
 \beqn 
@@ -1524,13 +1524,13 @@ S_{i,f} = \int_{S_f} b_i dA
 n_{f,x} S_{j,f} (\RadJ)_{j,x} +
 n_{f,y} S_{j,f} (\RadJ)_{j,y} +
 n_{f,z} S_{j,f} (\RadJ)_{j,z}
-\biggr] &= V_c,
+\biggr] &= V_c ( \bnabla \dotp \RadJ),
 \eeqn 
 or
 \beqn
 \sum_j \sum_f \sum_d \biggr[ 
 n_{f,d} S_{j,f} (\RadJ)_{j,d}
-\biggr] &= V_c,
+\biggr] &= V_c ( \bnabla \dotp \RadJ),
 \eeqn 
 where $d$ denotes dimension such that $d\in[0,1,2] \mapsto [x,y,z]$, the indices $(j,d)$ of $(\RadJ)_{j,d}$ maps to a row in $C^*$, i.e., 
 \beqn 
@@ -1538,9 +1538,10 @@ where $d$ denotes dimension such that $d\in[0,1,2] \mapsto [x,y,z]$, the indices
 \eeqn 
 from which we get
 \beqn
+\bnabla \dotp \RadJ = \frac{1}{V_c}
 \sum_j \sum_f \sum_d \biggr[ 
 n_{f,d} S_{j,f} C_{(j,d)\mapsto \text{ row } k}^* \dotp \boldsymbol{\RadE}_c
-\biggr] &= V_c, \quad \quad \forall c,
+\biggr], \quad \quad \forall c,
 \eeqn 
 If the indices of $\RadE_c$ are then mapped to global system indexes for the corresponding $\RadE_c$ and collection of $\RadE_f$'s then the system can be constructed.
 
@@ -1720,26 +1721,459 @@ S_{re} =S_{ea} - \frac{\sigma_t}{c} \RadF_0\dotp \velocity
 \eeqn 
 \end{subequations}
 
+
+
+
+
+\newpage 
+\subsection{Temporal scheme - Implicit Euler Predictor, Crank-Nicolson Corrector}
+\begin{subequations}
+\beqn 
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s}{4\pi} \phi
++ \frac{\sigma_a}{4\pi} a c T^4
+-\frac{\sigma_t}{4\pi}  \RadF_0 \dotp \frac{\mathbf{u}}{c} 
++ \frac{\sigma_t}{\pi} \RadE \ \Omegabf \dotp \velocity
+\eeqn 
+\beqn 
+\partialderiv{\HydroU}{t} + \bnabla \dotp \HydroF(\HydroU) = 
+\begin{bmatrix}
+	0 \\ -\mathbf{S}_{rp} \\  -S_{re}
+\end{bmatrix}
+\eeqn 
+\beqn 
+\frac{\partial \RadE}{\partial t} 
++\bnabla \dotp \RadF
+&=  \sigma_a c \bigr( aT^4 - \RadE \bigr)
+- \frac{\sigma_t}{c} \RadF_0  \dotp \velocity.
+\eeqn
+\end{subequations}
+
+\subsubsection{Transport prephase}
+\begin{subequations}
+\beqn 
+\frac{1}{c} \frac{\partial I}{\partial t} 
++\Omegabf \dotp \bnabla I
++\sigma_t(\position) I 
+=\frac{\sigma_s^n}{4\pi} c \RadE^n
++ \frac{\sigma_a^n}{4\pi} a c (T^4)^n
+-\frac{\sigma_t^n}{4\pi}  \RadF_0^n \dotp \frac{\mathbf{u}^n}{c} 
++ \frac{\sigma_t^n}{\pi} \RadE^n \ \Omegabf \dotp \velocity^n
+\eeqn 
+Develop $\VEFf^n$.
+\end{subequations}
+
+\subsubsection{Predictor phase}
+$\tau = \frac{1}{\half \Delta t}$
+\begin{subequations}
+\beqn 
+\tau(\HydroU^{n*} - \HydroU^n)+ \bnabla \dotp \HydroF(\HydroU^n) = 
+\mathbf{0}
+\eeqn 
+\beqn 
+\tau 
+\begin{pmatrix}
+	\begin{bmatrix}
+		\rho \\ \rho \velocity
+	\end{bmatrix}^{n+\half}
+-
+	\begin{bmatrix}
+	\rho \\ \rho \velocity
+\end{bmatrix}^{n*}
+\end{pmatrix}
+=
+\begin{bmatrix}
+	0\\
+	\frac{\sigma_t}{c} \RadF_0
+\end{bmatrix}^n
+\eeqn 
+\beqn 
+\tau (E^{n+\half}-E^{n*}) = -\theta_1 S_{ea}^{n+\half} - \theta_2 S_{ea}^n + \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^n
+\eeqn 
+\beqn 
+\tau (\RadE^{n+\half} - \RadE^n)
++\theta_1\bnabla \dotp \RadF^{n+\half}
++\theta_2\bnabla \dotp \RadF^n
+&=  \theta_1 S_{ea}^{n+\half} + \theta_2 S_{ea}^n - \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^n
+\eeqn
+For $S_{ea}$ and $\RadF$ both at $n+\half$:
+\beqn 
+\sigma^{n+\half} &= \rho^{n+\half}\kappa(T^n)
+\eeqn 
+
+\beqn 
+T^{4,n+\half} = T^{4,n*} + \frac{4T^{3,n*}}{C_v} (e^{n+\half}-e^{n*})
+\eeqn 
+\end{subequations}
+
+\subsubsection{Corrector phase}
+$\tau = \frac{1}{\Delta t}$
+\begin{subequations}
+	\beqn 
+	\tau(\HydroU^{n+\half*} - \HydroU^n)+ \bnabla \dotp \HydroF(\HydroU^{n+\half}) = 
+	\mathbf{0}
+	\eeqn 
+	\beqn 
+	\tau 
+	\begin{pmatrix}
+		\begin{bmatrix}
+			\rho \\ \rho \velocity
+		\end{bmatrix}^{n+1}
+		-
+		\begin{bmatrix}
+			\rho \\ \rho \velocity
+		\end{bmatrix}^{n+\half*}
+	\end{pmatrix}
+	=
+	\begin{bmatrix}
+		0\\
+		\frac{\sigma_t}{c} \RadF_0
+	\end{bmatrix}^{n+\half}
+	\eeqn 
+	\beqn 
+	\tau (E^{n+1}-E^{n+\half*}) = -\theta_1 S_{ea}^{n+1} - \theta_2 S_{ea}^n + \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^n)
+	+\theta_1\bnabla \dotp \RadF^{n+1}
+	+\theta_2\bnabla \dotp \RadF^n
+	&=  \theta_1 S_{ea}^{n+1} + \theta_2 S_{ea}^n - \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	For $S_{ea}$ and $\RadF$ both at $n+1$:
+	\beqn 
+	\sigma^{n+1} &= \rho^{n+1}\kappa(T^{n+\half})
+	\eeqn 
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+
+
+
+
+\newpage
+\subsubsection{General energy equations, Predictor and Corrector phase, with $\theta$ factors}
+Time integration scheme uses \textbf{implicit Euler} for the predictor phase and \textbf{Crank-Nicolson} in the corrector phase. Both these schemes can be represented wit a general $\theta$-scheme where we define:
+\beqn
+\theta_1 &\in [0,1] \\
+\theta_2 &= 1-\theta_1.
+\eeqn
+\noindent
+For implicit Euler, $\theta_1 = 1, \ \theta_2=0$, and for Crank-Nicolson, $\theta_1 = \theta_2 = \half$. With these factors defined we can repeat the energy equations and apply a series of manipulations. First we attempt to segregate known terms from all unknown terms. Thereafter we eliminate the internal energy, $e$, from the two sets of equations to get a single formulation for the radiation energy, $\RadE$. The latter formulation forms a diffusion system that needs to be assembled and solved for $\RadE$.
+
+
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-\theta_1 \sigma_a^{n+1} c  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \theta_2 S_{ea}^{n}
+	+ \biggr(\frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+  \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} +  \theta_2 \RadF^{n} \bigr)= 
+	\theta_1 \sigma_a^{n+1} c \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\theta_2 S_{re}^{n}
+	- \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + \frac{4T^{3,n+\half*}}{C_v} (e^{n+1}-e^{n+\half*})
+	\eeqn 
+	
+	\splitline
+\end{subequations}
+
+Define:
+\beqn 
+k_1 &= \theta_1 \sigma_a^{n+1} c \\
+k_2 &= \frac{4 T^{3,n+\half*}}{C_v}
+\eeqn 
+\splitline
+
+and plug them into the equations above,
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	- \theta_2 S_{ea}^{n}
+	+ \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} +  \theta_2 \RadF^{n} \bigr)= 
+	k_1 \biggr( 
+	a T^{4,n+1}   -\RadE^{n+1} 
+	\biggr)
+	+\theta_2 S_{re}^{n}
+	- \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+ungroup right-hand side elements by multiplying out terms within parentheses,
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+1}   + k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	+ \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} + \theta_2 \RadF^{n} \bigr)= 
+	k_1 a T^{4,n+1}   -k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	- \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+	
+	
+	\beqn 
+	T^{4,n+1} = T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})
+	\eeqn 
+\end{subequations}
+
+\splitline
+
+now plug in the temperature equation into both the energy equations,
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   + k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	+ \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} + \theta_2 \RadF^{n} \bigr)= 
+	k_1 a \big(T^{4,n+\half*} + k_2 (e^{n+1}-e^{n+\half*})\big)   -k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	- \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+ungroup elements on the both the right-hand sides,
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	-k_1  a T^{4,n+\half*} -k_1  a k_2 e^{n+1} + k_1  a k_2 e^{n+\half*}
+	+ k_1 \RadE^{n+1} 
+	- \theta_2 S_{ea}^{n}
+	+ \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} + \theta_2 \RadF^{n} \bigr)= 
+	k_1 a T^{4,n+\half*} + k_1 a k_2 e^{n+1} - k_1 a k_2 e^{n+\half*}
+	-k_1\RadE^{n+1} 
+	+\theta_2 S_{re}^{n}
+	- \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half}
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_3 &= -k_1  a T^{4,n+\half*} + k_1  a k_2 e^{n+\half*}
+- \theta_2 S_{ea}^{n}
++ \biggr( \frac{\sigma_t}{c} \RadF_0 \dotp \velocity \biggr)^{n+\half} \\
+k_4 &= -k_1 a k_2
+\eeqn 
+
+\splitline
+
+and plug them into the equations above,
+\begin{subequations}
+	\beqn 
+	\tau (E^{n+1} - E^{n+\half*}) = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} + \theta_2 \RadF^{n} \bigr)= 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Note:
+\beqn
+E^{n+1} = ( \half \rho ||\velocity||^2 )^{n+1} 
++ \rho^{n+1} e^{n+1}
+\eeqn 
+
+\splitline
+
+which gives,
+\begin{subequations}
+	\beqn 
+	\tau \big( ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \rho^{n+1} e^{n+1} - E^{n+\half*}\big) = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \bnabla \dotp \bigr( \theta_1 \RadF^{n+1} + \theta_2 \RadF^{n} \bigr)= 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+ungroup the material energy in the first equation,
+\begin{subequations}
+	\beqn 
+	\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau \rho^{n+1} e^{n+1} - \tau E^{n+\half*} = 
+	k_4 e^{n+1} 
+	+ k_1 \RadE^{n+1} 
+	+ k_3
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \theta_1 \bnabla \dotp  \RadF^{n+1} + \theta_2 \bnabla \dotp \RadF^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+and isolate the internal energy in the first equation,
+\begin{subequations}
+	\beqn 
+	(\tau \rho^{n+1}  - k_4 )e^{n+1} = 
+	k_1 \RadE^{n+1} 
+	+ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} 
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \theta_1 \bnabla \dotp  \RadF^{n+1} + \theta_2 \bnabla \dotp \RadF^{n} = 
+	-k_4 e^{n+1} 
+	-k_1\RadE^{n+1} 
+	-k_3
+	\eeqn
+\end{subequations}
+
+\splitline
+
+Define:
+\beqn 
+k_5 &= \frac{k_1}{\tau \rho^{n+1}  - k_4} \\
+k_6 &= \frac{ k_3 -\tau ( \half \rho ||\velocity||^2 )^{n+1} 
+	+ \tau E^{n+\half*} }{\tau \rho^{n+1}  - k_4}
+\eeqn 
+
+\splitline
+
+and plug these constants into the first equation above,
+\begin{subequations}
+	\beqn 
+	e^{n+1} = 
+	k_5 \RadE^{n+1} 
+	+ k_6
+	\eeqn 
+	
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \theta_1 \bnabla \dotp  \RadF^{n+1} + \theta_2 \bnabla \dotp \RadF^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 e^{n+1} 
+	\eeqn
+\end{subequations}
+
+\splitline
+
+now plug the first equation into the second,
+\begin{subequations}
+	\beqn 
+	\tau (\RadE^{n+1} - \RadE^{n}) 
+	+ \theta_1 \bnabla \dotp  \RadF^{n+1} + \theta_2 \bnabla \dotp \RadF^{n} = 
+	-k_1\RadE^{n+1} 
+	-k_3
+	-k_4 k_5 \RadE^{n+1} -k_4 k_6
+	\eeqn
+\end{subequations}
+
+\splitline
+
+now collect all the $\RadE^{n+1}$ terms on the left-hand side,
+\begin{subequations}
+	\beqn 
+	\big( \tau + k_1 + k_4 k_5\big) \RadE^{n+1} 
+	+ \theta_1 \bnabla \dotp  \RadF^{n+1} = 
+	-k_3
+	-k_4 k_6
+	+ \tau \RadE^{n}
+	- \theta_2 \bnabla \dotp \RadF^{n}
+	\eeqn
+\end{subequations}
+
+\splitline 
+
+
+
 \vspace{1cm}
 \subsection{Mixed Finite Element Method}
 We now turn our attention to just the radiation momentum equation,
- \beqn 
- \frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp (\VEFf \RadE) &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr).
- \eeqn 
- We assume that all the unknowns in this equation have a linear FE representation on a cell, except $\RadE$ and $\velocity$. 
- 
- \subsubsection{The radiation-flux at $n$}
- One of the first items we will need in any temporal discretization is the old $\RadF^n$. In order to get value of $\RadF^n$, when starting the iterations, we simply use the radiation-momentum equation with no time derivative to get
- \beqn
- \RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n, \quad \quad \text{if }n=0.
- \eeqn
- This equation, however, still requires a suitable spatial discretization. Applying a linear FEM first requires multiplying by a trial function, then integrating over volume
- \beqn 
- \int_V b_i \biggr[
-  \RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n
- \biggr]
- dV
- \eeqn
+\beqn 
+\frac{1}{c^2} \partialderiv{\RadF}{t} + \bnabla \dotp (\VEFf \RadE) &= -\frac{\sigma_t}{c}\RadF + \frac{\sigma_t}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr).
+\eeqn 
+We assume that all the unknowns in this equation have a linear FE representation on a cell, except $\RadE$ and $\velocity$. 
+
+\subsubsection{The radiation-flux at $n=0$}
+One of the first items we will need in any temporal discretization is the old $\RadF^n$. In order to get value of $\RadF^n$, when starting the iterations, we simply use the radiation-momentum equation with no time derivative to get
+\beqn
+\RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n, \quad \quad \text{if }n=0.
+\eeqn
+This equation, however, still requires a suitable spatial discretization. Applying a linear FEM first requires multiplying by a trial function, then integrating over volume
+\beqn 
+\int_V b_i \biggr[
+\RadF^n = - \frac{c}{\sigma_t^n} \bnabla \dotp (\VEFf^n \RadE^n)  + (\RadE \velocity + \VEFf \RadE \dotp \velocity)^n
+\biggr]
+dV
+\eeqn
 Let us now consider the terms one-by-one. First are the $\RadF$ terms. Since $\RadF \approx \sum_j \RadF_j b_j (\position)$ we get
 \beqn
 \int_V b_i \RadF dV = \sum_j \RadF_j \int_V b_i  b_j  dV
@@ -1758,57 +2192,109 @@ Second are the divergence terms. First we rewrite
 &=
 \sum_j \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_j \int_{S_f}b_i b_j dA
 -
-\sum_j (\VEFf \RadE)_j \dotp \int_V b_j \bnabla b_i dV \\
-\text{1D} \quad \quad 
-\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
-&=
-\sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f \int_{S_f} b_i dA
--
-(\VEFf \RadE)_c \dotp \int_V \bnabla b_i dV
+\sum_j (\VEFf \RadE)_j \dotp \int_V b_j \bnabla b_i dV
 \eeqn 
 Last are the advection terms. If the velocity and radiation-energy are only considered to be cell-constant then we have
 \beqn 
 \int_V b_i   \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr) dV
 =
- \bigr( \RadE \velocity +\VEFf\RadE \dotp \velocity \bigr)_c \int_V b_i dV
+\bigr( \RadE \velocity +\VEFf\RadE \dotp \velocity \bigr)_c \int_V b_i dV
 \eeqn 
 \newline 
 \newline
 Putting all this together, we get
 \beqn
- \sum_j \RadF_j^n \int_V b_i  b_j  dV
- =
- -\frac{c}{\sigma_t^n}  
- \biggr[
- \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f^n \int_{S_f} b_i dA
- -
- (\VEFf \RadE)_c^n \dotp \int_V \bnabla b_i dV
- \biggr]
- +
-  \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^n \int_V b_i dV
+\sum_j \RadF_j^n \int_V b_i  b_j  dV
+=
+-\frac{c}{\sigma_t^n}  
+\biggr[
+\sum_j 
+\sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_j^n \int_{S_f} b_i dA
+-
+(\VEFf \RadE)_c^n \dotp \int_V \bnabla b_i dV
+\biggr]
++
+\bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^n \int_V b_i dV
+\eeqn 
+and for 1D $\VEFf$
+\beqn
+\sum_j \RadF_j^n \int_V b_i  b_j  dV
+=
+-\frac{c}{\sigma_t^n}  
+\biggr[
+\sum_j 
+\sum_f \mathbf{n}_f \dotp (f \RadE)_j^n \int_{S_f} b_i dA
+-
+(f \RadE)_c^n  \int_V \bnabla b_i dV
+\biggr]
++
+\bigr( 1 + f_c^n \bigr) (\RadE \velocity)_c^n \int_V b_i dV
 \eeqn 
 which can be written as
 \beqn
-\bar{M}_c \bar{\mathbf{F}}_c^n = -\frac{c}{\sigma_t} \bar{C}_c (\mathbf{f} \boldsymbol{\RadE})_c^n
+\bar{M}_c \bar{\mathbf{F}}_c^n &= -\frac{c}{\sigma_t} \bar{C}_c (\mathbf{f} \boldsymbol{\RadE})_c^n
++ (1+f_c^n)\RadE_c^n C_{vol}\velocity_c^n
 \eeqn 
+where $\bar{M}_c$ is the dimension-extended mass-matrix as defined for Solver B and the matrix $\bar{C}_c$ is also the same as defined for Solver B. The nodal vector $(\mathbf{f} \boldsymbol{\RadE})$ is a stack of firstly the cell-centered $f\RadE$, then the list of nodal values,
+\beqn
+(\mathbf{f} \boldsymbol{\RadE}) = 
+\begin{bmatrix}
+	f_c \RadE_c \\
+	f_{c,0} \RadE_{c,0} \\
+	\vdots \\
+	f_{c,N_n{-1}} \RadE_{c,N_n{-1}}
+\end{bmatrix}
+\eeqn 
+the matrix $C_{vol}$ is a square block-matrix with block dimension $N_n{\times}1$ with block-structure
+\beqn 
+C_{vol} 
+=
+\begin{bmatrix}
+	V_{c,0} I \\
+	\vdots \\
+	V_{c,N_n{-1}}I
+\end{bmatrix}
+\eeqn 
+where the identity matrices, $I$, all have dimension $N_d{\times}N_d$ and the coefficients $V_{c,i}$ are given by
+\beqn 
+V_{c,i} = \int_V b_i dV.
+\eeqn 
+The resulting true dimensions of $C_{vol}$ is therefore $N_d  N_n {\times} N_d$.
+
+In order to obtain an expression for the nodal radiation-fluxes we then take the inverse of $\bar{M}_c$ to get
+\beqn 
+\bar{\mathbf{F}}_c^n = -\frac{c}{\sigma_t} \bar{M}_c ^{-1}\bar{C}_c (\mathbf{f} \boldsymbol{\RadE})_c^n
++ (1+f_c^n)\RadE_c^n \bar{M}_c ^{-1} C_{vol}\velocity_c^n
+\eeqn 
+which we can express as
+\beqn 
+\bar{\mathbf{F}}_c^n = -\frac{c}{\sigma_t} \bar{C}_c^* (\mathbf{f} \boldsymbol{\RadE})_c^n
++ (1+f_c^n)\RadE_c^n C_{vol}^* \velocity_c^n
+\eeqn 
+where $\bar{C}_c^* = \bar{M}_c^{-1} \bar{C}_c$ and $C_{vol}^* = \bar{M}_c^{-1} C_{vol}$. However, using the identity
+
+Additionally we require an expression for $\RadF_0$. If we use the same notation for building $\bar{\mathbf{F}}$ from $\RadF$, for $\bar{\mathbf{F}}_0$ from $\RadF_0$, we get
+\beqn
+\bar{\mathbf{F}}_{0,c}^n =  \bar{\mathbf{F}}_{c}^n - (1+f_c^n)\RadE_c^n C_{vol}^* \velocity_c^n
+\eeqn
 
 
 
 \vspace{2cm}
 \subsubsection{The radiation-flux at $n+1$}
 We now seek a similar expression for the radiation-flux at timestep $n+1$. Our first discretization is a temporal theta-scheme discretization where we lag the advection terms,
- \beqn 
- &\frac{1}{c^2 \tau} (\RadF^{n+1} - \RadF^{n}) 
- + \theta_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
- + \theta_2 \bnabla \dotp (\VEFf \RadE)^n 
- \\
- &= 
- -\frac{\theta_1}{c} \sigma_t^{n+1} \RadF^{n+1}
- -\frac{\theta_2}{c} \sigma_t^{n} \RadF^n
- + \frac{\sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
- \eeqn 
+\beqn 
+&\frac{1}{c^2 \tau} (\RadF^{n+1} - \RadF^{n}) 
++ \theta_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
++ \theta_2 \bnabla \dotp (\VEFf \RadE)^n 
+\\
+&= 
+-\frac{\theta_1}{c} \sigma_t^{n+1} \RadF^{n+1}
+-\frac{\theta_2}{c} \sigma_t^{n} \RadF^n
++ \frac{\sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
+\eeqn 
 we then multiply by $c^2 \tau$ 
- \beqn 
+\beqn 
 &\RadF^{n+1} - \RadF^{n}
 + \theta_1 c^2 \tau \bnabla \dotp (\VEFf \RadE)^{n+1} 
 + \theta_2 c^2 \tau \bnabla \dotp (\VEFf \RadE)^n 
@@ -1825,10 +2311,10 @@ a_2 &= \theta_2 c^2 \tau \\
 a_3 &= c \tau \sigma_t^{n+\half}
 \eeqn 
 to get,
- \beqn 
+\beqn 
 &\RadF^{n+1} - \RadF^{n}
 + a_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
-+ a_2 \tau \bnabla \dotp (\VEFf \RadE)^n 
++ a_2 \bnabla \dotp (\VEFf \RadE)^n 
 \\
 &= 
 -\frac{a_1}{c} \sigma_t^{n+1} \RadF^{n+1}
@@ -1839,7 +2325,7 @@ which we can rearrange as
 \beqn 
 \bigr(1+\frac{a_1}{c}\sigma_t^{n+1}\bigr)\RadF^{n+1} + a_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
 = \bigr(1-\frac{a_2}{c} \sigma_t^n \bigr) \RadF^n
--a_2 \tau \bnabla \dotp (\VEFf \RadE)^n 
+-a_2  \bnabla \dotp (\VEFf \RadE)^n 
 + a_3 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
 \eeqn 
 Next we define
@@ -1853,14 +2339,8 @@ to get
 \beqn 
 \RadF^{n+1} + a_4 \bnabla \dotp (\VEFf \RadE)^{n+1} 
 = a_5 \RadF^n
--a_6 \tau \bnabla \dotp (\VEFf \RadE)^n 
+-a_6  \bnabla \dotp (\VEFf \RadE)^n 
 + a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
-\eeqn 
-\beqn
-\RadF^{n+1} + a_4 \bnabla (f \RadE)^{n+1} 
-= a_5 \RadF^n
--a_6 \tau \bnabla (f \RadE)^n 
-+ a_7 \bigr( 1 + f^{n+\half} \bigr)(\RadE \velocity)^{n+\half}.
 \eeqn 
 \newline
 \newline
@@ -1868,84 +2348,109 @@ Now we apply our spatial discretization scheme by multiplying by trial functions
 \beqn 
 \int_V  b_i(\position)
 \biggr[
- \RadF^{n+1} + a_4 \bnabla \dotp (\VEFf \RadE)^{n+1} 
+\RadF^{n+1} + a_4 \bnabla \dotp (\VEFf \RadE)^{n+1} 
 = a_5 \RadF^n
--a_6 \tau \bnabla \dotp (\VEFf \RadE)^n 
+-a_6  \bnabla \dotp (\VEFf \RadE)^n 
 + a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
 \biggr] dV.
 \eeqn 
-Let us now consider the terms one-by-one. First are the $\RadF$ terms. Since $\RadF \approx \sum_j \RadF_j b_j (\position)$ we get
+For 1D $\VEFf$
+\beqn 
+\int_V  b_i(\position)
+\biggr[
+\RadF^{n+1} + a_4 \bnabla \dotp (f \RadE)^{n+1} 
+= a_5 \RadF^n
+-a_6  \bnabla  (f \RadE)^n 
++ a_7 \bigr( 1 +f_c^{n+\half} \bigr)\RadE_c^{n+\half}\velocity_c^{n+\half}
+\biggr] dV.
+\eeqn 
+Using the expressions we developed for the $n=0$ case, we can similarly write
 \beqn
-\int_V b_i \RadF dV = \sum_j \RadF_j \int_V b_i  b_j  dV
-\eeqn 
-Second are the divergence terms. First we rewrite
-\beqn 
-\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
-&=
-\int_S \mathbf{n} \dotp (b_i \VEFf \RadE) dA
--
-\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
-&=
-\sum_f \int_{S_f} \mathbf{n}_f \dotp (b_i \VEFf \RadE) dA
--
-\int_V \VEFf \RadE \dotp \bnabla b_i dV \\
-&=
-\sum_j \sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_j \int_{S_f}b_i b_j dA
--
-\sum_j (\VEFf \RadE)_j \dotp \int_V b_j \bnabla b_i dV \\
-\text{1D} \quad \quad 
-\int_V b_i \bnabla \dotp (\VEFf \RadE) dV 
-&=
-\sum_f \mathbf{n}_f \dotp (\VEFf \RadE)_f \int_{S_f} b_i dA
--
-(\VEFf \RadE)_c \dotp \int_V \bnabla b_i dV
-\eeqn 
-Last are the advection terms. If the velocity and radiation-energy are only considered to be cell-constant then we have
-\beqn 
-\int_V b_i  a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr) dV
+\bar{M}_c \bar{\mathbf{F}}_c^{n+1} + a_4 \bar{C}_c (\mathbf{f}\boldsymbol{\RadE})_c^{n+1}
 =
-a_7 \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c \int_V b_i dV
+a_5\bar{M}_c \bar{\mathbf{F}}_c^{n} - a_6 \bar{C}_c (\mathbf{f}\boldsymbol{\RadE})_c^{n}
++ a_7 (1+f_c^{n+\half})\RadE_c^{n+\half} C_{vol} \velocity_c^{n+\half}.
 \eeqn 
-\newline
-\newline 
-The resulting small system of equations can be written as
-\beqn 
-\bar{M}_c \bar{\mathbf{F}}_c^{n+1} = -a_4 \bar{C}_c \boldsymbol{\RadE}_c^{n+1} 
+An expression for the nodal fluxes is then obtained by multiplying with the inverse of $\bar{M}_c$ to get
+\beqn
+\bar{\mathbf{F}}_c^{n+1} 
+=
+- a_4 \bar{M}_c^{-1} \bar{C}_c (\mathbf{f}\boldsymbol{\RadE})_c^{n+1}
 +
-a_5 \bar{M}_c  \bar{\mathbf{F}}_c^{n}   - a_6 \bar{C}_c \boldsymbol{\RadE}_c^{n} 
-+ a_7 \mathbf{N}_c \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^{n+\half} ,
+a_5\bar{\mathbf{F}}_c^{n} - a_6 \bar{M}_c^{-1} \bar{C}_c (\mathbf{f}\boldsymbol{\RadE})_c^{n}
++ a_7 (1+f_c^{n+\half})\RadE_c^{n+\half} \bar{M}_c^{-1}  C_{vol} \velocity_c^{n+\half}.
 \eeqn 
-where 
-\beqn 
-\boldsymbol{\RadE}_c = 
-\begin{bmatrix}
-	\RadE_c \\
-	\RadE_{n=0} \\
-	\vdots \\
-	\RadE_{n=N_n-1}
-\end{bmatrix}^{(N_n+1){\times}1},
+which we can express as 
+\beqn
+\bar{\mathbf{F}}_c^{n+1} 
+=
+- a_4 \bar{C}_c^* (\mathbf{f}\boldsymbol{\RadE})_c^{n+1}
++
+a_5\bar{\mathbf{F}}_c^{n} - a_6  \bar{C}_c^* (\mathbf{f}\boldsymbol{\RadE})_c^{n}
++ a_7 (1+f_c^{n+\half})\RadE_c^{n+\half} C_{vol}^* \velocity_c^{n+\half}.
 \eeqn 
+using the definitions of $\bar{C}_c^*$ and $C_{vol}^*$ as developed for the $n=0$ case.
+
+\subsubsection{Using the expression for $\RadF^{n+1}$ in the primary equation}
+We start with the form that $\RadF$ appears in the radiation-energy equation, 
 \beqn 
-\mathbf{F}_c =
-\begin{bmatrix}
-	\RadF \\ \vdots \\ \RadF_{N_n{-1}}
-\end{bmatrix}
+\bnabla \dotp \RadF &= \frac{1}{V_c} \int_V \bnabla \dotp \RadF dV \\
+&= \frac{1}{V_c} \int_S \mathbf{n} \dotp \RadF dA \\
+&= \frac{1}{V_c} \sum_f \mathbf{n}_f \dotp \int_{S_f} \RadF dA\\
+&= \frac{1}{V_c} \sum_j \sum_f \mathbf{n}_f \dotp \RadF_j \int_{S_f} b_j dA \\
+\bnabla \dotp \RadF 
+&= \frac{1}{V_c} \sum_f \sum_j \sum_d n_{f,d} (\RadF_j)_d \int_{S_f} b_j dA. \\
+\eeqn 
+This now serves as a template for each of the terms in the expression. The term containing $\RadF^n$ is already covered by the template itself, therefore, by substituting $\displaystyle \int_{S_f} b_j dA = S_{j,f}$, we get
+\beqn
+ \bnabla \dotp \bar{\mathbf{F}}_c^n 
+\mapsto
+	\frac{1}{V_c} \sum_f \sum_j \sum_d n_{f,d} S_{j,f} (\RadF_j)_d.
 \eeqn
-\newline
-\newline 
-Next we can multiply with $\bar{M}_c^{-1}$ to get
+The second set of terms we need to address have the general form,
+\beq
+ - a \bar{C}_c^* (\mathbf{f}\boldsymbol{\RadE})_c
+\eeq
+where $a$ is either $a_4$ or $a_6$ and thus,
+\beqn
+- a \bar{C}_c^* (\mathbf{f}\boldsymbol{\RadE})_c
+\mapsto
+\frac{-a}{V_c} \sum_f \sum_j \sum_d 
+\biggr[ 
+n_{f,d} S_{j,f} 
+C^*_{(j,d)\mapsto  \text{ row }  k} \dotp (\mathbf{f}\boldsymbol{\RadE})
+\biggr].
+\eeqn 
+The last term to consider is the advection term,
 \beqn 
-\bar{\mathbf{F}}_c^{n+1} = -\bar{C}_c^* \boldsymbol{\RadE}_c^{n+1} 
-+
-a_5 \bar{\mathbf{F}}_c^{n} - a_6 \bar{C}_c^* \boldsymbol{\RadE}_c^{n} 
-+ a_7 \bar{M}_c^{-1} \mathbf{N}_c \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)_c^{n+\half} .
+a_7 (1+f_c^{n+\half})\RadE_c^{n+\half} C_{vol}^* \velocity_c^{n+\half}
+\mapsto
+\frac{a_7}{V_c} \sum_f \sum_j \sum_d \biggr[
+n_{f,d} S_{j,f} * C_{vol,(j,d)\mapsto \text{ row } k}^* \dotp \velocity_c^{n+\half}
+\biggr]
 \eeqn 
 
 
+\subsubsection{Using the expression for $\RadF^{n+1}$ in the auxiliary equations}
+For each face-node we now require continuity of flux. This can generally be expressed as
+\beqn 
+\sum_c \sum_f \int_{S_f} \mathbf{n}_f \dotp \RadF_j^{n+1} dA = 0
+\eeqn 
+from which we again have to develop the three types of term, i.e., the term with $\RadF$, the term with $\VEFf\RadE$ and the term with $\RadE \velocity$. Fortunately, the previously determined forms are easily extended to here, i.e., with only the relevant face and node indices changing.
 
-
-
-
+\beqn 
+&\sum_c \sum_f \sum_d n_{f,d} S_{j,f} \biggr[ -a_4
+C^*_{(j,d)\mapsto \text{ row } k} \dotp (\mathbf{f}\boldsymbol{\RadE})^{n+1}
+\biggr]\\
+&=
+\sum_c \sum_f \sum_d n_{f,d} S_{j,f} \biggr[ 
+-a_5 (\RadF_j)_d^{n}
++a_6
+C^*_{(j,d)\mapsto \text{ row } k} \dotp (\mathbf{f}\boldsymbol{\RadE})^{n}
+-a_7
+n_{f,d} S_{j,f} * C_{vol,(j,d)\mapsto \text{ row } k}^* \dotp \velocity_c^{n+\half}
+\biggr]
+\eeqn 
 
 
 \newpage
@@ -2212,6 +2717,226 @@ Example mach 3 conditions, $C_v = 0.14472799784454$ and $\gamma = \frac{5}{3}$:
 \vspace{1cm}
 \noindent
 \textbf{Note:} The initial guess, $\mathbf{x}^0$ cannot be the same as $\mathbf{x}_L$ since the iteration will terminate immediately. Generally the values need to be perturbed sufficiently such that $\rho_R > \rho_L$, $T_R > T_L$, $u_R < a_R$ where $a$ is the sound-speed, and $\RadE_R > \RadE_L$.
+
+
+
+
+
+
+
+\newpage
+\section{Tensor Algebra}
+Most of these notations are obtained from \cite{Moukalled}.
+\subsection{Identities}
+\begin{description}
+	\item [Identity C-1] Given $f(x,y,z)$ and $\mathbf{a} = [a_x, a_y, a_z]$.
+	$$
+	f \bnabla \dotp \mathbf{a} = \bnabla \dotp (f\mathbf{a}) - \mathbf{a} \dotp \bnabla f
+	$$
+	\textit{Proof:}
+	\begin{align}
+	f \bnabla \dotp \mathbf{a} &= f \biggr( 
+	\partialderiv{a_x}{x} + \partialderiv{a_y}{y} + \partialderiv{a_z}{z}
+	\biggr) \\
+	&= f\partialderiv{a_x}{x} + f\partialderiv{a_y}{y} + f\partialderiv{a_z}{z},\\
+	\intertext{	applying the product rule of differentiation,}
+	&=\partialderiv{}{x}(fa_x) - a_x \partialderiv{f}{x} \\
+	&+\partialderiv{}{y}(fa_y) - a_y \partialderiv{f}{y}\\
+	&+\partialderiv{}{z}(fa_z) - a_z \partialderiv{f}{z}\\
+	\intertext{by observing the vertical alignment here we get}
+	f \bnabla \dotp \mathbf{a}&=\bnabla \dotp (f\mathbf{a}) - \mathbf{a}\dotp \bnabla f
+	\end{align}
+
+		
+\end{description}
+\vspace{1cm}
+\subsection{Tensor product of two vectors $\mathbf{a} \otimes \mathbf{b}$}
+Also called the \textit{dyadic product}. Given vector $\mathbf{a}$ of size $N{\times}1$ and vector $\mathbf{b}$ of size $M{\times}1$, then the tensor product of $\mathbf{a}$ and $\mathbf{b}$ results in a rank 2 tensor and is given by
+\beqn 
+\mathbf{a}\otimes\mathbf{b} = 
+\begin{bmatrix}
+a_0 b_0 && a_0 b_1 && \dots   && a_0 b_{M-1} \\
+a_1 b_0 && a_1 b_1 && \dots   && a_1 b_{M-1} \\
+\vdots    && \vdots    && \ddots && \vdots \\
+a_{N-1} b_0 && a_{N-1} b_1 && \dots   && a_{N-1} b_{M-1} \\
+\end{bmatrix}
+\eeqn 
+with resulting dimensions $N{\times}M$.
+
+
+\subsection{Dot-product of a vector with a tensor, $\mathbf{a} \bullet \{t\}$}
+Under the same topic of tensor product notation we can also discuss the \textbf{dot product of scalar and a rank 2 tensor}. The dot-product of a vector $\mathbf{a}$ and a tensor $\{ \mathbf{t}\}$, commonly written as $\mathbf{a} \dotp \{ \mathbf{t}\}$, which results in a vector of size $N$, can be understood using one of two thought patterns:
+\begin{itemize}
+	\item Thought pattern 1: Classical component-wise dot product
+	\beqn 
+	\mathbf{a} \dotp \{ \mathbf{t}\} &=
+	\begin{bmatrix}
+		a_0 \\ a_1 \\ \vdots \\ a_{N-1}
+	\end{bmatrix}
+	\dotp 
+	\begin{bmatrix}
+		t_{00} & t_{01} & \hdots & t_{0(N-1)} \\
+		t_{10} & t_{11} & \hdots & t_{1(N-1)} \\
+		\vdots & \vdots & \ddots & \vdots \\
+		t_{(N-1)0} & t_{(N-1)1} & \hdots & t_{(N-1)(N-1)} \\
+	\end{bmatrix}\\
+	&=
+	\begin{bmatrix}
+		a_0 t_{00} &+ &a_1 t_{01} &+ &\hdots &+ &a_{N-1} t_{0(N-1)} \\
+		a_0 t_{10} &+ &a_1 t_{11} &+ &\hdots &+ &a_{N-1} t_{1(N-1)} \\
+		\vdots &+ &\vdots &+ &\ddots &+ &\vdots \\
+		a_0 t_{(N-1)0} &+ &a_1 t_{(N-1)1} &+ &\hdots &+ &a_{N-1} t_{(N-1)(N-1)} \\
+	\end{bmatrix} \\
+   &=\{t\}\dotp \mathbf{a}
+	\eeqn 
+	\item Thought pattern 2 (preferred): Dot product of vectors
+	\beqn 
+	\mathbf{a} \dotp \{ \mathbf{t}\} &=
+	\begin{bmatrix}
+		a_0 \\ a_1 \\ \vdots \\ a_{N-1}
+	\end{bmatrix}
+	\dotp 
+	\begin{bmatrix}
+		\mathbf{t}_0 \\
+		\mathbf{t}_1 \\
+		\vdots  \\
+		\mathbf{t}_{(N-1)}
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		\mathbf{a} \ \dotp \ \mathbf{t}_0 \\
+		\mathbf{a} \ \dotp \ \mathbf{t}_1 \\
+		\vdots  \\
+		\mathbf{a} \ \dotp \ \mathbf{t}_{(N-1)}
+	\end{bmatrix}
+	= \{t\}\dotp \mathbf{a}
+	\eeqn 
+\end{itemize}
+where the latter thought pattern requires the rank 2 tensor two be represented as a vector of vectors (or a matrix if you prefer).
+\newline
+\newline
+\subsection{Finite element discretization of the divergence of a tensor, i.e., $\bnabla \dotp \boldsymbol{\tau}$}
+Short-hand notation. $b_i \equiv b_i(\position)$. For this section we seek a general way to handle
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV.
+\eeqn
+
+We start by writing the tensor as a block vector
+\beqn 
+\boldsymbol{\tau} = 
+\begin{bmatrix}
+\mathbf{t}_0 \\ \mathbf{t}_1 \\ \vdots \\ \mathbf{t}_{N-1}
+\end{bmatrix},
+\eeqn 
+therefore,
+\beqn 
+\bnabla \dotp \boldsymbol{\tau} =
+\begin{bmatrix}
+	\bnabla \dotp \mathbf{t}_0 \\ \vdots \\ \bnabla \dotp \mathbf{t}_{N-1}
+\end{bmatrix}.
+\eeqn 
+If we now multiply by the trial space function, $b_i$, and integrate then we essentially have
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\begin{bmatrix}
+	\displaystyle \int_V b_i \bnabla \dotp \mathbf{t}_0 dV \\ 
+	\vdots \\ 
+	\displaystyle \int_V b_i \bnabla \dotp \mathbf{t}_{N-1}dV
+\end{bmatrix},
+\eeqn 
+after we use identity C-1 to get
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\begin{bmatrix}
+	\displaystyle \int_V b_i \bnabla \dotp \mathbf{t}_0 dV \\ 
+	\vdots \\ 
+	\displaystyle \int_V b_i \bnabla \dotp \mathbf{t}_{N-1}dV
+\end{bmatrix}
+=
+\begin{bmatrix}
+	\displaystyle \int_V \bnabla \dotp (b_i \mathbf{t}_0) dV - \int_V \mathbf{t}_0 \dotp \bnabla b_i dV \\ 
+	\vdots \\ 
+	\displaystyle \int_V \bnabla \dotp (b_i \mathbf{t}_{N-1}) dV - \int_V \mathbf{t}_{N-1} \dotp \bnabla b_i dV
+\end{bmatrix},
+\eeqn 
+Now we apply Gauss' divergence theorem on the first terms
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\begin{bmatrix}
+	\displaystyle \int_S \mathbf{n} \dotp (b_i \mathbf{t}_0) dA\\
+	\vdots \\
+	\displaystyle \int_S \mathbf{n} \dotp (b_i \mathbf{t}_{N-1}) dA
+\end{bmatrix}
+-
+\begin{bmatrix}
+	\displaystyle \int_V \mathbf{t}_0 \dotp \bnabla b_i dV\\
+	\vdots \\
+	\displaystyle \int_V \mathbf{t}_{N-1} \dotp \bnabla b_i dV
+\end{bmatrix},
+\eeqn 
+which we can write as
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\int_S \mathbf{n} \dotp (b_i \boldsymbol{\tau}) dA
+-
+\int_V \boldsymbol{\tau} \dotp \bnabla b_i dV.
+\eeqn 
+
+We can now expand $\boldsymbol{\tau}$ into basis functions and segregate the surface-integrals into face-integrals to get
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\sum_j \sum_f \biggr[
+\mathbf{n}_f \dotp \boldsymbol{\tau}_j \int_{S_f} b_i b_j dA 
+\biggr]- 
+\sum_j \biggr[
+\boldsymbol{\tau}_j \dotp \int_V b_j \bnabla b_i dV
+\biggr].
+\eeqn 
+
+What we can additionally do here is to lump the $\boldsymbol{\tau}_j$'s in the last term to cell-centered values $\boldsymbol{\tau}_c$ so that we have
+\beqn 
+\int_V b_i \bnabla \dotp \boldsymbol{\tau} dV =
+\sum_j \sum_f \biggr[
+\mathbf{n}_f \dotp \boldsymbol{\tau}_j \int_{S_f} b_i b_j dA 
+\biggr]- 
+\boldsymbol{\tau}_c \dotp \int_V \bnabla b_i dV,
+\eeqn 
+which enables us to develop a system form.
+
+Define the following,
+\beq
+M_{ij}^f &=  \int_{S_f} b_i b_j dA \\
+\mathbf{G}_i &= \int_V \bnabla b_i dV.
+\eeq
+We then start to define the matrix $C_c$ as
+\beqn 
+\boldsymbol{\tau}_c \dotp \int_V \bnabla b_i dV
+&=
+\begin{bmatrix}
+	\mathbf{G}_{i,x} & \mathbf{G}_{i,y} & \mathbf{G}_{i,z} & 0 & 0 & 0 & 0 & 0 & 0\\
+	0 & 0 & 0 & \mathbf{G}_{i,x} & \mathbf{G}_{i,y} & \mathbf{G}_{i,z} & 0 & 0 & 0 \\
+	0 & 0 & 0 & 0 & 0 & 0 & \mathbf{G}_{i,x} & \mathbf{G}_{i,y} & \mathbf{G}_{i,z} \\
+\end{bmatrix}
+\begin{bmatrix}
+	\mathbf{t}_{c,x} \\ 	\mathbf{t}_{c,y} \\	\mathbf{t}_{c,z}
+\end{bmatrix}
+\\
+&=
+\begin{bmatrix}
+	\mathbf{G}_i^T & 0 & 0\\
+	0 & \mathbf{G}_i^T & 0 \\
+	0 & 0 & \mathbf{G}_i^T
+\end{bmatrix}
+\begin{bmatrix}
+	\mathbf{t}_{c,x} \\ 	\mathbf{t}_{c,y} \\	\mathbf{t}_{c,z}
+\end{bmatrix}
+\eeqn 
+
+
+
+
+
+
 
 \end{appendices}
 

@@ -162,7 +162,25 @@ namespace chi_radhydro
                          std::vector<double>&     kappa_a,
                          std::vector<double>&     kappa_t);
 
-  //07_MHM
+  //07a_MHM
+  void MHM_HydroPredictor(
+    SimRefs&                              sim_refs,
+    double                                tau,
+    const std::vector<UVector>&           U_a,
+    const std::vector<GradUTensor>&       grad_U_a,
+    std::vector<UVector>&                 U_a_star
+  );
+
+  void MHM_HydroCorrector(
+    SimRefs&                              sim_refs,
+    double                                tau,
+    const std::vector<UVector>&           U_old,
+    const std::vector<UVector>&           U_int,
+    const std::vector<GradUTensor>&       grad_U_int,
+    std::vector<UVector>&                 U_int_star
+  );
+
+  //07b_MHM
   void MHM_HydroRadEPredictor(
     SimRefs&                              sim_refs,
     double                                tau,

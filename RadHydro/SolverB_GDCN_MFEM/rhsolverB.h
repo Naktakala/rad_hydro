@@ -15,7 +15,7 @@ protected:
   std::shared_ptr<SDM_PWLC> m_pwl;
 
   std::vector<MatDbl> m_list_of_Cc_star;
-  size_t              m_num_local_cfem_nodes;
+  size_t              m_num_local_cfem_nodes=0;
 public:
   //00
   explicit SolverB_GDCN_MFEM(const std::string& name);
