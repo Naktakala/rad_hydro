@@ -31,6 +31,8 @@ void chi_radhydro::SolverC_SNCN_MFEM::
   const std::vector<Vec3>&        grad_rad_E_nph,
   const std::vector<Vec3>&        rad_F0_nph,
   const std::vector<Vec3>&        rad_F_n,
+  const std::vector<double>&      VEFf_nodal,
+  const std::vector<double>&      VEFf_ctr,
   std::vector<UVector>&           U_np1,
   std::vector<double>&            rad_E_np1,
   std::vector<Vec3>&              rad_F_np1,
@@ -110,6 +112,7 @@ void chi_radhydro::SolverC_SNCN_MFEM::
     const double   rad_E_c_nph     = rad_E_nph[c];
 
     const Vec3     u_c_np1         = VelocityFromCellU(U_np1[c]);
+    const double   VEFf_c           = VEFf_ctr[c];
 
     //=========================================== Compute sigmas
     const double sigma_t_c_n   = rho_c_n * kappa_t_n[c];
@@ -198,7 +201,7 @@ void chi_radhydro::SolverC_SNCN_MFEM::
 
     list_of_a_coeffs[c] = {a4,a5,a6,a7};
 
-    const double VEFf_c = 1.0/3.0;
+
     double grad_dot_F_n = 0.0;
     //====================================== Loop over faces
     for (size_t f=0; f<Nf; ++f)
@@ -220,7 +223,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
         for (size_t d=0; d<Nd; ++d)
           for (size_t n=0; n <(Nn + 1); ++n)
           {
-            const double VEFf_n = 1.0 / 3.0;
+            const double VEFf_n = (n == 0)?
+                                  VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                  VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
             A[col_map[0]][col_map[n]] +=
               (theta1 * (-a4)/V_c) *
               nf[d] * Sf[j] * Cc_star[j * Nd + d][n] *
@@ -235,7 +240,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
         for (size_t d=0; d<Nd; ++d)
           for (size_t n=0; n <(Nn + 1); ++n)
           {
-            const double VEFf_n = 1.0 / 3.0;
+            const double VEFf_n = (n == 0)?
+                                  VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                  VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
             b[col_map[0]] -=
               (theta1 * (-a6)/V_c) *
               nf[d] * Sf[j] * Cc_star[j * Nd + d][n] *
@@ -262,7 +269,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
         for (size_t d=0; d<Nd; ++d)
           for (size_t n=0; n <(Nn + 1); ++n)
           {
-            const double VEFf_n = 1.0 / 3.0;
+            const double VEFf_n = (n == 0)?
+                                  VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                  VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
             A[col_map[j+1]][col_map[n]] +=
               (-a4) *
               nf[d] * Sf[j] * Cc_star[j * Nd + d][n] *
@@ -277,7 +286,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
         for (size_t d=0; d<Nd; ++d)
           for (size_t n=0; n <(Nn + 1); ++n)
           {
-            const double VEFf_n = 1.0 / 3.0;
+            const double VEFf_n = (n == 0)?
+                                  VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                  VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
             b[col_map[j+1]] +=
               a6 *
               nf[d] * Sf[j] * Cc_star[j * Nd + d][n] *
@@ -291,6 +302,18 @@ void chi_radhydro::SolverC_SNCN_MFEM::
             (1.0 + VEFf_c) * rad_E_c_nph * u_c_nph[d];
 
       }//for fj
+
+      if (not face.has_neighbor)
+      {
+        const double radE_adj = chi_radhydro::MakeRadEFromBC(
+          sim_refs.bc_settings.at(face.neighbor_id), rad_E_n[c]);
+        const UVector U_adj = chi_radhydro::MakeUFromBC(
+          sim_refs.bc_settings.at(face.neighbor_id), U_n[c]);
+        const Vec3 u_adj = VelocityFromCellU(U_adj);
+
+        for (size_t d=0; d<Nd; ++d)
+          b[col_map[f+1]] += (4.0/3.0) * radE_adj * u_adj[d]/c_spd;
+      }
     }//for f
 
     //=========================================== Diagonal and rhs
@@ -332,7 +355,7 @@ void chi_radhydro::SolverC_SNCN_MFEM::
     const auto&    S_surf   = fem_data.GetIntS_shapeI();
 
     //================================= Get cell physics-info
-    const double VEFf_c  = 1.0/3.0;
+    const double VEFf_c  = VEFf_ctr[c];
     const Vec3   u_c_nph = VelocityFromCellU(U_nph[c]);
 
     //================================= Get construction coefficients
@@ -369,7 +392,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
       for (size_t d=0; d<Nd; ++d)
         for (size_t n=0; n<(Nn+1); ++n)
         {
-          const double VEFf_n = 1.0/3.0;
+          const double VEFf_n = (n == 0)?
+                                VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
           radF0_c_i_np1(d) += -a4 * Cc_star[i*Nd + d][n] *
                               VEFf_n * rad_E_np1[known_col_map[n]];
         }
@@ -381,7 +406,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
       for (size_t d=0; d<Nd; ++d)
         for (size_t n=0; n<(Nn+1); ++n)
         {
-          const double VEFf_n = 1.0/3.0;
+          const double VEFf_n = (n == 0)?
+                                VEFf_ctr  [Cc_star_col_map4knowns[n]] :
+                                VEFf_nodal[Cc_star_col_map4knowns[n]-Nc];
           radF0_c_i_np1(d) += -a6 * Cc_star[i*Nd + d][n] *
                               VEFf_n * rad_E_n[known_col_map[n]];
         }

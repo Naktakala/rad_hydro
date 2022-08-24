@@ -65,14 +65,29 @@ public:
     const std::vector<Vec3>&        grad_rad_E_nph,
     const std::vector<Vec3>&        rad_F0_nph,
     const std::vector<Vec3>&        rad_F_n,
+    const std::vector<double>&      VEFf_nodal,
+    const std::vector<double>&      VEFf_ctr,
     std::vector<UVector>&           U_np1,
     std::vector<double>&            rad_E_np1,
     std::vector<Vec3>&              rad_F_np1,
     std::vector<Vec3>&              rad_F0_np1);
+
+  //03
+  static void Sweep1D(SimRefs&                           sim_refs,
+                      SDM_PWLC&                          pwlc,
+                      SDM_PWLD&                          pwld,
+                      const std::vector<double>&         kappa_a,
+                      const std::vector<double>&         kappa_t,
+                      const std::vector<UVector>&        U,
+                      const std::vector<double>&         radE,
+                      const std::vector<Vec3>&           radF0,
+                      const chi_math::AngularQuadrature& quadrature,
+                      VecDbl& VEFf_nodal,
+                      VecDbl& VEFf_ctr,
+                      bool verbose = false);
+
+
   };
-  //02cb
-
-
 
 }//namespace chi_radhydro
 

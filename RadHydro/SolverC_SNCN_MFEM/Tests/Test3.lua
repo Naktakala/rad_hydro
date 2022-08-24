@@ -186,7 +186,7 @@ zmax = 4
 zmin = 5
 TRANSMISSIVE = 0
 FIXED = 1
-bctype = TRANSMISSIVE
+bctype = FIXED
 chiRadHydroSetBCSetting(phys1,zmin,bctype,rho0,0,0,u0,e0,p0,radE0)
 chiRadHydroSetBCSetting(phys1,zmax,bctype,rho1,0,0,u1,e1,p1,radE1)
 

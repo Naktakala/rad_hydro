@@ -2,6 +2,7 @@
 
 #include "ChiMath/SpatialDiscretization/FiniteElement/PiecewiseLinear/pwlc.h"
 #include "ChiMath/SpatialDiscretization/FiniteElement/PiecewiseLinear/pwl.h"
+#include "ChiMath/Quadratures/product_quadrature.h"
 
 #include "ChiTimer/chi_timer.h"
 
@@ -53,6 +54,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
 
   VecDbl                kappa_a_nph(num_local_nodes, 0.0);
   VecDbl                kappa_t_nph(num_local_nodes, 0.0);
+
+  VecDbl                VEFf_nodal(m_num_local_cfem_nodes, 1.0/3.0);
+  VecDbl                VEFf_ctr(num_local_nodes,1.0/3.0);
 
   //======================================== Develop U and radE from field funcs
   FieldsToU(m_scalar_fields.at("rho"),
@@ -124,6 +128,8 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
     ostr << PrintVal(" e1    %8.8e", m_scalar_fields["e"          ][N - 1]);
     ostr << PrintVal(" radE1 %8.8e", m_scalar_fields["radE"       ][N - 1]);
     ostr << PrintVal(" E1    %8.8e", U_n[N - 1][MAT_E]);
+    ostr << PrintVal(" fL    %8.8e", VEFf_nodal[0]);
+    ostr << PrintVal(" fLctr %8.8e", VEFf_ctr[0]);
 
     chi::log.Log() << ostr.str();
   }
@@ -150,6 +156,10 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
                    m_bc_settings,
                    m_Cv, m_gamma,
                    m_kappa_s_function, m_kappa_a_function};
+
+  //======================================== Initialize quadrature
+  chi_math::ProductQuadrature quadrature;
+  quadrature.InitializeWithGL(12);
 
   //####################################################### Start iterations
   chi_objects::ChiTimer timer;
@@ -181,7 +191,14 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
                      << " matE_adv: " << setw(12)
                      << scientific << setprecision(8) << new_system_energy.me_adv
                      << " radE_adv: " << setw(12)
-                     << scientific << setprecision(8) << new_system_energy.re_adv;
+                     << scientific << setprecision(8) << new_system_energy.re_adv
+                     << " fccL: " << setw(12)
+                     << scientific << setprecision(8) << VEFf_nodal[num_local_nodes/2-1]
+                     << " fcc: " << setw(12)
+                     << scientific << setprecision(8) << VEFf_ctr[num_local_nodes/2-1]
+                     << " fccR: " << setw(12)
+                     << scientific << setprecision(8) << VEFf_nodal[num_local_nodes/2];
+
     }
     old_system_energy = new_system_energy;
 
@@ -229,6 +246,7 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
       U_n, U_n, U_n_star, grad_U_n,                 //Hydro inputs
       rad_E_n, rad_E_n, grad_rad_E_n,               //RadE inputs
       rad_F0_n, rad_F_n,                            //RadF inputs
+      VEFf_nodal, VEFf_ctr,                         //VEFf inputs
       U_nph,                                        //Input and output
       rad_E_nph, rad_F_nph, rad_F0_nph);            //Output
 
@@ -249,6 +267,11 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
     timing_info["compute_kappa_nph"] += GetResetTimer(timer);
 
     //################################################ Corrector
+    //################################################ VEF Sweep
+    Sweep1D(sim_refs, *m_pwlc, *m_pwld, kappa_a_nph, kappa_t_nph,
+            U_nph, rad_E_nph, rad_F0_nph, quadrature, VEFf_nodal, VEFf_ctr,
+      /*verbose=*/false);
+
     //=================================== Advection of U and rad_E
     //Applies a Riemann solver
     MHM_HydroCorrector(                     //Defined in chi_radhydro
@@ -279,6 +302,7 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
       U_n, U_nph, U_nph_star, grad_U_nph,                 //Hydro inputs
       rad_E_n, rad_E_nph, grad_rad_E_nph,                 //RadE inputs
       rad_F0_n, rad_F_n,                                  //RadF inputs
+      VEFf_nodal, VEFf_ctr,                               //VEFf inputs
       U_np1,                                              //Input and output
       rad_E_np1, rad_F_np1, rad_F0_np1);                  //Output
 
