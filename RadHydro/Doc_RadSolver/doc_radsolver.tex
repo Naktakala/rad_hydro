@@ -2284,7 +2284,7 @@ Additionally we require an expression for $\RadF_0$. If we use the same notation
 \subsubsection{The radiation-flux at $n+1$}
 We now seek a similar expression for the radiation-flux at timestep $n+1$. Our first discretization is a temporal theta-scheme discretization where we lag the advection terms,
 \beqn 
-&\frac{1}{c^2 \tau} (\RadF^{n+1} - \RadF^{n}) 
+&\frac{\tau}{c^2} (\RadF^{n+1} - \RadF^{n}) 
 + \theta_1 \bnabla \dotp (\VEFf \RadE)^{n+1} 
 + \theta_2 \bnabla \dotp (\VEFf \RadE)^n 
 \\
@@ -2293,22 +2293,22 @@ We now seek a similar expression for the radiation-flux at timestep $n+1$. Our f
 -\frac{\theta_2}{c} \sigma_t^{n} \RadF^n
 + \frac{\sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}
 \eeqn 
-we then multiply by $c^2 \tau$ 
+where $\tau = \dfrac{1}{\Delta t}$. We then multiply by $\dfrac{c^2}{\tau}$ 
 \beqn 
 &\RadF^{n+1} - \RadF^{n}
-+ \theta_1 c^2 \tau \bnabla \dotp (\VEFf \RadE)^{n+1} 
-+ \theta_2 c^2 \tau \bnabla \dotp (\VEFf \RadE)^n 
++ \theta_1 \frac{c^2}{\tau} \bnabla \dotp (\VEFf \RadE)^{n+1} 
++ \theta_2 \frac{c^2}{\tau} \bnabla \dotp (\VEFf \RadE)^n 
 \\
 &= 
--\frac{\theta_1 c^2 \tau }{c} \sigma_t^{n+1} \RadF^{n+1}
--\frac{\theta_2 c^2 \tau }{c} \sigma_t^{n} \RadF^n
-+ \frac{c^2 \tau \sigma_t^{n+\half}}{c} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
+-\frac{\theta_1 c^2}{c\tau} \sigma_t^{n+1} \RadF^{n+1}
+-\frac{\theta_2 c^2}{c\tau} \sigma_t^{n} \RadF^n
++ \frac{\sigma_t^{n+\half} c^2}{c\tau} \bigr( \RadE \velocity+\VEFf\RadE \dotp \velocity \bigr)^{n+\half}.
 \eeqn 
 Next we define,
 \beqn 
-a_1 &= \theta_1 c^2 \tau \\
-a_2 &= \theta_2 c^2 \tau \\
-a_3 &= c \tau \sigma_t^{n+\half}
+a_1 &= \theta_1 \frac{c^2}{\tau} \\
+a_2 &= \theta_2 \frac{c^2}{\tau} \\
+a_3 &= \sigma_t^{n+\half}\frac{c}{\tau}
 \eeqn 
 to get,
 \beqn 

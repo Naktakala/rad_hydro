@@ -216,6 +216,13 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
     timing_info["compute_kappa_n"] += GetResetTimer(timer);
 
     //################################################ Predictor
+    //################################################ VEF Sweep
+    Sweep1D(sim_refs, *m_pwlc, *m_pwld,      //Stuff
+            kappa_a_n, kappa_t_n,            //Kappa input
+            U_n, rad_E_n, rad_F0_n,          //Physics input
+            quadrature,                      //Quadrature input
+            VEFf_nodal, VEFf_ctr,            //Outputs
+            /*verbose=*/false);
 
     //=================================== Advection of U and rad_E
     MHM_HydroPredictor(                //Defined in chi_radhydro
@@ -267,10 +274,6 @@ void chi_radhydro::SolverC_SNCN_MFEM::Execute()
     timing_info["compute_kappa_nph"] += GetResetTimer(timer);
 
     //################################################ Corrector
-    //################################################ VEF Sweep
-    Sweep1D(sim_refs, *m_pwlc, *m_pwld, kappa_a_nph, kappa_t_nph,
-            U_nph, rad_E_nph, rad_F0_nph, quadrature, VEFf_nodal, VEFf_ctr,
-      /*verbose=*/false);
 
     //=================================== Advection of U and rad_E
     //Applies a Riemann solver

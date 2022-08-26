@@ -189,9 +189,9 @@ void chi_radhydro::SolverC_SNCN_MFEM::
 
     //=========================================== Assemble connectivity
     const double c_sqrd = pow(c_spd, 2.0);
-    const double a1 = theta1 * c_sqrd * tau;
-    const double a2 = theta2 * c_sqrd * tau;
-    const double a3 = c_spd * tau * sigma_t_c_nph;
+    const double a1 = theta1 * c_sqrd / tau;
+    const double a2 = theta2 * c_sqrd / tau;
+    const double a3 = sigma_t_c_nph * c_spd / tau;
 
     const double divisor = (1.0 + (a1/c_spd)*sigma_t_c_np1);
     const double a4 = a1/divisor;
