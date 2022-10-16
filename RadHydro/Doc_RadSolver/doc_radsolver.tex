@@ -269,9 +269,87 @@ S_{bb}(\nu, T) = \rho \kappa(\nu) B(\nu, T),
 with units $[Joule/cm^3 {-} s {-} steridian {-} Hz]$
 where $\rho$ is the material density $[g/cm^3]$ and $\kappa$ is the opacity $[cm^2/g]$. The combination $\rho \kappa$ is also equal to the macroscopic absorption cross section $\sigma_a$, therefore $\rho \kappa(\nu) = \sigma_a$. Data for the opacity of a material is normally available in the form of either the \textbf{Rosseland opacity}, $\kappa_{Rs}$, or the \textbf{Planck opacity}, $\kappa_{Pl}$.
 
+\newpage
+\subsection{An introduction to Special Relativity}
+In this subsection we make a simplified derivation of special relativity, specifically how time-dilation relates to laboratory-frame velocity relative to the speed of light, $c$. We will refer to the laboratory-frame as $S$ (to be consistent with Mihalas\cite{Mihalas}), and the co-moving frame as $S'$. Consider the schematic in Figure \ref{fig:relativitydiag1} below. The schematic depicts a cart, having a width $s$, moving at velocity $v$. On the cart is a co-moving observer ($O'$), and, stationary relative to the cart, is a lab-frame observer ($O$). A photon is propelled from one end of the cart to the other and both observers $O'$ and $O$ have a clock with which they measure $t_C$ and $t_L$ respectively.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\linewidth]{figures/RelativityDiag1.drawio.pdf}
+	\caption{Schematic of a special relativity scenario. The cart, having width $s$, is moving at velocity $v$. On the cart is a co-moving observer ($O'$), and, stationary relative to the cart, is a lab-frame observer ($O$). A photon is propelled from one end of the cart to the other.}
+	\label{fig:relativitydiag1}
+\end{figure}
 
+The two observers measure the time it takes for the photon to bounce of the mirror and return to its source. The path the photon takes is shown in Figure \ref{fig:relativitydiag1b}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\linewidth]{figures/RelativityDiag1b.drawio.pdf}
+	\caption{Schematic of the distances traveled from different frames of reference.}
+	\label{fig:relativitydiag1b}
+\end{figure}
+For $O'$, the time is measured to be $t_C$, however, since the speed of light, $c$ is a constant in any reference frame we can write
+\beqn 
+c = \frac{2s}{t_C}.
+\eeqn 
+For $O$, the time is measured to be $t_L$ but the distance traveled by the photon is much greater. Still, $c$ is constant and therefore we write
+\beqn 
+c = \frac{2\sqrt{s^2 + (\frac{1}{2}vt_L)^2}}{t_L}.
+\eeqn 
+From the first equation we obtain an expression for $t_C$, i.e.,
+\beqn
+t_C = \frac{2s}{c},
+\eeqn 
+and from the second equation we obtain an expression for $t_L$, i.e.,
+\beqn 
+ct_L &= 2\sqrt{s^2 + (\frac{1}{2}vt_L)^2} \\
+\frac{1}{4} c^2 t_L^2 &= s^2 + \frac{1}{4}v^2 t_L^2 \\
+\frac{1}{4} t_L^2 (c^2-v^2) &= s^2 \\
+t_L^2 &= 4s^2 \frac{1}{c^2 - v^2} \\
+\therefore
+t_L &= 2s \frac{1}{\sqrt{c^2-v^2}}
+\eeqn 
 
+\subsubsection{A useful relation from the clock-readings, e.g. time dilation}
+We can deduce several things from these expressions but firstly we define two important items. We define $t'$ as the time passed in the co-moving frame relative to the lab-frame. We also define $t_0$ as the time passed in the lab-frame relative to the co-moving frame. With these defined we can develop expressions for these quantities as follows.
 
+Firstly, time passed in the co-moving frame relative to the lab-frame, $t'$, is simply the ratio of the clock readings $t_C$ to $t_L$, multiplied with an arbitrary time passed in the lab-frame, $t$, i.e.,
+\beqn 
+t' &= \dfrac{t_C}{t_L} t
+= \dfrac{\dfrac{2s}{c}}
+{2s\dfrac{1}{\sqrt{c^2-v^2}}} t,
+\eeqn 
+arriving at
+\beqn \label{eq:time_relativity_t_prime}
+t' &= \biggr( \sqrt{1-\frac{v^2}{c^2}} \biggr) t.
+\eeqn 
+Secondly, time passed in the lab-frame relative to the co-moving frame, $t_0$, is simply the opposite ratio $t_L$ to $t_C$, again multiplied with an arbitrary time passed in the lab-frame, $t$, i.e.,
+\beqn 
+t_0 &= \dfrac{t_L}{t_C} t 
+= \dfrac{2s\dfrac{1}{\sqrt{c^2-v^2}}}
+{\dfrac{2s}{c}} t
+\eeqn 
+arriving at
+\beqn \label{eq:time_relativity_t0}
+t_0 &= \frac{1}{\sqrt{1-\dfrac{v^2}{c^2}}}t.
+\eeqn 
+
+These two expressions, i.e., eqs. \eqref{eq:time_relativity_t_prime} and \eqref{eq:time_relativity_t0}, can tell us some interesting things once we plug in some examples for $v$, e.g., for $v=\frac{6}{10} c$, we get $t'=\frac{8}{10}t$ and $t_0=\frac{5}{4}t$. It is easy to see that the clock placed in the co-moving frame runs slow as observed from the lab-frame (i.e. $t'<1$) and the clock placed in the lab-frame runs fast as observed from the co-moving frame (i.e. $t_0>1$). This effect is generally known as \textbf{time dilation}.
+
+Time dilation forms the basis of many other aspects that follow and to that end we define the following,
+\beqn
+\beta = \frac{v}{c} 
+\eeqn
+and 
+\beqn 
+\gamma = \frac{1}{\sqrt{1-\beta^2}}.
+\eeqn 
+With these definitions our time expresions in eqs. \eqref{eq:time_relativity_t_prime} and \eqref{eq:time_relativity_t0} become
+\beqn \label{eq:time_relativity_t_prime2}
+t' &= \frac{1}{\gamma} t
+\eeqn 
+and
+\beqn \label{eq:time_relativity_t02}
+t_0 &= \gamma t.
+\eeqn 
 
 
 \newpage
@@ -2453,6 +2531,112 @@ n_{f,d} S_{j,f} * C_{vol,(j,d)\mapsto \text{ row } k}^* \dotp \velocity_c^{n+\ha
 \eeqn 
 
 
+
+\newpage
+\section{Multifrequency}
+\subsection{Definitions}
+From fundamental transformations we have, for differential quantities, 
+\beqn 
+dE_0 &= \frac{E_0}{E}dE \\
+d\Omegabf_0 &= \biggr( \frac{E}{E_0} \biggr)^2 d\Omegabf \\
+d\Omegabf_0 dE_0 &= \frac{E}{E_0} d\Omegabf dE.
+\eeqn 
+The ratio of energies $\frac{E_0}{E}$ is given by
+\beqn 
+\frac{E_0}{E} = \gamma (1-\Omegabf\dotp \frac{\velocity}{c})
+\eeqn 
+for which we can apply a first-order Taylor-series expansion about $\velocity=0$ to get
+\beqn 
+\frac{E_0}{E} \approx (1-\Omegabf\dotp \frac{\velocity}{c}).
+\eeqn 
+Also,
+\beqn 
+\frac{E}{E_0} \approx (1+\Omegabf\dotp \frac{\velocity}{c}).
+\eeqn 
+Both these derivations are shown in the appendices.
+Co-moving cross sections are approximated by
+\beqn 
+\sigma(E_0) &= \sigma(E) + \partialderiv{\sigma}{E}(E_0-E) \\
+&= \sigma(E) + \partialderiv{\sigma}{E}E\biggr(\frac{E_0}{E}-1\biggr) \\
+&= \sigma(E) + \partialderiv{\sigma}{E}E\biggr((1-\Omegabf\dotp\frac{\velocity}{c})-1\biggr) \\
+&= \sigma(E) - \partialderiv{\sigma}{E}E \Omegabf \dotp \frac{\velocity}{c}.
+\eeqn 
+Note that this cross section seems to drop the directional dependence of $\sigma_0$.
+
+
+\beqn \label{eq:intensity_CF_vs_LF}
+I_0(\Omegabf_0, E_0) = \biggr( \frac{E_0}{E} \biggr)^3 I(\Omegabf, E)
+\eeqn 
+
+
+\subsection{Equilibrium quantities}
+\beqn 
+&\frac{1}{c} \frac{\partial I(\position, \Omegabf, E, t)}{\partial t} 
++\Omegabf \dotp \bnabla I(\position, \Omegabf, E, t)
++\sigma_t(\position,E) I(\position, \Omegabf, E, t) \\
+=& \frac{\sigma_s(\position,E)}{4\pi} \phi(E)
++ \sigma_a(\position,E) B(E,T(\position, t))\\
+&+
+\biggr[
+\biggr( \sigma_t + E \frac{\partial \sigma_a}{\partial E} \biggr) I
++\frac{\sigma_s}{4\pi}
+\biggr(
+2\phi - E \frac{\partial \phi}{\partial E}
+\biggr)
++2\sigma_a B(E,T)
+- B(E,T) E \frac{\partial \sigma_a}{\partial E}
+-\sigma_a E \frac{\partial B(E,T)}{\partial E}
+\biggr] \Omegabf \dotp \frac{\mathbf{u}}{c} \\
+&-\frac{\sigma_s}{4\pi} \biggr( \RadF - E \frac{\partial \RadF}{\partial E} \biggr) \dotp \frac{\mathbf{u}}{c}
+\eeqn 
+
+\subsubsection{Equilibrium Angular intensity, $I_{eq}$}
+From eq. \eqref{eq:intensity_CF_vs_LF} we get
+\beqn 
+I(\Omegabf, E) = \biggr( \frac{E}{E_0} \biggr)^3 I_0(\Omegabf_0, E_0)
+\eeqn 
+but in equilibrium $I_0$ becomes the Planck function, and therefore
+\begin{align}
+I_{eq}(\Omegabf, E) &= \biggr( \frac{E}{E_0} \biggr)^3 B(E_0),
+\intertext{into which we can plug the first-order expansion for $\frac{E_0}{E}$,}
+&= \biggr( 1+\Omegabf\dotp \frac{\velocity}{c} \biggr)^3 B(E_0)
+\intertext{Next we expand the first and second portion separately (I think, but wtfk)}
+&= \bigr( 1 + 3\Omegabf \dotp \frac{\velocity}{c} \bigr) 
+\biggr(
+B(E_0)|_{\beta=0} + O(\beta^2)\partialderiv{B}{E_0} \partialderiv{E_0}{\beta} \biggr|_{\beta=0}
+\biggr) \Omegabf \dotp \frac{\velocity}{c}
+\intertext{No fucking clue what happened here, only that $E=E_0$ if $\beta=0$,}
+&= B(E) + (3B(E) - E\partialderiv{B}{E})\Omegabf \dotp \frac{\velocity}{c} + O(\beta^2)
+\end{align}
+
+\vspace{1cm}
+\subsection{Radiation-energy equation and radiation-momentum equation}
+The radiation energy and momentum equation to $O(v/c) $ is
+\beqn
+\frac{\partial \RadE}{\partial t}+\bnabla\dotp\RadF
+=\int_0^{\infty} \sigma_a(4\pi B- \phi)dE 
++\int_0^{\infty}  (\sigma_a+E\frac{\partial \sigma_a}{\partial E}-\sigma_s)\vec{F} dE \dotp \frac{\velocity}{c}  \\
+\eeqn
+\beqn
+\frac{1}{c^2}\partialderiv{\RadF}{t}+\bnabla \dotp \RadP =-\int_0^{\infty}\frac{1}{c}\sigma_t\vec{F} dE
++  \int_0^{\infty}dE(\sigma_a+E\frac{\partial \sigma_a}{\partial E}+\sigma_s)\RadP \cdot \frac{\velocity}{c}
++ \int_0^{\infty}dE (\sigma_s\phi   +4\pi\sigma_aB)\frac{\velocity}{c^2}
+\eeqn
+The latter we write in the form
+\beqn \label{eq:radmom_weird}
+\frac{1}{c^2}\partialderiv{\RadF}{t}+\bnabla \dotp \RadP =-\int_0^{\infty}\frac{1}{c}\sigma_t\vec{F} dE
++  \int_0^{\infty}\vec{S}_{rp}^{(1)}dE
+\eeqn
+where
+\beqn 
+\vec{S}_{rp}^{(1)} = (\sigma_a+E\frac{\partial \sigma_a}{\partial E}+\sigma_s)\RadP \cdot \frac{\velocity}{c}
++(\sigma_s\phi   +4\pi\sigma_aB)\frac{\velocity}{c^2}
+\eeqn 
+
+
+
+
+
 \newpage
 \begin{appendices}
 \section{Angular integration identities} \label{appendix:angle_integration_identities}
@@ -2934,6 +3118,27 @@ We then start to define the matrix $C_c$ as
 
 
 
+\newpage
+\section{Taylor expansions}
+\subsection{$\frac{E_0}{E}$}
+\begin{align}
+\frac{E_0}{E} &= \gamma (1-\Omegabf\dotp \frac{\velocity}{c}) 
+\intertext{Pretend velocity along z-axis}
+&= \biggr( 1-\frac{u^2}{c^2} \biggr)^{-\half}(1-\mu u) = f(u) \\
+&= f(u=0) + \partialderiv{f}{u}\biggr|_{u=0}(u) \\
+\intertext{using Wolfram alpha}
+&= 1 - \mu u
+\intertext{Unpretending}
+\frac{E_0}{E} &= 1 - \Omegabf \dotp \velocity
+\end{align}
+\subsection{$\frac{E}{E_0}$}
+\begin{align}
+\frac{E}{E_0} &= \dfrac{1}{\gamma (1-\Omegabf\dotp \dfrac{\velocity}{c}) } \\
+\intertext{Similar process to that above}
+\frac{E}{E_0} &= 1 + \Omegabf \dotp \velocity
+\end{align}
+
+
 
 
 
@@ -2947,6 +3152,8 @@ We then start to define the matrix $C_c$ as
 \begin{thebibliography}{1}
 	
 %	\bibitem{LewisMiller} Lewis E.E., Miller W.F., {\em Computational Methods of Neutron Transport}, JohnWiley \& Sons, 1984
+
+	\bibitem{Mihalas} Mihalas D., Weibel-Mihalas B., {\em Foundations of Radiation Hydrodynamics}, Dover Publications, 1999.
 
 	\bibitem{Castor} John I. Castor, {\em Radiation Hydrodynamics}, UCRL-BOOK-134209-Rev-1, Lawrence Livermore National Laboratory, November 2003.
 	

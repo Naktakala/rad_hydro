@@ -24,7 +24,7 @@ chiMeshHandlerCreate()
 
 mesh={}
 N1 = 20
-N2 = 400
+N2 = 1600
 L=0.5
 L1 = (L/2)*(1-0.08*2)
 L2 = (L/2)*(0.08*2)

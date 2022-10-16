@@ -142,6 +142,8 @@ captionpos=t}
 {\LARGE\textbf{\DOCTITLE}}
 \newline
 \newline
+{\LARGE Rev 1.0 September 2022}
+\newline
 \newline
 \noindent
 {\Large Jan I.C. Vermaak$^{1,2}$, Jim E. Morel$^{1,2}$}
@@ -153,11 +155,11 @@ captionpos=t}
 \newline
 \newline
 \textbf{Abstract:}\newline\noindent
-Work is work for some, but for some it is play.
+In this research note we detail the use of a Riemann-solver, as part of an explicit time-dependent MUSCLE-Hancock scheme for simulating compressible inviscid ideal-gas fluid flows.
 \newline
 \newline\noindent
 {\small
-\textbf{Keywords:} hydrodynamics}
+\textbf{Keywords:} ideal-gas, hydrodynamics, explicit in time, predictor-corrector.}
 
 \section{Introduction}
 For this research we develop a fluid flow solver for the solution of flow problems involving compressible inviscid ideal gases. The governing equations are the Euler equations defined as
@@ -190,7 +192,7 @@ The conservation of mass-, momentum-, and energy equations can be written in the
  \mathbf{Q} \\
 \eeqn 
 where
-\beqn 
+\beqn \label{eq:definitions_UFHGQ}
 \mathbf{U} = 
 \begin{bmatrix}
 \rho \\ 
@@ -450,7 +452,7 @@ These two general limiters are used to define the \textbf{double minmod limiter}
 \eeqn 
 where $\position_{ccn} = \position_{cn} - \position_c$ and $\alpha{=2}$ denoting the ``double''. When $\alpha{=0}$ the scheme reduces to the unlimited scheme and if $\alpha{=1}$ the scheme is the standard minmod limiter.
 
-\newpage
+\vspace{1cm}
 \subsection{Step 3 - Advance the conserved variables by half a time step}
 Advance the cell-centered values over half a time step as
 \beqn 
@@ -541,14 +543,13 @@ S_* = \frac{p_R - p_L +\rho_L u_L(S_L-u_L) - \rho_R u_R(S_R-u_R)}
 \eeqn 
 
 \subsection{Intermediate fluxes}
-As per \cite{Toro} the intermediate fluxes, $\mathbf{F}_{*L}$ and $\mathbf{F}_{*R}$ are given by
+As per \cite{Toro} the intermediate conserved variables, $\mathbf{U}_{*L}$ and $\mathbf{U}_{*R}$, are given by
 \beqn 
-F_{*K} = 
-\frac
-{S_* (S_K \mathbf{U}_K - \mathbf{F}_K) + S_K(p_K+\rho_L(S_K-u_K)(S_*-u_K))D_*}
-{S_K - S_*}
+\mathbf{U}_{*K} =
+\frac{S_K \mathbf{U}_k - \mathbf{F}_K + p_{*K} D_{*}} 
+{S_K - S_{*}}
 \eeqn 
-for $K=L$ and $K=R$. The vector $\mathbf{D}_*$ is a vector such that
+where $K=L$ or $K=R$. \textbf{Note: }in \cite{Toro} the equation above has a typo in the denominator, i.e., the book has $S_L$ instead of $S_K$. The vector $\mathbf{D}_*$ is a vector such that
 \beqn 
 \mathbf{F}(\mathbf{U}) = u \mathbf{U} + p\mathbf{D},
 \eeqn 
@@ -556,6 +557,17 @@ therefore
 \beqn 
 \mathbf{D}_* = [0,1,0,0,S_*]^T
 \eeqn 
+and 
+\beqn 
+p_{*K} = p_K + \rho_K (S_K-u_K)(S_{*}-u_K).
+\eeqn 
+\newline
+\newline
+From here we can compute $\mathbf{F}_{*L}$ and $\mathbf{F}_{*R}$ as
+\beqn 
+\mathbf{F}_{*K} = \mathbf{F}(\mathbf{U}_{*K},p_{*K})
+\eeqn 
+from eq. \eqref{eq:definitions_UFHGQ}.
 
 \subsection{Interface flux}
 The interface flux $\mathbf{F}_f^{*hllc}$ is now given by
@@ -614,7 +626,7 @@ The program reached the maximum total time after 73 iterations and the results a
 	
 	\bibitem{Toro} Toro E.F., {\em Riemann Solvers and Numerical Methods for Fluid Dynamics - A Practical Introduction}, third edition, Springer, 2009.
 	
-	\bibitem{Moukalled} Moukalled F.,  Mangani L., Darwish M., {\em The Finite Volume Method in Computational Fluid Dynamics - An Advanced Introduction withOpenFOAM® and Matlab®}, Springer, 2016.
+	\bibitem{Moukalled} Moukalled F.,  Mangani L., Darwish M., {\em The Finite Volume Method in Computational Fluid Dynamics - An Advanced Introduction with OpenFOAM and Matlab}, Springer, 2016.
 	
 	\bibitem{McClarrenSlopes} McClarren R.G., Lowrie R.B., {\em The effects of slope limiting on asymptotic-preserving numerical methods for hyperbolic conservation laws}, Journal of Computational Physics, vol 227 p9711-9726, 2008.
 	
